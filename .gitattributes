@@ -1,0 +1,13 @@
+* text=auto
+*.sh text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.py text
+*.json text
+*.html text
+*.css text
+*.js text
+*.svg text
+*.md text
+*.jpg binary
+*.png binary

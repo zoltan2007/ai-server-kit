@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+dist/
+app/catalog.json.bak
+
+# Runtime / local state (never commit secrets or models)
+config.json
+panel.log
+panel.pid
+agreement.json
+imports/
+received/
+data/
+*.gguf
+*.safetensors
+
+# OS
+.DS_Store
+Thumbs.db

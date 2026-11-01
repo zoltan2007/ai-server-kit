@@ -1,0 +1,478 @@
+{
+ "updated": "2026-11-02",
+ "note": "大小是 Ollama 官方模型庫的實際下載量（預設量化）。用 tools/refresh_catalog.py 更新。",
+ "groups": [
+  {
+   "id": "chat",
+   "name": "通用聊天",
+   "models": [
+    {
+     "name": "qwen3.5",
+     "desc": "阿里巴巴通義千問 3.5。中文很強，可看圖、可思考、可呼叫工具",
+     "caps": [
+      "vision",
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "0.8b",
+       "size": 1322069043
+      },
+      {
+       "tag": "2b",
+       "size": 2683396637
+      },
+      {
+       "tag": "4b",
+       "size": 3324173757
+      },
+      {
+       "tag": "9b",
+       "size": 6550825373
+      },
+      {
+       "tag": "27b",
+       "size": 17478556413
+      },
+      {
+       "tag": "35b",
+       "size": 22069591997
+      },
+      {
+       "tag": "122b",
+       "size": 81370035877
+      }
+     ]
+    },
+    {
+     "name": "qwen3.6",
+     "desc": "通義千問 3.6。寫程式與代理任務更好",
+     "caps": [
+      "vision",
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "27b",
+       "size": 17769076719
+      },
+      {
+       "tag": "35b",
+       "size": 22621314161
+      }
+     ]
+    },
+    {
+     "name": "qwen3.8",
+     "desc": "通義千問 3.8。寫程式、研究、長任務",
+     "caps": [
+      "vision",
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "27b",
+       "size": 17741871939
+      }
+     ]
+    },
+    {
+     "name": "gemma4",
+     "desc": "Google Gemma 4。單張顯示卡就能跑的高品質模型，可看圖、聽聲音",
+     "caps": [
+      "vision",
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "e2b",
+       "size": 4587156264
+      },
+      {
+       "tag": "e4b",
+       "size": 6583656264
+      },
+      {
+       "tag": "12b",
+       "size": 8021618699
+      },
+      {
+       "tag": "26b",
+       "size": 18731025387
+      },
+      {
+       "tag": "31b",
+       "size": 20385457992
+      }
+     ]
+    },
+    {
+     "name": "gpt-oss",
+     "desc": "OpenAI 開放權重模型。推理與工具呼叫",
+     "caps": [
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "20b",
+       "size": 13793441427
+      },
+      {
+       "tag": "120b",
+       "size": 65369819443
+      }
+     ]
+    },
+    {
+     "name": "llama3.1",
+     "desc": "Meta Llama 3.1。英文為主，生態最完整",
+     "caps": [
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "8b",
+       "size": 4920752841
+      },
+      {
+       "tag": "70b",
+       "size": 42520412073
+      }
+     ]
+    },
+    {
+     "name": "mistral-small3.2",
+     "desc": "Mistral Small 3.2。歐系模型，可看圖",
+     "caps": [
+      "vision",
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "24b",
+       "size": 15177384294
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "reason",
+   "name": "推理（數學、邏輯）",
+   "models": [
+    {
+     "name": "deepseek-r1",
+     "desc": "DeepSeek R1 推理模型。會先想再答",
+     "caps": [
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "1.5b",
+       "size": 1117322281
+      },
+      {
+       "tag": "7b",
+       "size": 4683074953
+      },
+      {
+       "tag": "8b",
+       "size": 5225375560
+      },
+      {
+       "tag": "14b",
+       "size": 8988111721
+      },
+      {
+       "tag": "32b",
+       "size": 19851337321
+      },
+      {
+       "tag": "70b",
+       "size": 42520397385
+      }
+     ]
+    },
+    {
+     "name": "qwen3",
+     "desc": "通義千問 3。可切換思考／不思考",
+     "caps": [
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "4b",
+       "size": 2497293444
+      },
+      {
+       "tag": "8b",
+       "size": 5225387677
+      },
+      {
+       "tag": "14b",
+       "size": 9276198077
+      },
+      {
+       "tag": "30b",
+       "size": 18556698820
+      },
+      {
+       "tag": "32b",
+       "size": 20201253341
+      }
+     ]
+    },
+    {
+     "name": "phi4-reasoning",
+     "desc": "微軟 Phi-4 推理版",
+     "caps": [],
+     "tags": [
+      {
+       "tag": "14b",
+       "size": 11117502673
+      }
+     ]
+    },
+    {
+     "name": "magistral",
+     "desc": "Mistral 推理模型",
+     "caps": [
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "24b",
+       "size": 14333920644
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "code",
+   "name": "寫程式",
+   "models": [
+    {
+     "name": "qwen3-coder",
+     "desc": "通義千問寫程式專用，長上下文",
+     "caps": [
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "30b",
+       "size": 18556700222
+      }
+     ]
+    },
+    {
+     "name": "qwen2.5-coder",
+     "desc": "通義千問 2.5 寫程式版，小顯示卡也能跑",
+     "caps": [
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "1.5b",
+       "size": 986061602
+      },
+      {
+       "tag": "7b",
+       "size": 4683087074
+      },
+      {
+       "tag": "14b",
+       "size": 8988123810
+      },
+      {
+       "tag": "32b",
+       "size": 19851349410
+      }
+     ]
+    },
+    {
+     "name": "devstral-small-2",
+     "desc": "Mistral 寫程式代理模型",
+     "caps": [
+      "vision",
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "24b",
+       "size": 15177373679
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vision",
+   "name": "看圖、讀文件",
+   "models": [
+    {
+     "name": "qwen3-vl",
+     "desc": "通義千問視覺版。看圖、看截圖、讀表格",
+     "caps": [
+      "vision",
+      "tools",
+      "thinking"
+     ],
+     "tags": [
+      {
+       "tag": "2b",
+       "size": 1889519136
+      },
+      {
+       "tag": "4b",
+       "size": 3336618981
+      },
+      {
+       "tag": "8b",
+       "size": 6190971493
+      },
+      {
+       "tag": "30b",
+       "size": 19595409504
+      },
+      {
+       "tag": "32b",
+       "size": 20910297248
+      }
+     ]
+    },
+    {
+     "name": "gemma3",
+     "desc": "Google Gemma 3，可看圖",
+     "caps": [
+      "vision"
+     ],
+     "tags": [
+      {
+       "tag": "4b",
+       "size": 3350272259
+      },
+      {
+       "tag": "12b",
+       "size": 8164039587
+      },
+      {
+       "tag": "27b",
+       "size": 17413409507
+      }
+     ]
+    },
+    {
+     "name": "deepseek-ocr",
+     "desc": "DeepSeek 文字辨識（OCR）",
+     "caps": [
+      "vision"
+     ],
+     "tags": [
+      {
+       "tag": "3b",
+       "size": 6687239934
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "small",
+   "name": "小模型（舊電腦、沒有顯示卡）",
+   "models": [
+    {
+     "name": "llama3.2",
+     "desc": "Meta 小模型，CPU 也跑得動",
+     "caps": [
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "1b",
+       "size": 1321097844
+      },
+      {
+       "tag": "3b",
+       "size": 2019392628
+      }
+     ]
+    },
+    {
+     "name": "phi4-mini",
+     "desc": "微軟 Phi-4 mini，多語言、會呼叫工具",
+     "caps": [
+      "tools"
+     ],
+     "tags": [
+      {
+       "tag": "3.8b",
+       "size": 2491876363
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "embed",
+   "name": "嵌入（做知識庫、搜尋用，不能聊天）",
+   "models": [
+    {
+     "name": "bge-m3",
+     "desc": "多語言嵌入模型，中文效果好",
+     "caps": [
+      "embedding"
+     ],
+     "tags": [
+      {
+       "tag": "567m",
+       "size": 1157672268
+      }
+     ]
+    },
+    {
+     "name": "qwen3-embedding",
+     "desc": "通義千問嵌入模型",
+     "caps": [
+      "embedding"
+     ],
+     "tags": [
+      {
+       "tag": "0.6b",
+       "size": 639150592
+      },
+      {
+       "tag": "4b",
+       "size": 2496703776
+      },
+      {
+       "tag": "8b",
+       "size": 4676804928
+      }
+     ]
+    },
+    {
+     "name": "nomic-embed-text",
+     "desc": "輕量英文嵌入模型",
+     "caps": [
+      "embedding"
+     ],
+     "tags": [
+      {
+       "tag": "latest",
+       "size": 274302030
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

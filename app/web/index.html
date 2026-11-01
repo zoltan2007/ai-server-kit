@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1318">
+<title>AI 主機面板</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form class="login-card" id="login-form">
+    <img src="icon.svg" alt="" class="login-logo">
+    <h1>AI 主機面板</h1>
+    <p class="muted">輸入安裝時顯示的登入碼。忘記的話，在主機上執行「顯示登入碼」。</p>
+    <input id="login-token" type="password" autocomplete="current-password" placeholder="登入碼" required>
+    <button class="btn primary" type="submit">登入</button>
+    <p class="login-err" id="login-err"></p>
+  </form>
+</div>
+
+<div id="agree" class="login" hidden>
+  <form class="login-card agree-card" id="agree-form">
+    <h1>使用協議</h1>
+    <pre class="agree-text" id="agree-text"></pre>
+    <label class="check share-consent" id="agree-share-wrap" hidden>
+      <input type="checkbox" id="agree-share"><span id="agree-share-label"></span></label>
+    <label class="check"><input type="checkbox" id="agree-ok"> 我已閱讀並同意上述條款</label>
+    <button class="btn primary" type="submit" id="agree-btn" disabled>同意並開始使用</button>
+    <p class="login-err" id="agree-err"></p>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <header class="top">
+    <div class="brand">
+      <img src="icon.svg" alt="">
+      <div>
+        <div class="brand-name">AI 主機面板</div>
+        <div class="brand-host" id="host-name">—</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <span class="pill" id="ollama-pill" title="Ollama 狀態"><i class="dot"></i><span>Ollama</span></span>
+      <button class="icon-btn" id="jobs-btn" title="背景工作" aria-label="背景工作">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 14v6m-3-3 3 3 3-3"/></svg>
+        <b class="badge" id="jobs-badge" hidden>0</b>
+      </button>
+      <button class="icon-btn" id="logout-btn" title="登出" aria-label="登出">
+        <svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="status" class="on">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>狀態</span></button>
+    <button data-tab="models">
+      <svg viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg><span>模型</span></button>
+    <button data-tab="chat">
+      <svg viewBox="0 0 24 24"><path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-5 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg><span>對話</span></button>
+    <button data-tab="term">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12 15h5"/></svg><span>終端機</span></button>
+  </nav>
+
+  <main>
+    <!-- 狀態 -->
+    <section class="view on" id="view-status">
+      <div class="banner warn" id="ollama-down" hidden></div>
+      <div class="grid" id="status-grid">
+        <div class="card" id="card-cpu">
+          <div class="card-h">CPU</div>
+          <div class="big"><span id="cpu-val">—</span><small>%</small></div>
+          <svg class="spark" id="cpu-spark" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline/></svg>
+          <div class="muted small" id="cpu-name"></div>
+        </div>
+        <div class="card" id="card-mem">
+          <div class="card-h">記憶體</div>
+          <div class="big"><span id="mem-val">—</span><small id="mem-total"></small></div>
+          <div class="bar"><i id="mem-bar"></i></div>
+          <svg class="spark" id="mem-spark" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline/></svg>
+        </div>
+        <div class="contents" id="gpu-grid"></div>
+      </div>
+      <div class="grid two">
+        <div class="card">
+          <div class="card-h">Ollama 已載入的模型</div>
+          <div id="loaded-list" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h">使用顯示卡的程式</div>
+          <div id="gpu-procs" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h">磁碟</div>
+          <div id="disk-list" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h">主機</div>
+          <dl class="kv" id="host-kv"></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- 模型 -->
+    <section class="view" id="view-models">
+      <div class="banner warn" id="models-down" hidden></div>
+      <div class="card">
+        <div class="card-h">已安裝 <span class="muted small" id="installed-sum"></span></div>
+        <div id="installed-list" class="list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">下載開源模型</div>
+        <p class="muted small" id="hw-line"></p>
+        <form class="row" id="pull-form">
+          <input id="pull-name" placeholder="任何模型名稱，例如 qwen3.5:9b 或 hf.co/使用者/模型:Q4_K_M" autocomplete="off" spellcheck="false">
+          <button class="btn primary" type="submit">下載</button>
+        </form>
+        <form class="row" id="search-form">
+          <input id="search-q" placeholder="搜尋全網開源模型（Ollama 官方庫＋Hugging Face）" autocomplete="off" spellcheck="false">
+          <button class="btn" type="submit">搜尋</button>
+        </form>
+        <div id="search-results" class="catalog"></div>
+        <details id="catalog-wrap" open>
+          <summary class="muted small">依分類瀏覽推薦模型</summary>
+          <div class="chips" id="group-chips"></div>
+          <div id="catalog" class="catalog"></div>
+          <p class="muted small" id="catalog-note"></p>
+        </details>
+      </div>
+
+      <div class="card">
+        <div class="card-h">匯入自己的模型</div>
+        <div class="seg" id="import-seg">
+          <button data-mode="path" class="on">主機上的檔案</button>
+          <button data-mode="upload">從這台裝置上傳</button>
+        </div>
+        <form id="import-form" class="form">
+          <label>模型名稱<input id="imp-name" placeholder="例如 my-model 或 公司/客服:v2" required autocomplete="off" spellcheck="false"></label>
+          <div id="imp-path-box">
+            <label>主機上的路徑（.gguf 檔，或放 .gguf／safetensors 的資料夾）
+              <input id="imp-path" placeholder="例如 D:\models\my-model.gguf" autocomplete="off" spellcheck="false"></label>
+            <div class="chips" id="imp-files"></div>
+          </div>
+          <div id="imp-upload-box" hidden>
+            <label>選擇 .gguf 檔<input id="imp-file" type="file" accept=".gguf"></label>
+            <div class="bar" id="imp-up-bar" hidden><i></i></div>
+            <p class="muted small" id="imp-up-txt"></p>
+          </div>
+          <div id="imp-identify"></div>
+          <details>
+            <summary>進階設定</summary>
+            <label>系統提示（模型的角色設定，可留空）<textarea id="imp-system" rows="3"></textarea></label>
+            <label>上下文長度
+              <select id="imp-ctx"><option value="">用模型預設</option><option>4096</option><option>8192</option><option>16384</option><option>32768</option><option>65536</option></select></label>
+            <label>量化（只有 safetensors 資料夾有用）
+              <select id="imp-quant"><option value="">不量化</option><option>q4_K_M</option><option>q8_0</option></select></label>
+          </details>
+          <button class="btn primary" type="submit">開始匯入</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 對話 -->
+    <section class="view chat-view" id="view-chat">
+      <div class="chat-bar">
+        <select id="chat-model" aria-label="模型"></select>
+        <button class="btn" id="chat-new">新對話</button>
+        <button class="icon-btn" id="chat-opt-btn" title="設定" aria-label="設定">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M4.9 19.1 7 17m10-10 2.1-2.1"/></svg>
+        </button>
+      </div>
+      <div class="chat-opts" id="chat-opts" hidden>
+        <label>系統提示<textarea id="chat-system" rows="2" placeholder="例如：你是公司的客服，用繁體中文回答"></textarea></label>
+        <div class="opt-row">
+          <label class="check"><input type="checkbox" id="chat-think"> 思考模式</label>
+          <label class="check"><input type="checkbox" id="chat-status"> 附上主機狀態</label>
+        </div>
+        <label>創意程度 <span id="chat-temp-v">0.7</span><input type="range" id="chat-temp" min="0" max="1.5" step="0.1" value="0.7"></label>
+        <label>上下文長度
+          <select id="chat-ctx"><option value="">模型預設</option><option>4096</option><option>8192</option><option>16384</option><option>32768</option><option>65536</option></select></label>
+        <p class="muted small" id="chat-caps"></p>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="empty" id="chat-empty">
+          <p>選一個模型，直接打字跟它講話。</p>
+          <p class="muted small">對話只存在這台裝置的瀏覽器裡，不會上傳到任何地方。</p>
+        </div>
+      </div>
+      <form class="composer" id="composer">
+        <div class="attach" id="attach-list"></div>
+        <div class="comp-row">
+          <label class="icon-btn" id="attach-btn" title="附上圖片" hidden>
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>
+            <input type="file" id="attach-input" accept="image/*" multiple hidden>
+          </label>
+          <textarea id="chat-input" rows="1" placeholder="輸入訊息（Enter 送出，Shift+Enter 換行）"></textarea>
+          <button class="btn primary" id="chat-send" type="submit">送出</button>
+          <button class="btn danger" id="chat-stop" type="button" hidden>停止</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 終端機 -->
+    <section class="view term-view" id="view-term">
+      <div class="term-bar">
+        <select id="term-shell" aria-label="命令列"></select>
+        <code class="cwd" id="term-cwd" title="目前資料夾">~</code>
+        <button class="btn" id="term-clear">清畫面</button>
+      </div>
+      <div class="chips quick" id="term-quick"></div>
+      <div class="term-out" id="term-out"></div>
+      <form class="term-in" id="term-form">
+        <span class="prompt" id="term-prompt">&gt;</span>
+        <textarea id="term-input" rows="1" autocomplete="off" spellcheck="false" autocapitalize="off"
+                  placeholder="輸入指令，Enter 執行"></textarea>
+        <button class="btn primary" type="submit" id="term-run">執行</button>
+        <button class="btn danger" type="button" id="term-kill" hidden>停止</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<div class="drawer" id="jobs-drawer" hidden>
+  <div class="drawer-card">
+    <div class="drawer-h">
+      <b>背景工作</b>
+      <span>
+        <button class="btn" id="jobs-clear">清掉已完成</button>
+        <button class="icon-btn" id="jobs-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </span>
+    </div>
+    <div id="jobs-list" class="list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

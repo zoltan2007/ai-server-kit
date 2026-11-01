@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Server Kit — your own AI server, one click</title>
+<meta name="description" content="Turn any computer into your own private AI server: install Ollama, search or import open models, and manage it from a mobile-first web panel.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#0e1217;--bg2:#0b0f14;--surface:#161b22;--surface2:#1d242d;--bd:#2a333e;
+  --tx:#e6ebf1;--mut:#92a0b0;--ac:#3ec7b4;--ac2:#5fd0ff;--ink:#062621;--warn:#e5a73b;
+  --max:1080px;--r:14px;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font:16px/1.65 -apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;-webkit-text-size-adjust:100%}
+body.lang-zh .en{display:none}
+body.lang-en .zh{display:none}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3{line-height:1.25;letter-spacing:-.01em}
+img{max-width:100%}
+code,pre{font-family:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:11px 20px;font-weight:600;border:1px solid var(--bd);background:var(--surface2);color:var(--tx);cursor:pointer}
+.btn:hover{text-decoration:none;border-color:var(--mut)}
+.btn.primary{background:var(--ac);border-color:var(--ac);color:var(--ink)}
+.btn svg{width:18px;height:18px}
+
+/* header */
+header{position:sticky;top:0;z-index:10;background:rgba(14,18,23,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+.nav{display:flex;align-items:center;gap:14px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand .logo{width:30px;height:30px}
+.nav .sp{flex:1}
+.nav a.ghl{display:inline-flex;align-items:center;gap:6px;color:var(--mut)}
+.lang{display:inline-flex;border:1px solid var(--bd);border-radius:9px;overflow:hidden}
+.lang button{border:0;background:none;color:var(--mut);padding:6px 11px;cursor:pointer;font:inherit;font-size:14px}
+.lang button.on{background:var(--surface2);color:var(--tx)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--bd)}
+.hero::before{content:"";position:absolute;inset:-40% -10% auto;height:560px;background:
+  radial-gradient(60% 60% at 25% 20%,rgba(62,199,180,.18),transparent 70%),
+  radial-gradient(50% 50% at 85% 10%,rgba(95,208,255,.14),transparent 70%);pointer-events:none}
+.hero .wrap{position:relative;padding:64px 20px 48px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.hero h1{font-size:44px;margin:0 0 14px}
+.hero .tag{color:var(--mut);font-size:18px;margin:0 0 24px;max-width:46ch}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+.badges img{height:20px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.shot{border-radius:16px;border:1px solid var(--bd);box-shadow:0 24px 60px rgba(0,0,0,.45);display:block}
+.kick{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ac);margin-bottom:14px}
+
+/* sections */
+section{padding:60px 0}
+section.alt{background:var(--bg2)}
+h2.t{font-size:30px;margin:0 0 6px;text-align:center}
+.sub{color:var(--mut);text-align:center;margin:0 auto 36px;max-width:60ch}
+.grid{display:grid;gap:16px}
+.feat{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--bd);border-radius:var(--r);padding:20px}
+.card .ic{font-size:24px}
+.card h3{margin:10px 0 6px;font-size:18px}
+.card p{margin:0;color:var(--mut);font-size:15px}
+.gallery{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
+.gallery .col{display:grid;gap:16px}
+.gallery img{border-radius:12px;border:1px solid var(--bd);width:100%}
+.steps{counter-reset:s;max-width:820px;margin:0 auto;display:grid;gap:14px}
+.step{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;background:var(--surface);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ac);color:var(--ink);font-weight:800}
+.step h3{margin:2px 0 4px;font-size:17px}
+.step p{margin:0;color:var(--mut)}
+pre{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.5;margin:10px 0}
+pre code{color:#cfe9e4}
+.os{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.use{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.use .card h3{display:flex;align-items:center;gap:8px}
+.note{background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 42%,transparent);border-radius:12px;padding:14px 16px;color:var(--tx)}
+.note b{color:var(--warn)}
+ol.flow{counter-reset:f;list-style:none;padding:0;margin:14px 0;display:grid;gap:10px}
+ol.flow li{padding-left:34px;position:relative;color:var(--mut)}
+ol.flow li::before{counter-increment:f;content:counter(f);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--surface2);border:1px solid var(--bd);color:var(--tx);display:grid;place-items:center;font-size:13px;font-weight:700}
+footer{border-top:1px solid var(--bd);padding:30px 0;color:var(--mut);font-size:14px;text-align:center}
+
+@media(max-width:860px){
+  .hero .wrap{grid-template-columns:1fr;padding-top:40px}
+  .hero h1{font-size:34px}
+  .feat,.use,.os{grid-template-columns:1fr}
+  .gallery{grid-template-columns:1fr}
+  .nav a.ghl span{display:none}
+}
+</style>
+</head>
+<body class="lang-en">
+<header>
+  <div class="wrap nav">
+    <span class="brand"><svg class="logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#13202a"/><rect x="12" y="14" width="40" height="13" rx="3.5" fill="none" stroke="#3ec7b4" stroke-width="3"/><rect x="12" y="37" width="40" height="13" rx="3.5" fill="none" stroke="#3ec7b4" stroke-width="3"/><circle cx="20" cy="20.5" r="2.4" fill="#3ec7b4"/><circle cx="20" cy="43.5" r="2.4" fill="#3ec7b4"/><path d="M30 20.5h14M30 43.5h8" stroke="#7fe3d5" stroke-width="3" stroke-linecap="round"/></svg> AI Server Kit</span>
+    <span class="sp"></span>
+    <a class="ghl" href="https://github.com/zoltan2007/ai-server-kit" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.3-1.69-1.3-1.69-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.4-1.27.74-1.56-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.46-2.3 1.2-3.11-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11 11 0 0 1 5.8 0c2.2-1.5 3.18-1.19 3.18-1.19.63 1.59.23 2.76.11 3.05.75.81 1.2 1.85 1.2 3.11 0 4.43-2.7 5.4-5.28 5.69.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg><span>GitHub</span></a>
+    <span class="lang"><button data-lang="en" class="on">EN</button><button data-lang="zh">中文</button></span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <span class="kick">Self-hosted · Open source · MIT</span>
+      <h1><span class="en">Your own AI server,<br>one click.</span><span class="zh">你自己的 AI 主機,<br>一鍵完成。</span></h1>
+      <p class="tag"><span class="en">Turn any computer into a private AI machine: install Ollama, search or import open models, and manage everything from a mobile-first web panel — status, models, chat, and a terminal.</span><span class="zh">把任何一台電腦變成私有 AI 主機:裝好 Ollama、搜尋或匯入開源模型,再用手機優先的網頁面板管理一切——狀態、模型、對話、終端機。</span></p>
+      <div class="badges">
+        <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT">
+        <img src="https://img.shields.io/badge/python-3.8%2B-blue.svg" alt="Python 3.8+">
+        <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows | Linux">
+        <img src="https://img.shields.io/badge/dependencies-none-brightgreen.svg" alt="No dependencies">
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/zoltan2007/ai-server-kit/releases"><span class="en">Download</span><span class="zh">下載</span></a>
+        <a class="btn" href="https://github.com/zoltan2007/ai-server-kit" target="_blank" rel="noopener"><span class="en">View on GitHub</span><span class="zh">GitHub 原始碼</span></a>
+        <a class="btn" href="#quickstart"><span class="en">Quick start</span><span class="zh">快速開始</span></a>
+      </div>
+    </div>
+    <img class="shot" src="screenshots/status.jpg" alt="AI Server Kit dashboard">
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2 class="t"><span class="en">Everything in one panel</span><span class="zh">一個面板,全部搞定</span></h2>
+    <p class="sub"><span class="en">Pure standard-library backend, pure-JavaScript frontend. No Node, no pip, no build step — it even works offline.</span><span class="zh">後端純標準函式庫、前端純 JavaScript。不用 Node、不用 pip、不用編譯,離線也能跑。</span></p>
+    <div class="grid feat">
+      <div class="card"><div class="ic">📊</div><h3><span class="en">Live status</span><span class="zh">即時狀態</span></h3><p><span class="en">CPU, memory, every GPU (load, VRAM, temp, power, fan), disks, and which models Ollama has loaded.</span><span class="zh">CPU、記憶體、每張顯示卡(使用率、顯示卡記憶體、溫度、功耗、風扇)、磁碟、Ollama 載入了哪些模型。</span></p></div>
+      <div class="card"><div class="ic">🔎</div><h3><span class="en">Search every open model</span><span class="zh">搜尋全網開源模型</span></h3><p><span class="en">One box queries the Ollama library and Hugging Face GGUF. Each size is tagged "fits your GPU?".</span><span class="zh">一個框同時查 Ollama 官方庫和 Hugging Face GGUF。每個大小都標「放不放得下」。</span></p></div>
+      <div class="card"><div class="ic">📥</div><h3><span class="en">Import your own</span><span class="zh">匯入自己的模型</span></h3><p><span class="en">Local GGUF / safetensors, or upload from your phone. It reads the GGUF header to identify the model first.</span><span class="zh">本機 GGUF／safetensors,或從手機上傳。會先讀 GGUF 檔頭辨識這是什麼模型。</span></p></div>
+      <div class="card"><div class="ic">💬</div><h3><span class="en">Chat</span><span class="zh">對話</span></h3><p><span class="en">Thinking mode, vision, system prompt, optional machine-status context, and one-click "send code to terminal".</span><span class="zh">思考模式、看圖、系統提示、可附上主機狀態,程式碼一鍵「送到終端機」。</span></p></div>
+      <div class="card"><div class="ic">🖥️</div><h3><span class="en">Terminal</span><span class="zh">終端機</span></h3><p><span class="en">CMD / PowerShell / bash. Remembers the working directory, survives reloads, and can be turned off.</span><span class="zh">CMD／PowerShell／bash。記得目前資料夾、重整不中斷、可關閉。</span></p></div>
+      <div class="card"><div class="ic">🔒</div><h3><span class="en">Private by default</span><span class="zh">預設私有</span></h3><p><span class="en">Binds to 127.0.0.1, protected by a login code. Nothing leaves the machine unless you ask.</span><span class="zh">綁 127.0.0.1、要登入碼。除非你要,東西不會離開這台機器。</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="t"><span class="en">See it</span><span class="zh">介面</span></h2>
+    <p class="sub"><span class="en">Mobile-first, light & dark, nothing to install on the device you browse from.</span><span class="zh">手機優先、淺／深色,看的那台裝置什麼都不用裝。</span></p>
+    <div class="gallery">
+      <img src="screenshots/models.jpg" alt="Model search and import">
+      <div class="col">
+        <img src="screenshots/mobile.jpg" alt="Mobile view">
+      </div>
+    </div>
+    <div class="gallery" style="margin-top:16px">
+      <img src="screenshots/chat.jpg" alt="Chat with a model">
+      <div class="col"><img src="screenshots/agreement.jpg" alt="Usage agreement"></div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart">
+  <div class="wrap">
+    <h2 class="t"><span class="en">Quick start</span><span class="zh">快速開始</span></h2>
+    <p class="sub"><span class="en">Three steps on the machine you want to turn into an AI server.</span><span class="zh">在要變成 AI 主機的那台電腦上,三步驟。</span></p>
+    <div class="os">
+      <div class="card">
+        <h3>🪟 Windows 10 / 11</h3>
+        <div class="steps" style="margin-top:14px">
+          <div class="step"><div><h3><span class="en">Unzip the release</span><span class="zh">解壓縮</span></h3><p><span class="en">Download the latest release zip and extract it anywhere.</span><span class="zh">下載最新 release 壓縮檔,解壓到任意位置。</span></p></div></div>
+          <div class="step"><div><h3><span class="en">Double-click 安裝.bat</span><span class="zh">雙擊 安裝.bat</span></h3><p><span class="en">Answer the prompts (Enter = defaults): Ollama version, allow LAN, download a model.</span><span class="zh">照問題回答(Enter＝預設):Ollama 版本、要不要開放區網、要不要先下載模型。</span></p></div></div>
+          <div class="step"><div><h3><span class="en">Copy your login code</span><span class="zh">記下登入碼</span></h3><p><span class="en">The panel opens and shows a one-time login code. Done.</span><span class="zh">面板自動打開並顯示登入碼。完成。</span></p></div></div>
+        </div>
+        <p style="color:var(--mut);font-size:14px"><span class="en">Scripted / unattended:</span><span class="zh">免問、可批次:</span></p>
+        <pre><code>.\install.ps1 -Quiet -OllamaVersion 0.40.13 ^
+  -Models qwen3.5:9b -Lan</code></pre>
+      </div>
+      <div class="card">
+        <h3>🐧 Linux (systemd)</h3>
+        <p style="color:var(--mut)"><span class="en">Ubuntu / Debian / Fedora / RHEL. Installs Ollama via its official script, runs the panel as a systemd service.</span><span class="zh">Ubuntu／Debian／Fedora／RHEL。用官方腳本裝 Ollama,面板跑成 systemd 服務。</span></p>
+        <pre><code>sudo bash install.sh</code></pre>
+        <p style="color:var(--mut);font-size:14px"><span class="en">Options mirror Windows:</span><span class="zh">選項跟 Windows 對應:</span></p>
+        <pre><code>sudo bash install.sh --yes --lan \
+  --ollama-version 0.40.13 \
+  --model qwen3.5:9b</code></pre>
+        <p style="color:var(--mut);font-size:14px"><span class="en">Forgot the code? <code>sudo /opt/ai-server-kit/show-token.sh</code></span><span class="zh">忘記登入碼? <code>sudo /opt/ai-server-kit/show-token.sh</code></span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="t"><span class="en">How to use it</span><span class="zh">怎麼使用</span></h2>
+    <p class="sub"><span class="en">Open the panel URL (or scan it on your phone), enter the login code, and use the four tabs.</span><span class="zh">打開面板網址(或用手機開),輸入登入碼,用四個分頁。</span></p>
+    <div class="use">
+      <div class="card"><h3>📊 <span class="en">Status</span><span class="zh">狀態</span></h3><p><span class="en">Watch CPU, memory and GPUs in real time. See which models are loaded and whether they fit in VRAM.</span><span class="zh">即時看 CPU、記憶體、顯示卡。看載入了哪些模型、放不放得進顯示卡記憶體。</span></p></div>
+      <div class="card"><h3>🧩 <span class="en">Models</span><span class="zh">模型</span></h3><p><span class="en">Search the whole open-model world, download with a tap, or import your own GGUF / safetensors — the panel identifies it first.</span><span class="zh">搜尋全網開源模型、點一下下載,或匯入自己的 GGUF／safetensors——面板會先辨識它。</span></p></div>
+      <div class="card"><h3>💬 <span class="en">Chat</span><span class="zh">對話</span></h3><p><span class="en">Pick a model and talk. Turn on thinking, attach an image, or let it read the machine's live status.</span><span class="zh">選一個模型直接聊。開思考模式、傳圖片,或讓它讀這台的即時狀態。</span></p></div>
+      <div class="card"><h3>🖥️ <span class="en">Terminal</span><span class="zh">終端機</span></h3><p><span class="en">Run commands on the host from anywhere. It keeps the working directory and reconnects after a reload.</span><span class="zh">從任何地方對主機下指令。會記得資料夾,重整後自動接回。</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section id="deploy">
+  <div class="wrap">
+    <h2 class="t"><span class="en">Deploy to others &amp; collect models — with consent</span><span class="zh">發給別人用、收集模型——都要同意</span></h2>
+    <p class="sub"><span class="en">Distributing the kit? The optional "return a model to the producer" feature is off by default and never silent.</span><span class="zh">要發給別人用?選用的「把模型回傳給製作人」功能預設關閉,絕不背景偷傳。</span></p>
+    <div class="note">
+      <p style="margin:0 0 8px"><b>⚠ <span class="en">Three gates, all required:</span><span class="zh">三關,缺一不可:</span></b></p>
+      <ol class="flow">
+        <li><span class="en">The producer sets a receive URL in <code>config.json</code> (<code>share.url</code>). Without it, no sharing button ever appears.</span><span class="zh">製作人在 <code>config.json</code> 設收件位置(<code>share.url</code>)。沒設,分享按鈕根本不出現。</span></li>
+        <li><span class="en">On first run the user sees a <b>usage agreement</b> and must tick an <b>unchecked-by-default</b> box to allow sharing non-public models.</span><span class="zh">第一次開面板跳<b>使用協議</b>,使用者要勾一個<b>預設不打勾</b>的選項才會開啟分享。</span></li>
+        <li><span class="en">Even then, each unknown model is sent only when the user clicks "import &amp; return" and confirms. Public models are never involved.</span><span class="zh">就算開了,也只有匯入「網路上找不到」的模型、使用者按「匯入並回傳」並確認才會傳。公開模型完全不涉及。</span></li>
+      </ol>
+    </div>
+    <h3 style="margin-top:28px"><span class="en">Producer-side receiver</span><span class="zh">製作人端:收模型伺服器</span></h3>
+    <p style="color:var(--mut)"><span class="en">A tiny standalone server (<code>receiver/</code>) that accepts the uploads, verifies the token, stores them, and shows a listing page.</span><span class="zh">一支獨立小程式(<code>receiver/</code>):收上傳、驗 token、存檔、附清單頁。</span></p>
+    <pre><code># on the producer's machine
+pwsh receiver/setup.ps1            # makes config.json + a random token
+python receiver/server.py --config receiver/config.json</code></pre>
+    <p style="color:var(--mut);font-size:14px"><span class="en">Then point the panel at it: <code>"share": { "url": "https://your-host/upload", "label": "Producer", "token": "same-token" }</code></span><span class="zh">再把面板指過去:<code>"share": { "url": "https://你的網域/upload", "label": "製作人", "token": "同一組通關碼" }</code></span></p>
+    <div class="note" style="margin-top:18px">
+      <span class="en"><b>Not legal advice.</b> A pre-ticked consent box may be invalid under some privacy laws (e.g. GDPR), which is why sharing here is unticked by default. Have a lawyer review the agreement before relying on it commercially, and always serve the receiver over HTTPS.</span>
+      <span class="zh"><b>非法律意見。</b>「預設打勾」的同意在某些地區(例如歐盟 GDPR)可能無效,所以這裡預設不打勾。正式營運前請律師看過協議,收模型伺服器一定要走 HTTPS。</span>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap" style="text-align:center">
+    <h2 class="t"><span class="en">Get started</span><span class="zh">開始使用</span></h2>
+    <p class="sub"><span class="en">Free and open source under the MIT license.</span><span class="zh">免費開源,採用 MIT 授權。</span></p>
+    <div class="cta" style="justify-content:center">
+      <a class="btn primary" href="https://github.com/zoltan2007/ai-server-kit/releases"><span class="en">Download the latest release</span><span class="zh">下載最新版</span></a>
+      <a class="btn" href="https://github.com/zoltan2007/ai-server-kit" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    AI Server Kit · <a href="https://github.com/zoltan2007/ai-server-kit">github.com/zoltan2007/ai-server-kit</a> · MIT © 2026 zoltan2007<br>
+    <span class="en">Not affiliated with Ollama or Hugging Face.</span><span class="zh">與 Ollama、Hugging Face 無隸屬關係。</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var saved=null;try{saved=localStorage.getItem('aisk-lang');}catch(e){}
+  var lang=saved||((navigator.language||'en').toLowerCase().indexOf('zh')===0?'zh':'en');
+  function set(l){
+    document.body.className='lang-'+l;
+    document.documentElement.lang=(l==='zh'?'zh-Hant':'en');
+    var b=document.querySelectorAll('.lang button');for(var i=0;i<b.length;i++){b[i].classList.toggle('on',b[i].dataset.lang===l);}
+    try{localStorage.setItem('aisk-lang',l);}catch(e){}
+  }
+  document.querySelectorAll('.lang button').forEach(function(btn){btn.addEventListener('click',function(){set(btn.dataset.lang);});});
+  set(lang);
+})();
+</script>
+</body>
+</html>
