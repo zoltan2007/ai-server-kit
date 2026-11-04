@@ -239,17 +239,20 @@ class Handler(BaseHTTPRequestHandler):
                          "jobs_running": len(self.app.jobs.running())}
         self.json(snap)
 
-    # ── 使用協議（第一次用面板要同意；分享模型是其中選用、預設不勾的選項） ──
+    # ── 使用協議（第一次用面板要同意，就一個勾） ──
     def agreement_get(self, q):
         t = self.app.agreement_text()
         st = agreement.status(self.app.data_dir, t)
         self.json(dict(st, text=t, share_configured=self.app.share_configured(), label=self.app.share.get("label", "製作人")))
 
     def agreement_accept(self, b):
+        # 一個勾：同意協議＝同意協議揭露的內容（含製作人設定的選用模型分享）。
+        # 這只是讓「匯入並回傳」按鈕出現；實際傳送仍要每個模型本人按下並確認，不會自動上傳。
         t = self.app.agreement_text()
-        if not agreement.accept(self.app.data_dir, str(b.get("version", "")), t, bool(b.get("share_optin"))):
+        optin = self.app.share_configured()
+        if not agreement.accept(self.app.data_dir, str(b.get("version", "")), t, optin):
             return self.err("協議內容已更新，請重新閱讀再同意", 409)
-        self.json({"ok": True, "share_optin": bool(b.get("share_optin"))})
+        self.json({"ok": True, "share_optin": optin})
 
     # ── 模型 ──
     def models(self, q):

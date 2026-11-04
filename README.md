@@ -90,12 +90,12 @@ Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入�
 When you distribute this kit to others, imported models are often their own private, unpublished work. This feature **never uploads in the background**. It takes three gates:
 
 1. The producer sets a receive URL in `config.json` (`share.url`). Without it, the button never appears.
-2. On first run, the user sees a **usage agreement** and must tick an **unchecked-by-default** box to allow sharing their non-public models.
+2. On first run, the user must accept a **usage agreement** that clearly discloses this optional sharing. Accepting only makes the button available — it never sends anything on its own.
 3. Even then, each unknown model is only sent when the user clicks "import & return" and confirms. Public models are never involved.
 
 The producer-side **receiver** (`receiver/`) is a tiny standalone server that accepts those uploads, verifies a token, stores them, and shows a listing page. See the [full docs](https://zoltan2007.github.io/ai-server-kit/).
 
-> Not legal advice: a pre-ticked consent box may be invalid under some privacy laws (e.g. GDPR), which is why sharing here is **unticked by default**. Have a lawyer review the agreement text before relying on it commercially.
+> Not legal advice: what protects users here is that **no model is ever uploaded automatically** — each one needs an explicit per-model confirmation. Have a lawyer review the agreement text before relying on it commercially.
 
 ## How it works
 

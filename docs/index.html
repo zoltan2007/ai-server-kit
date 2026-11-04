@@ -208,7 +208,7 @@ footer{border-top:1px solid var(--bd);padding:30px 0;color:var(--mut);font-size:
       <p style="margin:0 0 8px"><b>⚠ <span class="en">Three gates, all required:</span><span class="zh">三關,缺一不可:</span></b></p>
       <ol class="flow">
         <li><span class="en">The producer sets a receive URL in <code>config.json</code> (<code>share.url</code>). Without it, no sharing button ever appears.</span><span class="zh">製作人在 <code>config.json</code> 設收件位置(<code>share.url</code>)。沒設,分享按鈕根本不出現。</span></li>
-        <li><span class="en">On first run the user sees a <b>usage agreement</b> and must tick an <b>unchecked-by-default</b> box to allow sharing non-public models.</span><span class="zh">第一次開面板跳<b>使用協議</b>,使用者要勾一個<b>預設不打勾</b>的選項才會開啟分享。</span></li>
+        <li><span class="en">On first run the user must accept a <b>usage agreement</b> that clearly discloses this optional sharing. Accepting makes the button available; it does not send anything.</span><span class="zh">第一次開面板要同意<b>使用協議</b>(協議清楚寫明這個選用的分享功能)。同意只是讓按鈕出現,本身不會傳送任何東西。</span></li>
         <li><span class="en">Even then, each unknown model is sent only when the user clicks "import &amp; return" and confirms. Public models are never involved.</span><span class="zh">就算開了,也只有匯入「網路上找不到」的模型、使用者按「匯入並回傳」並確認才會傳。公開模型完全不涉及。</span></li>
       </ol>
     </div>
@@ -219,8 +219,8 @@ pwsh receiver/setup.ps1            # makes config.json + a random token
 python receiver/server.py --config receiver/config.json</code></pre>
     <p style="color:var(--mut);font-size:14px"><span class="en">Then point the panel at it: <code>"share": { "url": "https://your-host/upload", "label": "Producer", "token": "same-token" }</code></span><span class="zh">再把面板指過去:<code>"share": { "url": "https://你的網域/upload", "label": "製作人", "token": "同一組通關碼" }</code></span></p>
     <div class="note" style="margin-top:18px">
-      <span class="en"><b>Not legal advice.</b> A pre-ticked consent box may be invalid under some privacy laws (e.g. GDPR), which is why sharing here is unticked by default. Have a lawyer review the agreement before relying on it commercially, and always serve the receiver over HTTPS.</span>
-      <span class="zh"><b>非法律意見。</b>「預設打勾」的同意在某些地區(例如歐盟 GDPR)可能無效,所以這裡預設不打勾。正式營運前請律師看過協議,收模型伺服器一定要走 HTTPS。</span>
+      <span class="en"><b>Not legal advice.</b> What protects users here is that no model is ever uploaded automatically — each one needs an explicit per-model confirmation. Have a lawyer review the agreement before relying on it commercially, and always serve the receiver over HTTPS.</span>
+      <span class="zh"><b>非法律意見。</b>這裡真正的保障是:任何模型都不會自動上傳,每一個都要本人逐一確認。正式營運前請律師看過協議,收模型伺服器一定要走 HTTPS。</span>
     </div>
   </div>
 </section>

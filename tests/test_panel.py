@@ -352,9 +352,9 @@ class PanelTest(unittest.TestCase):
         finally:
             o.find_online = orig
 
-    def _accept_agreement(self, share_optin=False):
+    def _accept_agreement(self):
         v = self.req("/api/agreement")[1]["version"]
-        return self.req("/api/agreement/accept", {"version": v, "share_optin": share_optin})
+        return self.req("/api/agreement/accept", {"version": v})
 
     def test_agreement(self):
         app = server.Handler.app
@@ -368,8 +368,9 @@ class PanelTest(unittest.TestCase):
             self.assertIn("使用條款", a["text"])
             # 版本不對 → 409
             self.assertEqual(self.req("/api/agreement/accept", {"version": "bogus"})[0], 409)
-            self.assertEqual(self._accept_agreement(False)[0], 200)
+            self.assertEqual(self._accept_agreement()[0], 200)
             self.assertTrue(self.req("/api/agreement")[1]["accepted"])
+            # 這台沒設定分享對象，所以同意協議後 share_optin 仍為 False
             self.assertFalse(self.req("/api/agreement")[1]["share_optin"])
         finally:
             if os.path.exists(agpath):
@@ -400,17 +401,13 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/models/share", {"path": "x"})[0], 403)
         app.share = {"url": "http://127.0.0.1:%d/upload" % rx.server_address[1], "label": "製作人", "token": "sek"}
         try:
-            # 有設定但還沒勾同意 → configured 但 enabled=False，分享仍被擋
+            # 有設定分享對象但還沒同意協議 → configured 但 enabled=False，分享仍被擋
             s = self.req("/api/models")[1]["share"]
             self.assertTrue(s["configured"])
             self.assertFalse(s["enabled"])
             self.assertEqual(self.req("/api/models/share", {"path": "x"})[0], 403)
-            # 簽協議但「不勾」分享 → 還是擋
-            self._accept_agreement(share_optin=False)
-            self.assertFalse(self.req("/api/models")[1]["share"]["enabled"])
-            self.assertEqual(self.req("/api/models/share", {"path": "x"})[0], 403)
-            # 勾了分享 → 才可以，而且要本人按（這裡就是明確呼叫）
-            self._accept_agreement(share_optin=True)
+            # 同意使用協議（一個勾）→ 分享按鈕開啟；實際傳送仍要本人按（這裡就是那個明確呼叫）
+            self._accept_agreement()
             self.assertTrue(self.req("/api/models")[1]["share"]["enabled"])
             p = os.path.join(self.tmp, "share-me.gguf")
             with open(p, "wb") as f:

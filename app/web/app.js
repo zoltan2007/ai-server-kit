@@ -124,11 +124,7 @@ function showAgreement(a) {
   $("#login").hidden = true; $("#app").hidden = true; $("#agree").hidden = false;
   $("#agree-text").textContent = a.text || "";
   $("#agree-form").dataset.version = a.version || "";
-  const sw = $("#agree-share-wrap");
-  sw.hidden = !a.share_configured;
-  $("#agree-share-label").textContent = `允許把我匯入的「非公開／自製」模型分享給${a.label || "製作人"}（預設關閉；開啟後每次仍需自己確認）`;
-  $("#agree-share").checked = false;   // 預設不打勾
-  $("#agree-ok").checked = false;
+  $("#agree-ok").checked = false;      // 一個勾：預設不打勾，打勾才能進去
   $("#agree-btn").disabled = true;
   $("#agree-err").textContent = "";
 }
@@ -137,7 +133,7 @@ $("#agree-form").addEventListener("submit", async e => {
   e.preventDefault();
   if (!$("#agree-ok").checked) return;
   try {
-    await api("/api/agreement/accept", { body: { version: $("#agree-form").dataset.version, share_optin: $("#agree-share").checked } });
+    await api("/api/agreement/accept", { body: { version: $("#agree-form").dataset.version } });
     enterApp();
   } catch (err) { $("#agree-err").textContent = err.message; }
 });
@@ -472,7 +468,7 @@ function renderIdentify(r) {
       h += `<div><button type="button" class="btn sm" id="share-btn">匯入並回傳給${esc(sh.label)}</button>
         <span class="muted small">按了才會把整個模型檔上傳給${esc(sh.label)}；不按不會傳。</span></div>`;
     } else if (sh?.configured) {
-      h += `<div class="muted small">模型分享目前關閉（你沒有在使用協議勾選同意），不會上傳到任何地方。</div>`;
+      h += `<div class="muted small">模型分享目前關閉（尚未同意使用協議），不會上傳到任何地方。</div>`;
     } else {
       h += `<div class="muted small">這台沒有設定回傳對象，不會上傳到任何地方。</div>`;
     }
