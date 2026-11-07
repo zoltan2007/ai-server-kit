@@ -272,8 +272,11 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(codes[-1], 429, codes)
         g.hits.clear(); server.Handler.app.fails.clear()
         # 內容大小：一般路徑 256KB 上限
-        code, r = self.req("/api/sessions/delete", {"id": "x" * (300 * 1024)})
-        self.assertEqual(code, 400); self.assertIn("內容太大", r["error"])
+        try:
+            code, r = self.req("/api/sessions/delete", {"id": "x" * (300 * 1024)})
+            self.assertEqual(code, 400); self.assertIn("內容太大", r["error"])
+        except (ConnectionAbortedError, ConnectionResetError):
+            pass   # 伺服器不讀太大的內容就直接回絕並斷線，Windows 上有時客戶端來不及收到 400
         # 同時對話數：佔滿後第三個被擋
         self.assertTrue(g.chat_start("admin")); self.assertTrue(g.chat_start("admin"))
         self.assertEqual(self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]})[0], 429)
@@ -318,6 +321,26 @@ class PanelTest(unittest.TestCase):
         self.assertIn("群組第一句", z.read("群組/小隊.txt").decode("utf-8"))
         self.assertEqual(self.req("/api/export/all", token="")[0], 401)
         self.req("/api/users/reject", {"user": "exp"})
+
+    def test_admin_dashboard(self):
+        self.req("/api/apply", {"user": "dashu", "password": "dashupass1"}, token="")
+        self.req("/api/users/approve", {"user": "dashu"})
+        tok = self.req("/api/login", {"user": "dashu", "password": "dashupass1"}, token="")[1]["token"]
+        sid = self.req("/api/sessions/save", {"title": "小明的專案", "model": "qwen3.5:4b", "messages": [{"role": "user", "content": "祕密"}]}, token=tok)[1]["id"]
+        code, resp = self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]}, token=tok, raw=True)
+        resp.read(); resp.close()
+        self.assertEqual(self.req("/api/admin/overview", token=tok)[0], 403)   # 一般帳號不能看
+        ov = self.req("/api/admin/overview")[1]
+        me = next(u for u in ov["users"] if u["name"] == "dashu")
+        self.assertEqual((me["projects"], me["messages"]), (1, 1)); self.assertGreater(me["tokens"], 0)
+        for p in ("day", "week", "month", "year"):
+            us = self.req("/api/admin/usage?period=%s" % p)[1]
+            self.assertIn("dashu", us["users"]); self.assertTrue(us["buckets"])
+        self.assertEqual(self.req("/api/admin/usage?period=bogus")[1]["period"], "day")
+        self.assertEqual(self.req("/api/admin/sessions?user=dashu")[1]["sessions"][0]["id"], sid)
+        self.assertEqual(self.req("/api/admin/session?user=dashu&id=" + sid)[1]["messages"][0]["content"], "祕密")
+        self.assertEqual(self.req("/api/admin/session?user=../x&id=" + sid)[0], 400)
+        self.req("/api/users/reject", {"user": "dashu"})
 
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")

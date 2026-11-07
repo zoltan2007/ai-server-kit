@@ -110,7 +110,7 @@ async function loadMe() {
   const me = await api("/api/me");
   S.me = me;
   $("#who").textContent = (me.role === "admin" ? "管理員 " : "") + me.name;
-  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin";
+  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin";
   $("#pw-details").hidden = !!me.master;
   $("#users-badge").hidden = !me.pending; $("#users-badge").textContent = me.pending || 0;
   if (me.pending) toast(`有 ${me.pending} 個帳號申請等你核准`);
