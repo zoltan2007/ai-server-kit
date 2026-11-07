@@ -88,10 +88,10 @@ $("#dash").addEventListener("click", async e => {
   const p = e.target.closest("[data-period]");
   if (p) { DASH.period = p.dataset.period; ls.set("dash.period", DASH.period); loadDash(); return; }
   if (e.target.closest("#dash-table")) { DASH.table = !DASH.table; renderDash(); return; }
-  const u = e.target.closest("[data-user]");
-  if (u) { await showUserProjects(u.dataset.user); return; }
   const s = e.target.closest("[data-sess]");
-  if (s) { await showTranscript(s.dataset.user, s.dataset.sess); }
+  if (s) { await showTranscript(s.dataset.user, s.dataset.sess); return; }
+  const u = e.target.closest("[data-user]");
+  if (u) await showUserProjects(u.dataset.user);
 });
 async function showUserProjects(name) {
   const box = $("#dash-user"); box.hidden = false;
