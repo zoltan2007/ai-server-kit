@@ -448,3 +448,6 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .sess-list > *, .menu-list > *, #recent .recent, #model-list > *, #settings-pop > *, #partner-pop > *, #ctx > * { position: relative; z-index: 1; }
 .sess:hover, .item:hover, .grp:hover, .rcard:hover, #model-list button:hover, .menu button:hover, #ctx button:hover { background: transparent; box-shadow: none; }
 @media (hover: none) { .liquid { display: none; } .sess:hover, .item:hover { box-shadow: var(--raise-sm); } }
+.sess-list { overflow-anchor: none; scroll-behavior: auto; }
+.tree { animation: unfold .18s ease-out; transform-origin: top; }
+@keyframes unfold { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

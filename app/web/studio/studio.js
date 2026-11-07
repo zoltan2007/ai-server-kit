@@ -318,7 +318,10 @@ function renderList() {
   }
   h += renderTree(list, roots.filter(s => !s.group));
   if (S.listMode === "rooms" && typeof renderRooms === "function") h = renderRooms();
-  $("#sess-list").innerHTML = h || `<div class="muted small" style="padding:12px">還沒有對話</div>`;
+  const box = $("#sess-list"), keepTop = box.scrollTop;          // 重畫清單時捲動位置不要跳
+  box.querySelector(":scope > .liquid")?.remove();
+  box.innerHTML = h || `<div class="muted small" style="padding:12px">還沒有對話</div>`;
+  box.scrollTop = keepTop;
 }
 $("#search-btn").addEventListener("click", () => { const b = $("#search"); b.hidden = !b.hidden; if (!b.hidden) b.focus(); else { b.value = ""; renderList(); } });
 $("#search").addEventListener("input", renderList);
