@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1a19">
+<title>Kiki Cloude</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+
+<div id="login" class="gate" hidden>
+  <form class="card" id="login-form">
+    <div class="logo">K</div>
+    <h1>Kiki Cloude</h1>
+    <p class="muted" id="login-tip">用你的帳號登入；還沒有帳號可以向管理員申請。</p>
+    <div id="login-user-fields">
+      <input id="login-user" autocomplete="username" placeholder="帳號" autocapitalize="none" spellcheck="false">
+      <input id="login-pass" type="password" autocomplete="current-password" placeholder="密碼">
+    </div>
+    <input id="login-token" type="password" autocomplete="off" placeholder="管理員登入碼" hidden>
+    <button class="btn primary" type="submit">登入</button>
+    <p class="err" id="login-err"></p>
+    <div class="links">
+      <button type="button" class="link" id="to-apply">申請帳號</button>
+      <button type="button" class="link" id="to-token">用管理員登入碼</button>
+    </div>
+  </form>
+
+  <form class="card" id="apply-form" hidden>
+    <div class="logo">K</div>
+    <h1>申請帳號</h1>
+    <p class="muted">送出後要等管理員核准才能登入。</p>
+    <input id="apply-user" autocomplete="username" placeholder="想用的帳號（小寫英數，3～20 字）" autocapitalize="none" spellcheck="false" required>
+    <input id="apply-pass" type="password" autocomplete="new-password" placeholder="密碼（至少 8 個字）" required>
+    <input id="apply-pass2" type="password" autocomplete="new-password" placeholder="再輸入一次密碼" required>
+    <input id="apply-note" placeholder="給管理員的話（你是誰）" maxlength="200">
+    <button class="btn primary" type="submit">送出申請</button>
+    <p class="err" id="apply-err"></p>
+    <div class="links"><button type="button" class="link" id="to-login">回登入</button></div>
+  </form>
+
+  <form class="card" id="setup-form" hidden>
+    <div class="logo">K</div>
+    <h1>建立管理員帳號</h1>
+    <p class="muted">登入碼先留著當備用；平常用這個帳號登入、核准別人的申請。</p>
+    <input id="setup-user" autocomplete="username" placeholder="管理員帳號" autocapitalize="none" spellcheck="false" required>
+    <input id="setup-pass" type="password" autocomplete="new-password" placeholder="密碼（至少 8 個字）" required>
+    <button class="btn primary" type="submit">建立並登入</button>
+    <p class="err" id="setup-err"></p>
+    <div class="links"><button type="button" class="link" id="setup-skip">先跳過</button></div>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- 左欄：對話清單 -->
+  <aside class="side" id="side">
+    <div class="side-tools">
+      <button class="tool" id="side-close" title="收起側欄" aria-label="收起側欄"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+      <button class="tool" id="hist-back" title="上一個對話" aria-label="上一個對話"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="tool" id="hist-fwd" title="下一個對話" aria-label="下一個對話"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <span class="grow"></span>
+      <button class="tool" id="right-open2" title="主機狀態" aria-label="主機狀態"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></button>
+      <a class="tool on" id="panel-link" href="../" title="面板：模型下載、匯入、終端機" hidden><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></a>
+    </div>
+    <nav class="menu-list">
+      <button class="item" id="new-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>新增</span></button>
+      <button class="item" id="search-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>搜尋</span></button>
+      <button class="item" id="users-btn" hidden><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-5-5.9"/></svg><span>成員</span><b class="badge" id="users-badge" hidden>0</b></button>
+      <button class="item" id="models-btn"><svg viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg><span>模型</span></button>
+      <button class="item" id="settings-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>自訂</span></button>
+    </nav>
+    <input class="search" id="search" type="search" placeholder="搜尋對話" hidden>
+    <div class="sess-list" id="sess-list"></div>
+    <div class="side-foot">
+      <div class="host-line" id="host-line"><i class="dot"></i><span id="host-name">連線中…</span></div>
+      <div class="host-line"><span class="who" id="who">—</span></div>
+    </div>
+  </aside>
+
+  <!-- 對話的右鍵選單 -->
+  <div class="popover ctx" id="ctx" hidden>
+    <button data-c="open">打開</button>
+    <button data-c="fork">分支出新對話</button>
+    <button data-c="pin">釘選／取消釘選</button>
+    <button data-c="rename">改名</button>
+    <button data-c="group">移到群組…</button>
+    <button data-c="delete" class="danger">刪除</button>
+  </div>
+
+  <!-- 自訂 -->
+  <div class="popover" id="settings-pop" hidden>
+    <div class="pop-head">自訂</div>
+    <button class="btn sm" id="theme-btn">切換深／淺色</button>
+    <button class="btn sm" id="pw-btn">改我的密碼</button>
+    <button class="btn sm" id="logout-btn">登出</button>
+  </div>
+
+  <!-- 主欄：對話 -->
+  <main class="main">
+    <header class="bar">
+      <button class="icon-btn" id="side-open" title="對話清單" aria-label="對話清單">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <input class="title" id="title" placeholder="新對話" maxlength="120">
+      <button class="chip" id="model-chip" title="切換模型"><span id="model-name">選模型</span>
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="icon-btn" id="pin-btn" title="釘選" aria-label="釘選">
+        <svg viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3z"/></svg></button>
+      <button class="icon-btn" id="del-btn" title="刪除對話" aria-label="刪除對話">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <button class="icon-btn" id="right-open" title="主機狀態" aria-label="主機狀態">
+        <svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></button>
+    </header>
+
+    <div class="msgs" id="msgs">
+      <div class="empty" id="empty">
+        <div class="logo big">K</div>
+        <h2>嗨，我是 Kiki Cloude，要做什麼？</h2>
+        <p class="muted">對話會存在主機上，手機和電腦看到同一份。輸入 <code>/</code> 有快捷指令。</p>
+        <div class="hints" id="hints">
+          <button data-hint="幫我看一下這台主機現在的狀態，哪裡該注意？">看主機狀態</button>
+          <button data-hint="用三句話摘要這段新聞：\n">摘要新聞</button>
+          <button data-hint="幫我把下面這段文字翻成英文：\n">翻譯</button>
+          <button data-hint="寫一個 Python 小程式：">寫程式</button>
+        </div>
+      </div>
+    </div>
+
+    <form class="composer" id="composer">
+      <div class="menu" id="slash" hidden></div>
+      <div class="attach-list" id="attach-list"></div>
+      <textarea id="input" rows="1" placeholder="問點什麼…（Enter 送出，Shift+Enter 換行）"></textarea>
+      <div class="comp-bar">
+        <button class="icon-btn" type="button" id="attach-btn" title="附圖" hidden>
+          <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg></button>
+        <input id="attach-input" type="file" accept="image/*" multiple hidden>
+        <label class="toggle" id="think-wrap"><input type="checkbox" id="think" checked><span>思考</span></label>
+        <label class="toggle"><input type="checkbox" id="with-status"><span>帶主機狀態</span></label>
+        <span class="caps muted" id="caps"></span>
+        <span class="grow"></span>
+        <button class="send" type="submit" id="send" title="送出" aria-label="送出"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        <button class="send stop" type="button" id="stop" title="停止" aria-label="停止" hidden><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+      </div>
+    </form>
+  </main>
+
+  <!-- 右欄：主機狀態 -->
+  <aside class="right" id="right">
+    <div class="side-head"><b>主機狀態</b>
+      <button class="icon-btn" id="right-close" title="收起" aria-label="收起"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="right-body" id="status"></div>
+  </aside>
+
+  <!-- 模型選單 -->
+  <div class="popover" id="model-pop" hidden>
+    <div class="pop-head">選模型 <span class="muted small">只列已經下載的</span></div>
+    <div id="model-list"></div>
+    <a class="btn sm" href="../#models">去面板下載更多</a>
+  </div>
+</div>
+
+<!-- 帳號管理 -->
+<div class="modal" id="users-modal" hidden>
+  <div class="modal-card">
+    <div class="side-head"><b>成員</b><button class="icon-btn" id="users-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="users" id="users-list"></div>
+    <details class="pw" id="pw-details"><summary>改我的密碼</summary>
+      <form id="pw-form" class="pw-form">
+        <input id="pw-old" type="password" autocomplete="current-password" placeholder="舊密碼" required>
+        <input id="pw-new" type="password" autocomplete="new-password" placeholder="新密碼（至少 8 個字）" required>
+        <button class="btn sm" type="submit">改密碼</button>
+      </form>
+    </details>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="studio.js"></script>
+</body>
+</html>

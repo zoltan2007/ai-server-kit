@@ -102,6 +102,89 @@ class PanelTest(unittest.TestCase):
             code, _ = self.req(bad, token="")
             self.assertEqual(code, 404, bad)
 
+    def test_studio_static(self):
+        for p in ("/studio/", "/studio/index.html", "/studio/studio.js", "/studio/studio.css"):
+            with urllib.request.urlopen(self.base + p, timeout=10) as r:
+                self.assertEqual(r.status, 200, p)
+        with urllib.request.urlopen(self.base + "/studio/", timeout=10) as r:
+            self.assertIn("Kiki Cloude", r.read().decode())
+            self.assertIn("frame-ancestors 'none'", r.headers["Content-Security-Policy"])
+        for bad in ("/studio/../server.py", "/studio/..%2findex.html", "/studio/nope.js"):
+            code, _ = self.req(bad, token="")
+            self.assertEqual(code, 404, bad)
+
+    def test_sessions(self):
+        self.assertEqual(self.req("/api/sessions", token="")[0], 401)
+        code, r = self.req("/api/sessions/save", {"title": "第一個", "model": "qwen3.5:4b",
+                                                  "messages": [{"role": "user", "content": "你好"}]})
+        self.assertEqual(code, 200, r)
+        sid = r["id"]
+        self.assertRegex(sid, r"^[a-f0-9]{12}$")
+        code, r = self.req("/api/sessions/save", {"id": sid, "title": "改名", "model": "qwen3.5:4b", "pinned": True,
+                                                  "messages": [{"role": "user", "content": "你好"}, {"role": "assistant", "content": "嗨"}]})
+        self.assertEqual(code, 200, r)
+        code, r = self.req("/api/sessions")
+        row = next(s for s in r["sessions"] if s["id"] == sid)
+        self.assertEqual((row["title"], row["count"], row["pinned"]), ("改名", 2, True))
+        code, r = self.req("/api/sessions/get?id=" + sid)
+        self.assertEqual(r["messages"][1]["content"], "嗨")
+        self.assertEqual(self.req("/api/sessions/get?id=zzz")[0], 404)
+        self.assertEqual(self.req("/api/sessions/save", {"id": "../x", "messages": []})[0], 400)
+        self.assertEqual(self.req("/api/sessions/save", {"messages": "不是清單"})[0], 400)
+        code, r = self.req("/api/sessions/delete", {"id": sid})
+        self.assertTrue(r["ok"])
+        self.assertEqual(self.req("/api/sessions/get?id=" + sid)[0], 404)
+
+    def test_accounts(self):
+        # 申請 → 還不能登入 → 管理員核准 → 登入 → 只能用對話相關的功能 → 停用後憑證失效
+        self.assertEqual(self.req("/api/apply", {"user": "Amy", "password": "short", "note": "x"}, token="")[0], 400)
+        self.assertEqual(self.req("/api/apply", {"user": "bad name!", "password": "longenough1"}, token="")[0], 400)
+        code, r = self.req("/api/apply", {"user": "amy", "password": "longenough1", "note": "朋友"}, token="")
+        self.assertEqual((code, r["status"]), (200, "pending"), r)
+        self.assertEqual(self.req("/api/apply", {"user": "amy", "password": "longenough1"}, token="")[0], 400)
+        code, r = self.req("/api/login", {"user": "amy", "password": "longenough1"}, token="")
+        self.assertEqual(code, 403, r)
+        code, r = self.req("/api/me")
+        self.assertEqual((r["role"], r["pending"], r["needs_setup"]), ("admin", 1, True))
+        code, r = self.req("/api/users")
+        self.assertEqual([u["name"] for u in r["users"] if u["status"] == "pending"], ["amy"])
+        self.assertEqual(self.req("/api/users/approve", {"user": "amy"})[0], 200)
+        code, r = self.req("/api/login", {"user": "AMY", "password": "wrong-pass-1"}, token="")
+        self.assertEqual(code, 401)
+        code, r = self.req("/api/login", {"user": "AMY", "password": "longenough1"}, token="")
+        self.assertEqual((code, r["user"], r["role"]), (200, "amy", "user"), r)
+        amy = r["token"]
+        self.assertEqual(self.req("/api/me", token=amy)[1]["name"], "amy")
+        self.assertEqual(self.req("/api/status", token=amy)[0], 200)
+        self.assertEqual(self.req("/api/users", token=amy)[0], 403)
+        self.assertEqual(self.req("/api/term/run", {"cmd": "echo hi"}, token=amy)[0], 403)
+        self.assertEqual(self.req("/api/models/pull", {"name": "x:1b"}, token=amy)[0], 403)
+        # 對話紀錄各自分開
+        code, r = self.req("/api/sessions/save", {"title": "amy 的", "model": "qwen3.5:4b", "messages": []}, token=amy)
+        self.assertEqual(code, 200, r)
+        self.assertEqual([x["title"] for x in self.req("/api/sessions", token=amy)[1]["sessions"]], ["amy 的"])
+        self.assertNotIn("amy 的", [x["title"] for x in self.req("/api/sessions")[1]["sessions"]])
+        # 改密碼、登出、停用
+        self.assertEqual(self.req("/api/password", {"old": "nope-nope-1", "password": "newpassword9"}, token=amy)[0], 403)
+        self.assertEqual(self.req("/api/password", {"old": "longenough1", "password": "newpassword9"}, token=amy)[0], 200)
+        self.assertEqual(self.req("/api/me", token=amy)[0], 401)   # 改密碼後舊憑證失效
+        amy = self.req("/api/login", {"user": "amy", "password": "newpassword9"}, token="")[1]["token"]
+        self.assertEqual(self.req("/api/logout", {}, token=amy)[0], 200)
+        self.assertEqual(self.req("/api/me", token=amy)[0], 401)
+        amy = self.req("/api/login", {"user": "amy", "password": "newpassword9"}, token="")[1]["token"]
+        self.assertEqual(self.req("/api/users/disable", {"user": "amy"})[0], 200)
+        self.assertEqual(self.req("/api/me", token=amy)[0], 401)
+        self.assertEqual(self.req("/api/login", {"user": "amy", "password": "newpassword9"}, token="")[0], 403)
+        # 用主登入碼建管理員帳號，之後管理員帳號也能管人
+        code, r = self.req("/api/users/setup", {"user": "boss", "password": "bosspassword1"})
+        self.assertEqual((code, r["role"]), (200, "admin"), r)
+        boss = self.req("/api/login", {"user": "boss", "password": "bosspassword1"}, token="")[1]["token"]
+        self.assertFalse(self.req("/api/me", token=boss)[1]["needs_setup"])
+        self.assertEqual(self.req("/api/users/enable", {"user": "amy"}, token=boss)[0], 200)
+        self.assertEqual(self.req("/api/users/disable", {"user": "boss"}, token=boss)[0], 400)
+        self.assertEqual(self.req("/api/users/reject", {"user": "amy"}, token=boss)[0], 200)
+        self.assertEqual(self.req("/api/users/reject", {"user": "boss"})[0], 200)
+
     def test_auth(self):
         self.assertEqual(self.req("/api/ping", token="")[0], 200)
         self.assertEqual(self.req("/api/status", token="")[0], 401)

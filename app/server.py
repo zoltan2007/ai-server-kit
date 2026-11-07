@@ -24,8 +24,12 @@ sys.path.insert(0, HERE)
 import agreement  # noqa: E402
 import jobs  # noqa: E402
 import ollama_api  # noqa: E402
+import sessions  # noqa: E402
+import users  # noqa: E402
+import users_api  # noqa: E402
 import sysinfo  # noqa: E402
 from ollama_api import NAME_RE, OllamaError  # noqa: E402
+from sessions import ID_RE  # noqa: E402
 
 VERSION = "0.1.0"
 WEB = os.path.join(HERE, "web")
@@ -48,10 +52,23 @@ class App:
         self.share = cfg.get("share") or {}
         self.data_dir = cfg.get("data_dir") or os.path.join(os.path.expanduser("~"), ".ai-server-kit")
         self.imports_dir = cfg.get("imports_dir") or os.path.join(self.data_dir, "imports")
+        self.users = users.UserStore(self.data_dir)
+        self.version = VERSION
+        self.session_stores = {}
+        self.store_lock = threading.Lock()
         self.fails = {}
         self.fail_lock = threading.Lock()
         with open(os.path.join(HERE, "catalog.json"), encoding="utf-8") as f:
             self.catalog = json.load(f)
+
+    def sessions_for(self, user):
+        """每個帳號自己的對話資料夾；主登入碼和管理員帳號 admin 共用同一個。"""
+        name = user["name"]
+        with self.store_lock:
+            st = self.session_stores.get(name)
+            if not st:
+                st = self.session_stores[name] = sessions.SessionStore(os.path.join(self.data_dir, "sessions", name))
+            return st
 
     def share_configured(self):
         return bool(self.share.get("url"))
@@ -127,13 +144,14 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write((json.dumps(obj, ensure_ascii=False) + "\n").encode("utf-8"))
         self.wfile.flush()
 
-    def authed(self):
+    def authed(self, path=""):
         auth = self.headers.get("Authorization", "")
         tok = auth[7:] if auth.startswith("Bearer ") else ""
-        if self.app.check(tok):
+        self.user = users_api.resolve(self.app, tok)
+        if self.user and users_api.allowed(self.user, path):
             return True
         self.close_connection = True  # 請求內容沒讀，這條連線不能再用
-        self.err("請先登入", 401)
+        self.err("請先登入" if not self.user else "這個功能只有管理員能用", 401 if not self.user else 403)
         return False
 
     def route(self):
@@ -148,7 +166,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.static(path)
             if path == "/api/ping":
                 return self.json({"ok": True})
-            if not self.authed():
+            if not self.authed(path):
                 return
             fn = GET_ROUTES.get(path)
             return fn(self, q) if fn else self.err("沒有這個功能", 404)
@@ -165,8 +183,10 @@ class Handler(BaseHTTPRequestHandler):
         path, q = self.route()
         try:
             if path == "/api/login":
-                return self.login()
-            if not self.authed():
+                return users_api.login(self)
+            if path == "/api/apply":
+                return users_api.apply(self)
+            if not self.authed(path):
                 return
             fn = POST_ROUTES.get(path)
             if not fn:
@@ -194,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             if path != "/api/upload":
                 self.close_connection = True
                 return self.err("沒有這個功能", 404)
-            if self.authed():
+            if self.authed(path):
                 self.upload(q)
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -207,29 +227,20 @@ class Handler(BaseHTTPRequestHandler):
 
     # ── 網頁 ──
     def static(self, path):
-        name = "index.html" if path in ("/", "/index.html") else path.lstrip("/")
-        if "/" in name or "\\" in name or name.startswith(".") or name not in os.listdir(WEB):
+        # 根目錄是舊面板；/studio/ 是 Kiki Cloude（像 Claude 程式介面的對話頁）（子資料夾一層，不吃 ..）
+        folder, name = WEB, path.lstrip("/")
+        if name.startswith("studio/") or name == "studio":
+            folder, name = os.path.join(WEB, "studio"), name[7:]
+        if name in ("", "index.html"):
+            name = "index.html"
+        if "/" in name or "\\" in name or name.startswith(".") or name not in os.listdir(folder):
             return self.err("找不到", 404)
-        with open(os.path.join(WEB, name), "rb") as f:
+        with open(os.path.join(folder, name), "rb") as f:
             data = f.read()
         ext = os.path.splitext(name)[1].lower()
         self._headers(200, MIME.get(ext, "application/octet-stream"), len(data),
                       {"Content-Security-Policy": CSP} if ext == ".html" else None)
         self.wfile.write(data)
-
-    def login(self):
-        ip = self.client_address[0]
-        if self.app.locked(ip):
-            return self.err("錯太多次，10 分鐘後再試", 429)
-        try:
-            tok = str(self.body().get("token", "")).strip()
-        except ValueError:
-            tok = ""
-        if self.app.check(tok):
-            return self.json({"ok": True, "version": VERSION})
-        self.app.failed(ip)
-        time.sleep(0.8)
-        self.err("登入碼不對", 401)
 
     # ── 狀態 ──
     def status(self, q):
@@ -442,6 +453,26 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             resp.close()  # 關掉就會叫 Ollama 停止生成
 
+    # ── 對話紀錄（工作台用） ──
+    def session_list(self, q):
+        self.json({"sessions": self.app.sessions_for(self.user).list()})
+
+    def session_get(self, q):
+        s = self.app.sessions_for(self.user).get(q.get("id", "")) if ID_RE.match(q.get("id", "")) else None
+        return self.json(s) if s else self.err("找不到這個對話", 404)
+
+    def session_save(self, b):
+        try:
+            self.json(self.app.sessions_for(self.user).save(b))
+        except ValueError as e:
+            self.err(str(e))
+
+    def session_delete(self, b):
+        sid = str(b.get("id", ""))
+        if not ID_RE.match(sid):
+            return self.err("對話編號不對")
+        self.json({"ok": self.app.sessions_for(self.user).delete(sid)})
+
     # ── 背景工作 ──
     def job_list(self, q):
         self.json({"jobs": self.app.jobs.list()})
@@ -508,6 +539,8 @@ GET_ROUTES = {
     "/api/models/size": Handler.model_size, "/api/models/search": Handler.model_search,
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
+    "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
+    **users_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,
@@ -517,6 +550,8 @@ POST_ROUTES = {
     "/api/models/share": Handler.model_share, "/api/chat": Handler.chat,
     "/api/jobs/clear": Handler.job_clear, "/api/jobs/kill": Handler.job_kill,
     "/api/term/run": Handler.term_run, "/api/term/input": Handler.term_input,
+    "/api/sessions/save": Handler.session_save, "/api/sessions/delete": Handler.session_delete,
+    **users_api.POST,
 }
 
 _log_path = None
