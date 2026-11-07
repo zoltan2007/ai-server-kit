@@ -288,7 +288,7 @@ function isOpen(key, d = true) { return key in open ? open[key] : d; }
 function toggleOpen(key, d = true) { open[key] = !isOpen(key, d); ls.set("open", open); renderList(); }
 function sessRow(s, kids) {
   const cur = S.cur?.id === s.id;
-  const caret = kids.length ? `<span class="caret">${isOpen("s:" + s.id, false) ? "▼" : "▶"}</span>` : "";
+  const caret = kids.length ? `<span class="caret" title="${kids.length} 個分支對話">${isOpen("s:" + s.id, false) ? "▼" : "▶"}</span>` : "";
   return `<button class="sess ${cur ? "on" : ""}" data-id="${s.id}" data-kids="${kids.length}"><span class="t">${esc(s.title || "（沒有標題）")}</span>${caret}<span class="grow"></span>${s.pinned ? '<span class="pin">●</span>' : ""}</button>`;
 }
 function renderTree(list, roots) {
@@ -297,9 +297,7 @@ function renderTree(list, roots) {
     const kids = list.filter(k => k.parent === s.id);
     h += sessRow(s, kids);
     if (!kids.length) continue;
-    h += isOpen("s:" + s.id, false)
-      ? `<div class="tree">${renderTree(list, kids)}</div>`
-      : `<div class="tree"><button class="sess muted" data-open="s:${s.id}"><span class="t">${kids.length} 個分支對話</span></button></div>`;
+    if (isOpen("s:" + s.id, false)) h += `<div class="tree">${renderTree(list, kids)}</div>`;   // 收起時只留標題旁的箭頭
   }
   return h;
 }
