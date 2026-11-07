@@ -124,7 +124,8 @@ a { color: inherit; text-decoration: none; }
 .ctx button { border: 0; background: transparent; text-align: left; padding: 7px 10px; border-radius: 7px; cursor: pointer; color: var(--text); }
 .ctx button:hover { background: var(--surface-2); }
 .ctx button.danger { color: var(--danger); }
-#settings-pop { width: 200px; }
+#settings-pop { width: 190px; }
+#settings-pop .btn { width: 100%; }
 #settings-pop .btn { justify-content: flex-start; }
 .side-foot { padding: 8px 12px 10px; }
 
@@ -258,7 +259,9 @@ a { color: inherit; text-decoration: none; }
 .link { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 .link:hover { color: var(--accent); }
 #login-user-fields { display: grid; gap: 10px; }
-.who { color: var(--text); }
+.who { color: var(--text); font-weight: 600; }
+.who-line { align-items: center; }
+.who-line .icon-btn { width: 30px; height: 30px; }
 .badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 11px; }
 .modal { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .5); display: grid; place-items: center; padding: 14px; }
 .modal-card { width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 14px 14px; }
@@ -351,6 +354,7 @@ body.in-room .chat-only { display: none !important; }
 :root {
   --bg: #26282e; --side: #26282e; --surface: #26282e; --surface-2: #2c2e35; --user: #2c2e35; --code-bg: #202228;
   --border: transparent; --text: #e4e6ec; --muted: #9a9fab;
+  --accent: #2fb5a3; --accent-ink: #0d2a26; --ok: #2fb5a3;
   --nm-l: rgba(255, 255, 255, .06); --nm-d: rgba(0, 0, 0, .55);
   --raise: 6px 6px 12px var(--nm-d), -6px -6px 12px var(--nm-l);
   --raise-sm: 3px 3px 7px var(--nm-d), -3px -3px 7px var(--nm-l);
@@ -360,7 +364,7 @@ body.in-room .chat-only { display: none !important; }
 }
 :root[data-theme="light"] {
   --bg: #e6e9ef; --side: #e6e9ef; --surface: #e6e9ef; --surface-2: #dfe3ea; --user: #dfe3ea; --code-bg: #dde1e8;
-  --border: transparent; --text: #363b47; --muted: #7b8190; --accent: #c0613f;
+  --border: transparent; --text: #363b47; --muted: #7b8190; --accent: #1f9c8b; --accent-ink: #ffffff; --ok: #1f9c8b;
   --nm-l: rgba(255, 255, 255, .95); --nm-d: rgba(163, 177, 198, .65);
   --line: rgba(120, 130, 150, .18);
 }

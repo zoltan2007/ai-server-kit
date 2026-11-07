@@ -393,7 +393,7 @@ $("#models-btn").addEventListener("click", e => { e.stopPropagation(); $("#model
 $("#right-open2").addEventListener("click", () => openRight(!app.classList.contains("right-on")));
 $("#settings-btn").addEventListener("click", e => {
   const p = $("#settings-pop"), r = e.currentTarget.getBoundingClientRect();
-  p.hidden = !p.hidden; p.style.top = r.bottom + 4 + "px"; p.style.left = r.left + 8 + "px";
+  p.hidden = !p.hidden; p.style.top = Math.max(8, r.top - 8) + "px"; p.style.transform = "translateY(-100%)"; p.style.left = Math.max(8, Math.min(r.left - 150, innerWidth - 210)) + "px";
 });
 $("#pw-btn").addEventListener("click", () => { $("#settings-pop").hidden = true; $("#users-modal").hidden = false; $("#pw-details").open = true; $("#users-list").innerHTML = ""; if (S.me?.role === "admin") renderUsers().catch(() => {}); });
 $("#pin-btn").addEventListener("click", () => { if (!S.cur || !S.cur.id) return; S.cur.pinned = !S.cur.pinned; renderCur(); queueSave(0); });
