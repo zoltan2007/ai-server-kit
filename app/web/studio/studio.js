@@ -212,15 +212,22 @@ async function loadModels() {
 }
 function renderModelChip() {
   const m = S.cur?.model || "";
-  $("#model-name").textContent = m || (S.models.length ? "選模型" : "還沒有模型");
-  $("#model-list").innerHTML = S.models.length
+  const lab = m.startsWith("ext:") ? ((typeof myModels === "function" ? myModels() : []).find(x => x.value === m)?.label || m) : m;
+  $("#model-name").textContent = lab || (S.models.length ? "選模型" : "還沒有模型");
+  const ext = typeof myModels === "function" ? myModels() : [];
+  const found = S.models.includes(m) || ext.some(x => x.value === m);
+  if (m && !found) $("#model-name").textContent = m.startsWith("ext:") ? m.split(":")[1] + "（沒有金鑰）" : m;
+  $("#model-list").innerHTML = (S.models.length || ext.length)
     ? S.models.map(n => `<button data-model="${esc(n)}" class="${n === m ? "on" : ""}"><span>${esc(n)}</span>${n === m ? '<span class="muted">目前</span>' : ""}</button>`).join("")
-    : `<div class="muted small" style="padding:8px">還沒有模型，先到面板下載</div>`;
+      + ext.map(x => `<button data-model="${esc(x.value)}" class="ext ${x.value === m ? "on" : ""}"><span>${esc(x.label)}</span><span class="muted">${esc(x.sub)}</span></button>`).join("")
+    : `<div class="muted small" style="padding:8px">還沒有模型，先到面板下載，或在自訂裡接上你的 AI</div>`;
   updateCaps();
 }
 async function updateCaps() {
   const name = S.cur?.model;
   if (!name) { $("#caps").textContent = ""; $("#attach-btn").hidden = true; return; }
+  if (name.startsWith("ext:")) { $("#caps").textContent = "雲端 AI：只送對話文字"; $("#attach-btn").hidden = true; $("#think").disabled = true; $("#with-status").checked = false; $("#with-status").disabled = true; return; }
+  $("#with-status").disabled = false;
   if (!S.caps[name]) { try { S.caps[name] = await api("/api/models/show?name=" + encodeURIComponent(name)); } catch { S.caps[name] = { capabilities: [] }; } }
   const caps = S.caps[name].capabilities || [];
   $("#attach-btn").hidden = !caps.includes("vision");
@@ -426,7 +433,7 @@ function renderCur() {
   $("#pin-btn").classList.toggle("on", !!c.pinned);
   $("#think").checked = c.settings?.think !== false;
   $("#with-status").checked = !!c.settings?.status;
-  if (c.model && !S.models.includes(c.model) && S.models.length) toast(`這個對話用的模型 ${c.model} 已經不在了，先換一個`, true);
+  if (c.model && !c.model.startsWith("ext:") && !S.models.includes(c.model) && S.models.length) toast(`這個對話用的模型 ${c.model} 已經不在了，先換一個`, true);
   renderModelChip();
   const box = $("#msgs");
   $$(".msg", box).forEach(x => x.remove());
@@ -637,7 +644,7 @@ $("#attach-list").addEventListener("click", e => { const b = e.target.closest("[
 async function boot() {
   $("#login").hidden = true; $("#app").hidden = false;
   try { await loadMe(); } catch (err) { showLogin(err.message); return; }
-  await Promise.all([pollStatus(), loadModels(), loadList(), typeof loadRooms === "function" ? loadRooms() : null]);
+  await Promise.all([pollStatus(), loadModels(), loadList(), typeof loadRooms === "function" ? loadRooms() : null, typeof loadMyAI === "function" ? loadMyAI() : null]);
   const last = ls.get("last", "");
   if (last && S.sessions.some(s => s.id === last)) await openSession(last); else newSession();
   if (!S.cur) newSession();

@@ -2,6 +2,7 @@
 import threading
 import time
 
+import ai_api
 import rooms as R
 
 PATHS = {"/api/rooms", "/api/rooms/get", "/api/rooms/people", "/api/rooms/create", "/api/rooms/invite",
@@ -72,7 +73,47 @@ def post(h, b):
         return h.err(str(e))
     if R.mentioned(msg["content"]):
         threading.Thread(target=reply, args=(h.app, rid), daemon=True).start()
+    room = h.app.rooms.get(rid, h.user["name"], 10 ** 9) or {}
+    for handle in R.handles(msg["content"]) & set(room.get("bots", {})):
+        threading.Thread(target=reply_bot, args=(h.app, rid, handle, room["bots"][handle]), daemon=True).start()
     h.json(msg)
+
+
+def set_bot(h, b):
+    """群主把自己在「我的 AI」設好的服務接進群組，別人 @ 它的代號就會回。"""
+    prov = str(b.get("provider", ""))
+    if prov not in ai_api.P.PROVIDERS:
+        return h.err("不支援的服務")
+    key, model = ai_api.key_for(h.app, h.user["name"], prov)
+    if not key:
+        return h.err("你還沒設定這家的金鑰")
+    handle = ai_api.P.PROVIDERS[prov]["handle"]
+    _call(h, h.app.rooms.set_bot, str(b.get("id", "")), h.user["name"], handle, {"provider": prov, "model": model, "owner": h.user["name"], "name": ai_api.P.PROVIDERS[prov]["name"]})
+
+
+def remove_bot(h, b):
+    _call(h, h.app.rooms.set_bot, str(b.get("id", "")), h.user["name"], str(b.get("handle", "")), None)
+
+
+def reply_bot(app, rid, handle, bot):
+    """外部 AI 回話：只給它群組的對話文字（providers 會擋掉其他東西），用群主的金鑰。"""
+    room, lines = app.rooms.context(rid)
+    if not room:
+        return
+    seq = app.rooms.start_reply(rid, handle)
+    key, model = ai_api.key_for(app, bot["owner"], bot["provider"])
+    system = R.SYSTEM.replace("你是 Kiki", "你是 %s（代號 @%s）" % (bot.get("name", handle), handle)).replace("你自己的發言標為「Kiki」", "你自己的發言標為「%s」" % handle)
+    text = ""
+    try:
+        for chunk in ai_api.P.stream(bot["provider"], key, model, [{"role": "user", "content": "\n".join(lines) + "\n%s：" % handle}], system):
+            if isinstance(chunk, tuple):
+                app.usage.add(bot["owner"], "ext:%s:%s" % (bot["provider"], model), chunk[1]["prompt"], chunk[1]["completion"], kind="room", provider=bot["provider"])
+            else:
+                text += chunk
+                app.rooms.update_reply(rid, seq, text)
+        app.rooms.update_reply(rid, seq, text.strip(), done=True)
+    except Exception as e:
+        app.rooms.update_reply(rid, seq, text.strip(), done=True, error=str(e))
 
 
 def reply(app, rid):
@@ -103,10 +144,11 @@ def reply(app, rid):
         finally:
             resp.close()
         app.rooms.update_reply(rid, seq, text.strip(), done=True)
+        app.usage.add(room["owner"], model, 0, 0, kind="room")
     except Exception as e:  # 模型掛了也要把訊息收尾，不然前端會一直等
         app.rooms.update_reply(rid, seq, text.strip(), done=True, error=str(e))
 
 
 GET = {"/api/rooms": room_list, "/api/rooms/get": room_get, "/api/rooms/people": people}
 POST = {"/api/rooms/create": create, "/api/rooms/invite": invite, "/api/rooms/remove": remove,
-        "/api/rooms/rename": rename, "/api/rooms/post": post}
+        "/api/rooms/rename": rename, "/api/rooms/post": post, "/api/rooms/bot": set_bot, "/api/rooms/bot_remove": remove_bot}

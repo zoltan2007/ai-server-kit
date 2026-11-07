@@ -95,6 +95,7 @@
   <div class="popover" id="settings-pop" hidden>
     <div class="pop-head">自訂</div>
     <button class="btn sm" id="theme-btn">切換深／淺色</button>
+    <button class="btn sm" id="myai-btn">我的 AI（Claude／OpenAI／Gemini／Grok）</button>
     <button class="btn sm" id="pw-btn">改我的密碼</button>
     <button class="btn sm" id="logout-btn">登出</button>
   </div>
@@ -165,12 +166,24 @@
   </div>
 </div>
 
+<!-- 我的 AI -->
+<div class="modal" id="myai-modal" hidden>
+  <div class="modal-card">
+    <div class="side-head"><b>我的 AI</b><button class="icon-btn" id="myai-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="muted small" style="margin:0 0 10px">用你自己訂閱的服務。金鑰只存在這台主機、不會回傳到瀏覽器；送給雲端的只有對話文字，主機狀態、檔案、終端機一律不給。費用由你的帳號負擔。</p>
+    <div id="myai-list"></div>
+  </div>
+</div>
+
 <!-- 群組成員 -->
 <div class="modal" id="members-modal" hidden>
   <div class="modal-card">
     <div class="side-head"><b>群組成員</b><button class="icon-btn" id="members-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="users" id="members-list"></div>
     <div class="invite-row" id="invite-row"><select id="invite-sel"></select><button class="btn sm primary" id="invite-btn">邀請</button></div>
+    <div class="side-head" style="padding-left:0"><b>外部 AI</b><span class="muted small">只看得到群組對話</span></div>
+    <div class="users" id="bots-list"></div>
+    <div class="invite-row" id="bot-row"><select id="bot-sel"></select><button class="btn sm primary" id="bot-btn">接上我的 AI</button></div>
     <div class="foot-btns" style="margin-top:12px"><button class="btn sm" id="room-rename">改名</button><button class="btn sm danger" id="room-leave">離開群組</button></div>
   </div>
 </div>
@@ -193,5 +206,6 @@
 <div class="toast" id="toast" hidden></div>
 <script src="studio.js"></script>
 <script src="rooms.js"></script>
+<script src="myai.js"></script>
 </body>
 </html>

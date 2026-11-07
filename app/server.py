@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import agreement  # noqa: E402
+import ai_api  # noqa: E402
 import jobs  # noqa: E402
 import ollama_api  # noqa: E402
 import rooms  # noqa: E402
@@ -30,6 +31,7 @@ import sessions  # noqa: E402
 import users  # noqa: E402
 import users_api  # noqa: E402
 import sysinfo  # noqa: E402
+import usage  # noqa: E402
 from ollama_api import NAME_RE, OllamaError  # noqa: E402
 from sessions import ID_RE  # noqa: E402
 
@@ -56,6 +58,7 @@ class App:
         self.imports_dir = cfg.get("imports_dir") or os.path.join(self.data_dir, "imports")
         self.users = users.UserStore(self.data_dir)
         self.rooms = rooms.RoomStore(self.data_dir)
+        self.usage = usage.Usage(self.data_dir)
         self.version = VERSION
         self.session_stores = {}
         self.store_lock = threading.Lock()
@@ -440,6 +443,8 @@ class Handler(BaseHTTPRequestHandler):
     # ── 對話（直接轉給 Ollama，一邊生一邊傳） ──
     def chat(self, b):
         name = str(b.get("model", ""))
+        if ai_api.ext_model(name):
+            return self.chat_external(name, b.get("messages") or [])
         if not NAME_RE.match(name):
             return self.err("請先選模型")
         payload = {"model": name, "messages": b.get("messages") or [], "stream": True}
@@ -451,10 +456,33 @@ class Handler(BaseHTTPRequestHandler):
         try:
             for obj in gen:
                 self.send_line(obj)
+                if obj.get("done") and obj.get("eval_count") is not None:
+                    self.app.usage.add(self.user["name"], name, obj.get("prompt_eval_count"), obj.get("eval_count"))
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass  # 使用者按了停止
         finally:
             resp.close()  # 關掉就會叫 Ollama 停止生成
+
+    def chat_external(self, name, messages):
+        """使用者自己的雲端 AI。只送對話文字（providers 會把 system、圖片丟掉），回傳格式和 Ollama 一樣。"""
+        provider, model = ai_api.ext_model(name)
+        key, _ = ai_api.key_for(self.app, self.user["name"], provider)
+        if not key:
+            return self.err("你還沒在「自訂 → 我的 AI」設定 %s 的金鑰" % ai_api.P.PROVIDERS[provider]["name"])
+        self.stream_start()
+        usage_row = {"prompt": 0, "completion": 0}
+        try:
+            for chunk in ai_api.P.stream(provider, key, model, messages, ai_api.SYSTEM_CHAT):
+                if isinstance(chunk, tuple):
+                    usage_row = chunk[1]
+                else:
+                    self.send_line({"message": {"role": "assistant", "content": chunk}, "done": False})
+            self.send_line({"done": True, "eval_count": usage_row["completion"], "prompt_eval_count": usage_row["prompt"], "model": name})
+            self.app.usage.add(self.user["name"], name, usage_row["prompt"], usage_row["completion"], provider=provider)
+        except ai_api.P.ProviderError as e:
+            self.send_line({"error": str(e), "done": True})
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
     # ── 對話紀錄（工作台用） ──
     def session_list(self, q):
@@ -543,7 +571,7 @@ GET_ROUTES = {
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
     "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
-    **users_api.GET, **rooms_api.GET,
+    **users_api.GET, **rooms_api.GET, **ai_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,
@@ -554,7 +582,7 @@ POST_ROUTES = {
     "/api/jobs/clear": Handler.job_clear, "/api/jobs/kill": Handler.job_kill,
     "/api/term/run": Handler.term_run, "/api/term/input": Handler.term_input,
     "/api/sessions/save": Handler.session_save, "/api/sessions/delete": Handler.session_delete,
-    **users_api.POST, **rooms_api.POST,
+    **users_api.POST, **rooms_api.POST, **ai_api.POST,
 }
 
 _log_path = None

@@ -126,6 +126,7 @@ async function renderMembers() {
   $("#invite-sel").innerHTML = people.length ? people.map(p => `<option>${esc(p)}</option>`).join("") : `<option value="">（沒有可以邀的人）</option>`;
   $("#room-leave").textContent = mine ? "刪除群組" : "離開群組";
   $("#room-rename").hidden = !mine;
+  if (typeof renderRoomBots === "function") await renderRoomBots();
 }
 $("#members-modal").addEventListener("click", async e => {
   if (e.target === e.currentTarget) { $("#members-modal").hidden = true; return; }
@@ -156,9 +157,9 @@ $("#input").addEventListener("input", e => {
   const v = e.target.value, m = v.match(/(?:^|\s)@([\w.-]*)$/);
   const menu = $("#slash");
   if (!m) { if (menu.dataset.at) { menu.hidden = true; delete menu.dataset.at; } return; }
-  const names = ["Kiki", ...RM.cur.members.filter(n => n !== S.me?.name)].filter(n => n.toLowerCase().startsWith(m[1].toLowerCase()));
+  const names = ["Kiki", ...Object.keys(RM.cur.bots || {}), ...RM.cur.members.filter(n => n !== S.me?.name)].filter(n => n.toLowerCase().startsWith(m[1].toLowerCase()));
   menu.dataset.at = "1"; menu.hidden = !names.length;
-  menu.innerHTML = names.map((n, i) => `<button type="button" data-at="${esc(n)}" class="${i ? "" : "on"}"><b>@${esc(n)}</b><span>${n === "Kiki" ? "叫 AI 回話" : "成員"}</span></button>`).join("");
+  menu.innerHTML = names.map((n, i) => `<button type="button" data-at="${esc(n)}" class="${i ? "" : "on"}"><b>@${esc(n)}</b><span>${n === "Kiki" ? "叫 AI 回話" : (RM.cur.bots || {})[n] ? "外部 AI" : "成員"}</span></button>`).join("");
 });
 $("#slash").addEventListener("click", e => {
   const b = e.target.closest("[data-at]");

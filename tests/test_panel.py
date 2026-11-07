@@ -185,6 +185,62 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/users/reject", {"user": "amy"}, token=boss)[0], 200)
         self.assertEqual(self.req("/api/users/reject", {"user": "boss"})[0], 200)
 
+    def test_external_ai(self):
+        # 假的雲端服務：把 providers._open 換掉，回 OpenAI 格式的 SSE
+        import io
+        import providers
+        seen = {}
+
+        def fake_open(url, headers, body):
+            seen["url"], seen["headers"], seen["body"] = url, headers, body
+            if "bad" in headers.get("Authorization", ""):
+                raise providers.ProviderError("api.x.ai 回應 401：bad key")
+            lines = ['data: {"choices":[{"delta":{"content":"OK\u5f9e\u96f2\u7aef"}}]}',
+                     'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":3}}', "data: [DONE]"]
+            return io.BytesIO("\n".join(lines).encode("utf-8"))
+        real = providers._open
+        providers._open = fake_open
+        try:
+            self.req("/api/users/setup", {"user": "zed", "password": "zedpassword1"})
+            zed = self.req("/api/login", {"user": "zed", "password": "zedpassword1"}, token="")[1]["token"]
+            self.assertEqual(self.req("/api/ai/set", {"provider": "xai", "key": "xai-test-key"})[0], 400)   # 主登入碼沒有個人設定
+            code, r = self.req("/api/ai/set", {"provider": "xai", "key": "xai-test-key", "model": "grok-4"}, token=zed)
+            self.assertEqual(code, 200, r)
+            self.assertEqual(r["ai"][0]["has_key"], True)
+            self.assertNotIn("xai-test-key", json.dumps(r))
+            code, r = self.req("/api/ai/test", {"provider": "xai"}, token=zed)
+            self.assertEqual((code, r["reply"]), (200, "OK從雲端"), r)
+            self.assertEqual(seen["headers"]["Authorization"], "Bearer xai-test-key")
+            # 對話：system 和主機狀態不會送出去，只有對話文字
+            code, resp = self.req("/api/chat", {"model": "ext:xai:grok-4", "messages": [
+                {"role": "system", "content": "以下是這台主機現在的狀態 SECRET"}, {"role": "user", "content": "哈囉"}]}, token=zed, raw=True)
+            self.assertEqual(code, 200)
+            with resp:
+                evs = [json.loads(l) for l in resp.read().decode().splitlines() if l.strip()]
+            self.assertNotIn("SECRET", json.dumps(seen["body"], ensure_ascii=False))
+            self.assertEqual(seen["body"]["messages"][-1]["content"], "哈囉")
+            self.assertTrue(evs[-1]["done"]) ; self.assertEqual(evs[-1]["eval_count"], 3)
+            self.assertIn("OK從雲端", "".join(e.get("message", {}).get("content", "") for e in evs))
+            # 群組接 Grok：@grok 才回
+            rid = self.req("/api/rooms/create", {"title": "雲端群"}, token=zed)[1]["id"]
+            self.assertEqual(self.req("/api/rooms/bot", {"id": rid, "provider": "anthropic"}, token=zed)[0], 400)   # 沒設 Claude
+            code, r = self.req("/api/rooms/bot", {"id": rid, "provider": "xai"}, token=zed)
+            self.assertIn("grok", r["bots"])
+            self.req("/api/rooms/post", {"id": rid, "content": "@grok 幫我看看"}, token=zed)
+            for _ in range(60):
+                msgs = self.req("/api/rooms/get?id=%s&since=0" % rid, token=zed)[1]["messages"]
+                ai = [m for m in msgs if m["role"] == "assistant"]
+                if ai and ai[-1].get("done"):
+                    break
+                time.sleep(0.2)
+            self.assertEqual((ai[-1]["user"], ai[-1]["content"]), ("grok", "OK從雲端"))
+            self.assertIn("zed：@grok 幫我看看", seen["body"]["messages"][-1]["content"])
+            self.assertEqual(self.req("/api/ai/remove", {"provider": "xai"}, token=zed)[1]["ai"], [])
+            self.req("/api/rooms/remove", {"id": rid}, token=zed)
+            self.req("/api/users/reject", {"user": "zed"})
+        finally:
+            providers._open = real
+
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
         self.req("/api/users/approve", {"user": "bob"})

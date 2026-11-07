@@ -8,6 +8,7 @@ import time
 
 ID_RE = re.compile(r"^[a-f0-9]{12}$")
 MENTION_RE = re.compile(r"(^|[\s,，。！？!?(（])@(kiki( cloude)?|ai|小機)\b", re.I)
+HANDLE_RE = re.compile(r"(^|[\s,，。！？!?(（])@([a-z][a-z0-9_-]{1,20})", re.I)
 MAX_MSGS = 2000
 CONTEXT_MSGS = 40
 SYSTEM = ("你是 Kiki，這個群組的 AI 成員。平常只默默觀察大家的討論，只有被 @ 到才回話。"
@@ -16,6 +17,11 @@ SYSTEM = ("你是 Kiki，這個群組的 AI 成員。平常只默默觀察大家
 
 def mentioned(text):
     return bool(MENTION_RE.search(text or ""))
+
+
+def handles(text):
+    """訊息裡 @ 到的名字（小寫）。"""
+    return {m.group(2).lower() for m in HANDLE_RE.finditer(text or "")}
 
 
 class RoomStore:
@@ -47,7 +53,7 @@ class RoomStore:
     def summary(room, me):
         return {"id": room["id"], "title": room["title"], "owner": room["owner"], "members": room["members"],
                 "model": room.get("model", ""), "updated": room.get("updated", 0), "seq": room.get("seq", 0),
-                "mine": room["owner"] == me}
+                "bots": room.get("bots", {}), "mine": room["owner"] == me}
 
     def list_for(self, user):
         out = []
@@ -122,6 +128,18 @@ class RoomStore:
             self._write(room)
             return self.summary(room, user)
 
+    def set_bot(self, rid, user, handle, bot):
+        """群主把自己的外部 AI 接進群組；bot=None 移除。"""
+        with self.lock:
+            room = self._owned(rid, user)
+            bots = room.setdefault("bots", {})
+            if bot is None:
+                bots.pop(handle, None)
+            else:
+                bots[handle] = bot
+            self._write(room)
+            return self.summary(room, user)
+
     def _append(self, room, role, user, content):
         room["seq"] = room.get("seq", 0) + 1
         msg = {"seq": room["seq"], "role": role, "user": user, "content": content, "ts": time.time()}
@@ -154,16 +172,16 @@ class RoomStore:
             for m in room["messages"][-CONTEXT_MSGS:]:
                 if m["role"] == "system":
                     continue
-                who = "Kiki" if m["role"] == "assistant" else m["user"]
+                who = ("Kiki" if m["user"] == "kiki" else m["user"]) if m["role"] == "assistant" else m["user"]
                 lines.append("%s：%s" % (who, m["content"]))
             return room, lines
 
-    def start_reply(self, rid):
+    def start_reply(self, rid, who="kiki"):
         with self.lock:
             room = self._read(rid)
             if not room:
                 return None
-            msg = self._append(room, "assistant", "kiki", "")
+            msg = self._append(room, "assistant", who, "")
             room["busy"] = True
             self._write(room)
             return msg["seq"]

@@ -121,6 +121,11 @@ class UserStore:
             self._save(self.path, self.users)
             self._drop_tokens(name)
 
+    def flush(self):
+        """外部程式改了 self.users（例如 AI 金鑰）後存檔。"""
+        with self.lock:
+            self._save(self.path, self.users)
+
     def verify(self, name, pw):
         """帳號密碼對了就回公開資料，不對回 None；還沒核准或停用也回 None（錯誤訊息由呼叫端決定）。"""
         u = self.users.get(name or "")
