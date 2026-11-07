@@ -65,7 +65,9 @@ function roomMsgEl(m) {
 function fillRoomMsg(d, m) {
   const t = new Date(m.ts * 1000).toLocaleTimeString("zh-Hant", { hour: "2-digit", minute: "2-digit" });
   if (m.role === "assistant") {
-    d.innerHTML = `<div class="av">K</div><div class="body"><div class="name">Kiki <span class="time">${t}</span></div><div class="${m.done ? "" : "cursor"}">${md(m.content || "")}</div>${m.error ? `<div class="err">${esc(m.error)}</div>` : ""}</div>`;
+    const prov = m.user !== "kiki" ? (typeof PROV_BY_HANDLE !== "undefined" ? PROV_BY_HANDLE[m.user] : "") : "";
+    d.classList.toggle("partner", !!prov); if (prov) d.dataset.prov = prov;
+    d.innerHTML = `<div class="av">${m.user === "kiki" ? "K" : esc(m.user[0].toUpperCase())}</div><div class="body"><div class="name">${m.user === "kiki" ? "Kiki" : esc(m.user)} <span class="time">${t}</span></div><div class="${m.done ? "" : "cursor"}">${md(m.content || "")}</div>${m.error ? `<div class="err">${esc(m.error)}</div>` : ""}</div>`;
     return;
   }
   const mine = m.user === S.me?.name;

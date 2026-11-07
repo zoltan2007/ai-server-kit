@@ -96,7 +96,7 @@ comp.addEventListener("drop", async e => {
 function renderParty() {
   const p = partner(), el = $("#party");
   el.innerHTML = `<i class="pav u" title="你">${esc((S.me?.name || "你")[0].toUpperCase())}</i><i class="pav k" title="Kiki">K</i>` +
-    (p ? `<i class="pav p" title="${esc(p.name)}">${esc(p.name[0])}</i>` : `<i class="pav add" title="加入我的 AI">+</i>`);
+    (p ? `<i class="pav p" data-prov="${esc(p.provider)}" title="${esc(p.name)}">${esc(p.name[0])}</i>` : `<i class="pav add" title="加入我的 AI">+</i>`);
 }
 $("#party").addEventListener("click", () => $("#partner-chip").click());
 

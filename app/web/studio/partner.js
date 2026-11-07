@@ -3,6 +3,7 @@
 // 訊息多一個 by 欄位：user／kiki／<夥伴代號>。接在 myai.js 後面載入。
 
 const PT = { depth: 0 };
+const PROV_BY_HANDLE = { claude: "anthropic", gpt: "openai", gemini: "gemini", grok: "xai" };
 const MAX_HOPS = 2;   // AI 互相接話最多幾回合，免得無限迴圈
 
 function partner() { return S.cur?.partner || null; }

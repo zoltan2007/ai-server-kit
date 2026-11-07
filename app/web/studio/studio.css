@@ -424,3 +424,17 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .msg.partner .body::before { background: #2fb5a3; }
 .pav.p { background: #2fb5a3; color: #0d2a26; }
 :root[data-theme="light"] .msg.ai.partner .who { color: #1f9c8b; }
+
+/* 外部 AI 用各家原廠的主題色：Claude 陶土橘、OpenAI 綠、Gemini 藍、Grok 黑白 */
+:root { --c-anthropic: #d97757; --i-anthropic: #1b1a19; --c-openai: #10a37f; --i-openai: #ffffff; --c-gemini: #4285f4; --i-gemini: #ffffff; --c-xai: #f2f2f2; --i-xai: #111111; }
+:root[data-theme="light"] { --c-xai: #1a1a1a; --i-xai: #ffffff; }
+.msg.partner[data-prov="anthropic"] .av, .pav.p[data-prov="anthropic"] { background: var(--c-anthropic); color: var(--i-anthropic); }
+.msg.partner[data-prov="openai"] .av, .pav.p[data-prov="openai"] { background: var(--c-openai); color: var(--i-openai); }
+.msg.partner[data-prov="gemini"] .av, .pav.p[data-prov="gemini"] { background: var(--c-gemini); color: var(--i-gemini); }
+.msg.partner[data-prov="xai"] .av, .pav.p[data-prov="xai"] { background: var(--c-xai); color: var(--i-xai); }
+.msg.partner[data-prov="anthropic"] .body::before, .msg.partner[data-prov="anthropic"] .who { background: var(--c-anthropic); color: var(--c-anthropic); }
+.msg.partner[data-prov="openai"] .body::before, .msg.partner[data-prov="openai"] .who { background: var(--c-openai); color: var(--c-openai); }
+.msg.partner[data-prov="gemini"] .body::before, .msg.partner[data-prov="gemini"] .who { background: var(--c-gemini); color: var(--c-gemini); }
+.msg.partner[data-prov="xai"] .body::before { background: var(--c-xai); }
+.msg.partner[data-prov="xai"] .who { color: var(--muted); }
+.msg.partner .who { background: transparent !important; }

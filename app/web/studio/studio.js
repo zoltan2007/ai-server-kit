@@ -525,6 +525,8 @@ function fillMsg(d, m, live) {
   const { content, thinking } = splitThink(m);
   const by = m.by || "kiki", isP = by !== "kiki";
   d.classList.toggle("partner", isP);
+  const prov = isP && typeof partner === "function" ? (partner()?.handle === by ? partner().provider : (typeof PROV_BY_HANDLE !== "undefined" ? PROV_BY_HANDLE[by] : "")) : "";
+  if (prov) d.dataset.prov = prov; else delete d.dataset.prov;
   const pname = typeof nameOf === "function" ? nameOf(by) : by;
   let h = `<div class="av">${esc(isP ? pname[0].toUpperCase() : "K")}</div><div class="body"><div class="who">${esc(pname)}</div>`;
   if (thinking) h += `<details class="think" ${live && !content ? "open" : ""}><summary>思考過程</summary><div>${esc(thinking)}</div></details>`;
