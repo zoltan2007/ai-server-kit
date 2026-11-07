@@ -117,6 +117,11 @@ $("#users-side").addEventListener("click", async e => {
   const { act, u } = b.dataset, body = { user: u };
   if (act === "reject" && !confirm(`刪除帳號 ${u}？`)) return;
   if (act === "reset") { const pw = prompt(`${u} 的新密碼（至少 8 個字）`); if (!pw) return; body.password = pw; }
+  if (act === "quota") {
+    const d = prompt(`${u} 每天的 token 上限（千，0 = 不限）`, "0"); if (d == null) return;
+    const w = prompt(`${u} 每週的 token 上限（千，0 = 不限）`, "0"); if (w == null) return;
+    body.day = Math.round(+d * 1000) || 0; body.week = Math.round(+w * 1000) || 0;
+  }
   try { await api("/api/users/" + act, { body }); toast("完成"); await renderUsers("#users-side"); await loadMe(); }
   catch (err) { toast(err.message, true); }
 });

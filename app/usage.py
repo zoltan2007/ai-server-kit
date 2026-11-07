@@ -82,16 +82,30 @@ class Usage:
         return out
 
     def totals(self, user):
-        """這週（週一起）和從頭到現在的 token 總量。"""
+        """今天、這週（週一起）和從頭到現在的 token 總量。"""
         today = dt.date.today()
         week_start = today - dt.timedelta(days=today.weekday())
-        week = total = 0
+        day = week = total = 0
         for r in self.rows():
             if r["user"] != user:
                 continue
             n = r["prompt"] + r["completion"]
             total += n
-            if dt.datetime.fromisoformat(r["ts"]).date() >= week_start:
+            d = dt.datetime.fromisoformat(r["ts"]).date()
+            if d >= week_start:
                 week += n
-        return {"week": week, "total": total}
+            if d == today:
+                day += n
+        return {"day": day, "week": week, "total": total}
+
+    def over_quota(self, user, quota):
+        """超過管理員設的上限就回一句說明，沒超過回 None。"""
+        if not quota or not (quota.get("day") or quota.get("week")):
+            return None
+        t = self.totals(user)
+        if quota.get("day") and t["day"] >= quota["day"]:
+            return "今天的 token 用量已達上限（%s / %s），明天再來或請管理員調高" % (f"{t['day']:,}", f"{quota['day']:,}")
+        if quota.get("week") and t["week"] >= quota["week"]:
+            return "這週的 token 用量已達上限（%s / %s），下週再來或請管理員調高" % (f"{t['week']:,}", f"{quota['week']:,}")
+        return None
 

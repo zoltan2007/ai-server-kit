@@ -68,7 +68,8 @@ class UserStore:
         if not u:
             return None
         return {"name": name, "role": u["role"], "status": u["status"], "note": u.get("note", ""), "email": u.get("email", ""),
-                "verified": bool(u.get("verified", True)), "created": u.get("created"), "last_login": u.get("last_login")}
+                "verified": bool(u.get("verified", True)), "created": u.get("created"), "last_login": u.get("last_login"),
+                "quota": u.get("quota") or {"day": 0, "week": 0}}
 
     def list(self):
         rows = [self.public(n) for n in self.users]
@@ -94,6 +95,16 @@ class UserStore:
             salt = secrets.token_hex(16)
             self.users[name] = {"salt": salt, "hash": _hash(pw, salt), "role": role, "status": status,
                                 "note": str(note or "")[:200], "created": time.time(), "email": str(email or "")[:120], "verified": bool(verified)}
+            self._save(self.path, self.users)
+        return self.public(name)
+
+    def set_quota(self, name, day, week):
+        """每天／每週 token 上限，0 = 不限。"""
+        with self.lock:
+            u = self.users.get(name)
+            if not u:
+                raise ValueError("沒有這個帳號")
+            u["quota"] = {"day": max(0, int(day or 0)), "week": max(0, int(week or 0))}
             self._save(self.path, self.users)
         return self.public(name)
 

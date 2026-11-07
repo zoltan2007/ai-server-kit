@@ -120,6 +120,9 @@ async function loadMe() {
   const me = await api("/api/me");
   S.me = me;
   $("#who").textContent = (me.role === "admin" ? "管理員 " : "") + me.name;
+  const q = me.quota || {}, used = me.used || {};
+  $("#quota-line").hidden = !(q.day || q.week);
+  $("#quota-line").textContent = [q.day ? `今天 ${fmtTok(used.day || 0)} / ${fmtTok(q.day)}` : "", q.week ? `本週 ${fmtTok(used.week || 0)} / ${fmtTok(q.week)}` : ""].filter(Boolean).join(" · ");
   $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin"; $("#mail-btn").hidden = me.role !== "admin";
   $("#pw-details").hidden = !!me.master;
   $("#users-badge").hidden = !me.pending; $("#users-badge").textContent = me.pending || 0;
@@ -134,7 +137,7 @@ async function renderUsers(target = "#users-list") {
       : u.status === "active" ? act("disable", u.name, "停用") + (u.role !== "admin" ? act("admin", u.name, "設為管理員") : "")
       : act("enable", u.name, "啟用") + act("reject", u.name, "刪除");
     return `<div class="user"><span class="n">${esc(u.name)}</span><span class="s ${u.status}">${zh[u.status] || u.status}${u.role === "admin" ? " · 管理員" : ""}${u.email ? ` · ${esc(u.email)}${u.verified ? " ✓" : "（未驗證）"}` : ""}</span>
-      <span class="acts">${acts}${act("reset", u.name, "重設密碼")}</span>${u.note ? `<span class="note">${esc(u.note)}</span>` : ""}</div>`;
+      <span class="acts">${acts}${act("reset", u.name, "重設密碼")}${act("quota", u.name, "用量上限")}</span>${u.note ? `<span class="note">${esc(u.note)}</span>` : ""}${(u.quota?.day || u.quota?.week) ? `<span class="note">上限：${u.quota.day ? "每天 " + fmtTok(u.quota.day) : ""}${u.quota.day && u.quota.week ? " · " : ""}${u.quota.week ? "每週 " + fmtTok(u.quota.week) : ""}</span>` : ""}</div>`;
   }).join("") || `<div class="muted small">還沒有任何帳號申請</div>`;
 }
 $("#users-btn").addEventListener("click", async () => { $("#users-modal").hidden = false; try { await renderUsers(); } catch (err) { toast(err.message, true); } });
@@ -146,6 +149,11 @@ $("#users-modal").addEventListener("click", async e => {
   const { act, u } = b.dataset, body = { user: u };
   if (act === "reject" && !confirm(`刪除帳號 ${u}？`)) return;
   if (act === "reset") { const pw = prompt(`${u} 的新密碼（至少 8 個字）`); if (!pw) return; body.password = pw; }
+  if (act === "quota") {
+    const d = prompt(`${u} 每天的 token 上限（千，0 = 不限）`, "0"); if (d == null) return;
+    const w = prompt(`${u} 每週的 token 上限（千，0 = 不限）`, "0"); if (w == null) return;
+    body.day = Math.round(+d * 1000) || 0; body.week = Math.round(+w * 1000) || 0;
+  }
   try { await api("/api/users/" + act, { body }); toast("完成"); await renderUsers(); await loadMe(); }
   catch (err) { toast(err.message, true); }
 });

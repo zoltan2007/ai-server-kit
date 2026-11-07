@@ -464,7 +464,16 @@ class Handler(BaseHTTPRequestHandler):
         self.json({"path": dst, "size": n})
 
     # ── 對話（直接轉給 Ollama，一邊生一邊傳） ──
+    def quota_blocked(self):
+        if self.user.get("master"):
+            return None
+        u = self.app.users.public(self.user["name"]) or {}
+        return self.app.usage.over_quota(self.user["name"], u.get("quota"))
+
     def chat(self, b):
+        msg = self.quota_blocked()
+        if msg:
+            return self.err(msg, 429)
         if not self.app.guard.chat_start(self.user["name"]):
             return self.err("你已經有對話在生成中，等它結束再送", 429)
         try:

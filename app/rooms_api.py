@@ -74,10 +74,13 @@ def post(h, b):
         msg = h.app.rooms.post(rid, h.user["name"], b.get("content", ""))
     except ValueError as e:
         return h.err(str(e))
-    if R.mentioned(msg["content"]):
+    over = None if h.user.get("master") else h.app.usage.over_quota(h.user["name"], (h.app.users.public(h.user["name"]) or {}).get("quota"))
+    if over:
+        msg["quota_note"] = over      # 發言照樣送出，但 AI 不回
+    if R.mentioned(msg["content"]) and not over:
         threading.Thread(target=reply, args=(h.app, rid, h.user["name"]), daemon=True).start()
     room = h.app.rooms.get(rid, h.user["name"], 10 ** 9) or {}
-    for handle in R.handles(msg["content"]) & set(room.get("bots", {})):
+    for handle in (R.handles(msg["content"]) & set(room.get("bots", {})) if not over else set()):
         bot = room["bots"][handle]
         # 4. 外部 AI 花的是接它進來那個人的錢：只有本人 @ 它，或本人允許全群用，才回
         if bot.get("owner") != h.user["name"] and not bot.get("shared"):

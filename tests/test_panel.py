@@ -386,6 +386,30 @@ class PanelTest(unittest.TestCase):
             server.Handler.app.mailer.cfg = {}
             self.req("/api/users/reject", {"user": "nomail"}); self.req("/api/users/reject", {"user": "gmx"})
 
+    def test_quota(self):
+        self.req("/api/apply", {"user": "quo", "password": "quopassword1", "email": "quo@gmail.com"}, token="")
+        self.req("/api/users/approve", {"user": "quo"})
+        tok = self.req("/api/login", {"user": "quo", "password": "quopassword1"}, token="")[1]["token"]
+        self.assertEqual(self.req("/api/users/quota", {"user": "quo", "day": 100}, token=tok)[0], 403)   # 只有管理員能設
+        code, r = self.req("/api/users/quota", {"user": "quo", "day": 100, "week": 0})
+        self.assertEqual((code, r["quota"]), (200, {"day": 100, "week": 0}))
+        code, resp = self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]}, token=tok, raw=True)
+        self.assertEqual(code, 200); resp.read(); resp.close()      # 第一次 54 tokens，還沒超過
+        self.assertEqual(self.req("/api/me", token=tok)[1]["used"]["day"], 54)
+        code, resp = self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]}, token=tok, raw=True)
+        self.assertEqual(code, 200); resp.read(); resp.close()      # 108，超過了
+        code, r = self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]}, token=tok)
+        self.assertEqual(code, 429); self.assertIn("今天", r["error"])
+        rid = self.req("/api/rooms/create", {"title": "q"}, token=tok)[1]["id"]
+        m = self.req("/api/rooms/post", {"id": rid, "content": "@kiki 在嗎"}, token=tok)[1]
+        self.assertIn("quota_note", m)
+        time.sleep(0.5)
+        self.assertFalse([x for x in self.req("/api/rooms/get?id=%s&since=0" % rid, token=tok)[1]["messages"] if x["role"] == "assistant"])
+        self.req("/api/users/quota", {"user": "quo", "day": 0, "week": 0})
+        self.assertEqual(self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]}, token=tok, raw=True)[0], 200)
+        self.req("/api/rooms/remove", {"id": rid}, token=tok)
+        self.req("/api/users/reject", {"user": "quo"})
+
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1", "email": "bob@gmail.com"}, token="")
         self.req("/api/users/approve", {"user": "bob"})

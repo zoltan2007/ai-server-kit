@@ -137,6 +137,8 @@ def log(msg):
 
 def me(h, q):
     u = dict(h.user)
+    if not u.get("master"):
+        u["used"] = h.app.usage.totals(u["name"])
     if u["role"] == "admin":
         u["pending"] = h.app.users.pending_count()
         u["needs_setup"] = not h.app.users.has_admin()
@@ -218,6 +220,13 @@ def _change(h, b, status, role=None):
         h.err(str(e))
 
 
+def set_quota(h, b):
+    try:
+        h.json(h.app.users.set_quota(str(b.get("user", "")).strip().lower(), b.get("day"), b.get("week")))
+    except (ValueError, TypeError) as e:
+        h.err(str(e))
+
+
 def reset_password(h, b):
     try:
         h.app.users.set_password(_target(h, b), str(b.get("password", "")))
@@ -249,4 +258,4 @@ GET = {"/api/me": me, "/api/users": list_users, "/api/mail": mail_get}
 POST = {"/api/logout": logout, "/api/password": change_password, "/api/users/setup": setup_admin,
         "/api/users/approve": approve, "/api/users/reject": reject, "/api/users/disable": disable,
         "/api/users/enable": enable, "/api/users/admin": make_admin, "/api/users/reset": reset_password,
-        "/api/mail/set": mail_set, "/api/mail/test": mail_test}
+        "/api/mail/set": mail_set, "/api/mail/test": mail_test, "/api/users/quota": set_quota}
