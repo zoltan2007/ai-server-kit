@@ -110,16 +110,16 @@ async function loadMe() {
   const me = await api("/api/me");
   S.me = me;
   $("#who").textContent = (me.role === "admin" ? "管理員 " : "") + me.name;
-  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin";
+  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin";
   $("#pw-details").hidden = !!me.master;
   $("#users-badge").hidden = !me.pending; $("#users-badge").textContent = me.pending || 0;
   if (me.pending) toast(`有 ${me.pending} 個帳號申請等你核准`);
 }
-async function renderUsers() {
+async function renderUsers(target = "#users-list") {
   const r = await api("/api/users");
   const zh = { pending: "等核准", active: "可用", disabled: "已停用" };
   const act = (a, u, label, cls = "") => `<button class="btn sm ${cls}" data-act="${a}" data-u="${esc(u)}">${label}</button>`;
-  $("#users-list").innerHTML = r.users.map(u => {
+  $(target).innerHTML = r.users.map(u => {
     const acts = u.status === "pending" ? act("approve", u.name, "核准", "primary") + act("reject", u.name, "拒絕")
       : u.status === "active" ? act("disable", u.name, "停用") + (u.role !== "admin" ? act("admin", u.name, "設為管理員") : "")
       : act("enable", u.name, "啟用") + act("reject", u.name, "刪除");
@@ -267,6 +267,7 @@ function newSession(extra = {}) {
     messages: [], settings: { think: true, status: false } }, extra);
   renderCur(); renderList();
   if (typeof loadHeat === "function") loadHeat();
+  if (typeof renderRecent === "function") renderRecent();
   $("#input").focus();
 }
 async function openSession(id, track = true) {
@@ -500,8 +501,20 @@ function splitThink(m) {
 function msgEl(m, live) {
   const d = document.createElement("div");
   d.className = "msg " + (m.role === "user" ? "user" : "ai");
+  d.dataset.by = m.by || (m.role === "assistant" ? "kiki" : "user");
+  const prev = $("#msgs").lastElementChild;
+  if (prev && prev.classList.contains("msg") && prev.dataset.by === d.dataset.by) d.classList.add("cont");
   fillMsg(d, m, live);
   return d;
+}
+function tldr(src) {
+  // 長回答最上面放「重點」：第一段＋前幾個清單項目（不叫模型，純文字擷取）
+  if (src.length < 1200) return "";
+  const lines = src.split("\n").map(l => l.trim()).filter(Boolean);
+  const first = lines.find(l => !/^(#|```|\||[-*+]|\d+[.)])/.test(l)) || "";
+  const items = lines.filter(l => /^([-*+]|\d+[.)])\s+/.test(l)).slice(0, 5).map(l => l.replace(/^([-*+]|\d+[.)])\s+/, ""));
+  if (!first && !items.length) return "";
+  return `<details class="tldr"><summary>重點</summary>${first ? `<p>${inline(first.slice(0, 200))}</p>` : ""}${items.length ? "<ul>" + items.map(i => "<li>" + inline(i.slice(0, 120)) + "</li>").join("") + "</ul>" : ""}</details>`;
 }
 function fillMsg(d, m, live) {
   if (m.role === "user") {
@@ -513,9 +526,9 @@ function fillMsg(d, m, live) {
   const by = m.by || "kiki", isP = by !== "kiki";
   d.classList.toggle("partner", isP);
   const pname = typeof nameOf === "function" ? nameOf(by) : by;
-  let h = `<div class="av">${esc(isP ? pname[0].toUpperCase() : "K")}</div><div class="body">${isP ? `<div class="who">${esc(pname)}</div>` : ""}`;
+  let h = `<div class="av">${esc(isP ? pname[0].toUpperCase() : "K")}</div><div class="body"><div class="who">${esc(pname)}</div>`;
   if (thinking) h += `<details class="think" ${live && !content ? "open" : ""}><summary>思考過程</summary><div>${esc(thinking)}</div></details>`;
-  h += `<div class="${live ? "cursor" : ""}">${md(content)}</div>`;
+  h += `<div class="${live ? "cursor" : ""}">${live ? "" : tldr(content)}${md(content)}</div>`;
   if (m.error) h += `<div class="err">${esc(m.error)}</div>`;
   if (m.stopped) h += `<div class="stats">已停止</div>`;
   if (m.stats) h += `<div class="stats">${esc(m.stats)}</div>`;

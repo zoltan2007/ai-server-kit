@@ -123,6 +123,7 @@
         <div class="logo big">K</div>
         <h2>嗨，我是 Kiki，要做什麼？</h2>
         <p class="muted">對話會存在主機上，手機和電腦看到同一份。輸入 <code>/</code> 有快捷指令。</p>
+        <div id="recent"></div>
         <div class="heat" id="heat" hidden></div>
       </div>
     </div>
@@ -152,10 +153,15 @@
 
   <!-- 右欄：主機狀態 -->
   <aside class="right" id="right">
-    <div class="side-head"><b>主機狀態</b>
+    <div class="side-head rtabs">
+      <button data-rt="host" class="on">主機</button><button data-rt="project">專案</button><button data-rt="usage">用量</button><button data-rt="members" id="rt-members" hidden>申請</button>
+      <span class="grow"></span>
       <button class="icon-btn" id="right-close" title="收起" aria-label="收起"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
-    <div class="right-body" id="status"></div>
+    <div class="right-body rpane" id="status" data-rt="host"></div>
+    <div class="right-body rpane" id="project-pane" data-rt="project" hidden></div>
+    <div class="right-body rpane" data-rt="usage" hidden><div class="heat side" id="heat-side" hidden></div></div>
+    <div class="right-body rpane" data-rt="members" hidden><div class="users" id="users-side"></div></div>
   </aside>
 
   <div class="popover" id="partner-pop" hidden></div>
@@ -211,5 +217,6 @@
 <script src="myai.js"></script>
 <script src="partner.js"></script>
 <script src="heat.js"></script>
+<script src="ui2.js"></script>
 </body>
 </html>

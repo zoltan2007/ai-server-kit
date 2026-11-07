@@ -3,8 +3,8 @@
 
 const fmtTok = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + "k" : String(n);
 
-async function loadHeat() {
-  const box = $("#heat");
+async function loadHeat(sel = "#heat") {
+  const box = $(sel);
   if (!box) return;
   let days, tot;
   try { tot = await api("/api/usage/me?days=7"); days = tot.days; } catch { box.hidden = true; return; }
