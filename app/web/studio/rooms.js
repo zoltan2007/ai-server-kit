@@ -1,7 +1,7 @@
 "use strict";
 // 群組：好幾個帳號一起聊，Kiki 默默觀察、被 @ 才回。接在 studio.js 後面載入，共用 $、api、S、toast 等。
 
-const RM = { list: [], cur: null, seq: 0, timer: 0, members: [] };
+const RM = { list: [], cur: null, seq: 0, timer: 0, members: [], gen: 0, sending: false, idle: 0 };
 
 function renderRooms() {
   const rows = RM.list.map(r => `<button class="sess room ${RM.cur?.id === r.id ? "on" : ""}" data-room="${r.id}">
@@ -29,6 +29,7 @@ $("#sess-list").addEventListener("click", async e => {
 
 // ── 進出群組 ──
 function leaveRoomView() {
+  RM.gen++;
   if (!RM.cur) return;
   clearTimeout(RM.timer); RM.cur = null; RM.seq = 0;
   document.body.classList.remove("in-room");
@@ -38,7 +39,7 @@ async function openRoom(id) {
   leaveRoomView();
   let r;
   try { r = await api("/api/rooms/get?id=" + id + "&since=0"); } catch (err) { toast(err.message, true); return; }
-  RM.cur = r; RM.seq = 0; S.cur = null;
+  RM.cur = r; RM.seq = 0; RM.idle = 0; S.cur = null; const gen = ++RM.gen;
   setListMode("rooms");
   document.body.classList.add("in-room");
   $("#title").value = r.title; $("#title").readOnly = true;
@@ -50,7 +51,7 @@ async function openRoom(id) {
   if (!r.messages.length) box.insertAdjacentHTML("beforeend", `<div class="sys">邀請成員進來聊；打 @Kiki 她才會回話</div>`);
   appendRoomMsgs(r.messages);
   renderList();
-  pollRoom();
+  pollRoom(gen);
   $("#input").focus();
 }
 function roomMsgEl(m) {
@@ -77,17 +78,19 @@ function appendRoomMsgs(msgs) {
   const box = $("#msgs");
   for (const m of msgs) {
     const old = m.seq ? $(`[data-seq="${m.seq}"]`, box) : null;
-    if (old) fillRoomMsg(old, m); else box.appendChild(roomMsgEl(m));
+    if (old) { const key = (m.content || "") + (m.done ? "#" : "") + (m.error || ""); if (old._key !== key) { fillRoomMsg(old, m); old._key = key; } }
+    else box.appendChild(roomMsgEl(m));
     RM.seq = Math.max(RM.seq, m.seq || 0);
   }
   if (msgs.length) scrollMsgs();
 }
-async function pollRoom() {
-  if (!RM.cur) return;
+async function pollRoom(gen) {
+  if (!RM.cur || gen !== RM.gen) return;
   const id = RM.cur.id;
   try {
     const r = await api(`/api/rooms/get?id=${id}&since=${RM.seq}`);
-    if (!RM.cur || RM.cur.id !== id) return;
+    if (!RM.cur || RM.cur.id !== id || gen !== RM.gen) return;
+    RM.idle = r.messages.length ? 0 : RM.idle + 1;
     // 正在生成的 Kiki 回覆 seq 不變，用 since-1 再抓一次才看得到更新
     RM.cur.members = r.members; RM.cur.title = r.title;
     appendRoomMsgs(r.messages);
@@ -95,20 +98,29 @@ async function pollRoom() {
     if (live) {
       const seq = +live.closest(".msg").dataset.seq;
       const again = await api(`/api/rooms/get?id=${id}&since=${seq - 1}`);
-      if (RM.cur && RM.cur.id === id) appendRoomMsgs(again.messages.filter(m => m.seq === seq));
+      if (RM.cur && RM.cur.id === id && gen === RM.gen) { const m = again.messages.find(x => x.seq === seq); if (m) { appendRoomMsgs([m]); if (m.content === (live.closest(".msg")._last || "")) RM.idle++; live.closest(".msg")._last = m.content; } }
     }
   } catch (err) {
     if (/404/.test(err.message) || /沒有這個群組/.test(err.message)) { toast("這個群組已經不存在"); leaveRoomView(); newSession(); loadRooms(); return; }
+    if (/請先登入/.test(err.message)) return;
   }
-  RM.timer = setTimeout(pollRoom, $("#msgs .msg.ai .cursor") ? 700 : 2500);
+  if (gen !== RM.gen) return;
+  const live = !!$("#msgs .msg.ai .cursor") && RM.idle < 40;      // 一直沒動靜（例如伺服器重啟）就退回慢速
+  const wait = document.hidden ? 15000 : live ? 700 : Math.min(2500 + RM.idle * 200, 8000);
+  RM.timer = setTimeout(() => pollRoom(gen), wait);
 }
+document.addEventListener("visibilitychange", () => { if (!document.hidden && RM.cur) { clearTimeout(RM.timer); pollRoom(RM.gen); } });
 async function roomSend(text) {
+  if (RM.sending) return;
+  RM.sending = true; $("#send").disabled = true;
   try {
     const m = await api("/api/rooms/post", { body: { id: RM.cur.id, content: text } });
     $("#msgs .sys")?.remove();
     appendRoomMsgs([m]);
-    clearTimeout(RM.timer); RM.timer = setTimeout(pollRoom, 300);
-  } catch (err) { toast(err.message, true); }
+    if (m.quota_note) toast(m.quota_note, true);
+    RM.idle = 0; clearTimeout(RM.timer); const gen = RM.gen; RM.timer = setTimeout(() => pollRoom(gen), 300);
+  } catch (err) { toast(err.message, true); const ta = $("#input"); if (!ta.value) { ta.value = text; autosize(ta); } }
+  finally { RM.sending = false; $("#send").disabled = false; }
 }
 
 // ── 成員 ──

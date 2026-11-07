@@ -22,7 +22,7 @@ async function api(path, opt = {}) {
   const init = { method: opt.body !== undefined ? "POST" : "GET", headers: { Authorization: "Bearer " + TOKEN }, signal: opt.signal };
   if (opt.body !== undefined) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opt.body); }
   const r = await fetch(path, init);
-  if (r.status === 401) { showLogin("登入已失效，請重新登入"); throw new Error("請先登入"); }
+  if (r.status === 401) { if (TOKEN) showLogin("登入已失效，請重新登入"); throw new Error("請先登入"); }
   if (opt.raw && r.ok) return r;
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
@@ -31,17 +31,21 @@ async function api(path, opt = {}) {
 async function* lines(resp) {
   const rd = resp.body.getReader(), dec = new TextDecoder();
   let buf = "";
-  for (;;) {
-    const { value, done } = await rd.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
-      if (l) { try { yield JSON.parse(l); } catch { /* 半截 */ } }
+  try {
+    for (;;) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (l) { try { yield JSON.parse(l); } catch { /* 半截 */ } }
+      }
     }
+    if (buf.trim()) { try { yield JSON.parse(buf); } catch { /* 忽略 */ } }
+  } finally {
+    try { await rd.cancel(); } catch { /* 已經關了 */ }
   }
-  if (buf.trim()) { try { yield JSON.parse(buf); } catch { /* 忽略 */ } }
 }
 let toastT = 0;
 function toast(msg, bad) {
@@ -53,7 +57,16 @@ function autosize(ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.
 
 // ── 登入／申請／建管理員 ──
 const gate = { mode: "user" };
+function stopAll() {
+  // 登出或憑證失效：所有輪詢停掉、生成中的串流中斷、狀態清空，免得舊的計時器一直打 401
+  clearInterval(S.statusTimer); S.statusTimer = 0;
+  if (typeof leaveRoomView === "function") leaveRoomView();
+  try { S.ctrl?.abort(); } catch { /* 沒在生成 */ }
+  S.busy = false; S.cur = null; S.sessions = []; S.me = null; H.list = []; H.i = -1;
+  $$("#msgs .msg, #msgs .sys").forEach(x => x.remove());
+}
 function showLogin(msg) {
+  TOKEN = ""; ls.set("token", ""); stopAll();
   $("#app").hidden = true; $("#login").hidden = false;
   showCard("login-form"); $("#login-err").textContent = msg || "";
   setTimeout(() => $(gate.mode === "token" ? "#login-token" : "#login-user").focus(), 50);
@@ -179,6 +192,7 @@ $("#theme-btn").addEventListener("click", () => {
   document.documentElement.dataset.theme = light ? "light" : "dark"; ls.set("theme", light ? "light" : "dark");
 });
 if (ls.get("theme", "dark") === "light") document.documentElement.dataset.theme = "light";
+if (!matchMedia("(pointer: coarse)").matches) $("#input").placeholder = "問點什麼…（Enter 送出，Shift+Enter 換行）";
 
 // ── 主機狀態（右欄＋左下角一行） ──
 function renderStatus(s) {
@@ -204,7 +218,7 @@ function dur(sec) {
   return d ? `${d} 天 ${h} 小時` : h ? `${h} 小時 ${m} 分` : `${m} 分`;
 }
 async function pollStatus() {
-  try { S.status = await api("/api/status"); renderStatus(S.status); }
+  try { S.status = await api("/api/status"); if (app.classList.contains("right-on") || !S.statusTimer) renderStatus(S.status); else { const g = S.status.gpus?.[0]; $("#host-name").textContent = `${S.status.hostname || "主機"} · ${g ? `GPU ${g.temp ?? "—"}°C` : "沒有顯示卡"}`; } }
   catch (err) { $("#host-name").textContent = err.message; }
 }
 function statusForAI() {
@@ -342,8 +356,10 @@ function renderList() {
   box.scrollTop = keepTop;
 }
 $("#search-btn").addEventListener("click", () => { const b = $("#search"); b.hidden = !b.hidden; if (!b.hidden) b.focus(); else { b.value = ""; renderList(); } });
-$("#search").addEventListener("input", renderList);
+let searchT = 0;
+$("#search").addEventListener("input", () => { clearTimeout(searchT); searchT = setTimeout(renderList, 150); });
 $("#sess-list").addEventListener("click", async e => {
+  if (S.busy && !e.target.closest("[data-open]") && !e.target.closest(".caret")) { toast("等這則回完再切換"); return; }
   const o = e.target.closest("[data-open]");
   if (o) { toggleOpen(o.dataset.open, o.dataset.open.startsWith("g:")); return; }
   const b = e.target.closest("[data-id]");
@@ -361,7 +377,7 @@ function showCtx(x, y, id) {
 $("#sess-list").addEventListener("contextmenu", e => { const b = e.target.closest("[data-id]"); if (b) { e.preventDefault(); showCtx(e.clientX, e.clientY, b.dataset.id); } });
 let pressT = 0;
 $("#sess-list").addEventListener("touchstart", e => { const b = e.target.closest("[data-id]"); if (b) pressT = setTimeout(() => showCtx(e.touches[0].clientX, e.touches[0].clientY, b.dataset.id), 550); }, { passive: true });
-$("#sess-list").addEventListener("touchend", () => clearTimeout(pressT));
+$("#sess-list").addEventListener("touchend", e => { clearTimeout(pressT); if (!$("#ctx").hidden) e.preventDefault(); });
 $("#sess-list").addEventListener("touchmove", () => clearTimeout(pressT));
 document.addEventListener("keydown", e => { if (e.key === "Escape") { $("#ctx").hidden = true; $("#settings-pop").hidden = true; $("#model-pop").hidden = true; } });
 document.addEventListener("click", e => { if (!e.target.closest("#ctx")) $("#ctx").hidden = true; if (!e.target.closest("#settings-pop, #settings-btn")) $("#settings-pop").hidden = true; });
@@ -372,6 +388,7 @@ $("#ctx").addEventListener("click", async e => {
   const row = S.sessions.find(s => s.id === ctxId);
   if (!row) return;
   const c = b.dataset.c;
+  if (S.busy && c !== "pin" && c !== "rename") { toast("等這則回完再做"); return; }
   if (c === "open") return openSession(ctxId);
   if (c === "fork") return forkSession(ctxId);
   if (c === "delete") { if (!confirm(`刪除「${row.title}」？`)) return; await deleteSession(ctxId); return; }
@@ -432,16 +449,22 @@ function queueSave(delay = 800) {
   clearTimeout(S.saveTimer);
   S.saveTimer = setTimeout(saveNow, delay);
 }
-async function saveNow() {
-  const c = S.cur;
+async function saveNow(conv) {
+  const c = conv || S.cur;
   if (!c || !c.messages.length && !c.title) return;
+  if (c._saving) { c._again = true; return c._saving; }   // 同一個對話一次只存一份，第一次存回 id 前不會重複建檔
+  c._saving = (async () => { try { await saveOne(c); } finally { c._saving = null; if (c._again) { c._again = false; queueSave(300); } } })();
+  return c._saving;
+}
+async function saveOne(c) {
   if (!c.title) c.title = (c.messages.find(m => m.role === "user")?.content || "").slice(0, 40).replace(/\n.*/s, "") || "新對話";
-  const body = Object.assign({}, c, { messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images })) });
+  const body = Object.assign({}, c, { _saving: undefined, _again: undefined,
+    messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images })) });
   try {
     const r = await saveSession(body);
     c.id = r.id; c.updated = r.updated;
-    ls.set("last", r.id); remember(r.id);
-    $("#title").value = c.title; renderList();
+    if (S.cur === c) { ls.set("last", r.id); remember(r.id); $("#title").value = c.title; }
+    renderList();
   } catch (err) { toast("存對話失敗：" + err.message, true); }
 }
 
@@ -461,9 +484,20 @@ function renderCur() {
   for (const m of c.messages) box.appendChild(msgEl(m));
   scrollMsgs(true);
 }
+function nearBottom() { const b = $("#msgs"); return b.scrollHeight - b.scrollTop - b.clientHeight < 120; }
 function scrollMsgs(force) {
   const b = $("#msgs");
-  if (force || b.scrollHeight - b.scrollTop - b.clientHeight < 120) b.scrollTop = b.scrollHeight;
+  if (force || nearBottom()) b.scrollTop = b.scrollHeight;
+}
+function paintLive(el, m) {
+  // 串流中：只更新內容那一格，思考區塊的開合、選取的文字都不會被洗掉
+  const body = el.querySelector(".body"), live = body && body.querySelector(":scope > .cursor");
+  if (!live) { fillMsg(el, m, true); return; }
+  const { content, thinking } = splitThink(m);
+  const th = body.querySelector(":scope > .think > div");
+  if (th && thinking !== th.textContent) th.textContent = thinking;
+  else if (thinking && !th) { fillMsg(el, m, true); return; }
+  live.innerHTML = md(content);
 }
 
 // 簡單的 Markdown：程式碼區塊、行內程式碼、粗體、標題、清單、表格
@@ -590,7 +624,8 @@ async function sendChatLegacy(text) {
   S.busy = true; S.ctrl = new AbortController();
   $("#send").hidden = true; $("#stop").hidden = false;
   let raf = 0, live = true;
-  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live) { fillMsg(el, ai, true); scrollMsgs(); } }); };
+  let lastPaint = 0;
+  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live && performance.now() - lastPaint > 120) { lastPaint = performance.now(); const follow = nearBottom(); paintLive(el, ai); if (follow) scrollMsgs(true); } }); };
   try {
     const r = await api("/api/chat", { body, raw: true, signal: S.ctrl.signal });
     for await (const ev of lines(r)) {
@@ -631,7 +666,7 @@ $("#input").addEventListener("keydown", e => {
   }
   if (!menu.hidden && e.key === "Tab") { e.preventDefault(); $("button.on", menu)?.click(); return; }
   if (e.key === "Escape") menu.hidden = true;
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#composer").requestSubmit(); }
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229 && !matchMedia("(pointer: coarse)").matches) { e.preventDefault(); $("#composer").requestSubmit(); }
 });
 $("#input").addEventListener("input", e => { autosize(e.target); renderSlash(e.target.value); });
 $("#stop").addEventListener("click", () => S.ctrl?.abort());
@@ -660,6 +695,7 @@ $("#slash").addEventListener("click", e => { const b = e.target.closest("[data-k
 function runSlash(text) {
   const c = SLASH.find(x => text.trim() === x.k);
   if (!c) return false;
+  if (!S.cur && !["/新", "/面板", "/模型"].includes(c.k)) { toast("這個指令要在專案裡用"); $("#slash").hidden = true; return true; }
   $("#slash").hidden = true; c.run(); return true;
 }
 
@@ -687,7 +723,8 @@ async function boot() {
   if (!S.cur) newSession();
   histBtns();
   if (wide() && ls.get("right", true)) openRight(true);
-  setInterval(pollStatus, 15000);
+  clearInterval(S.statusTimer);
+  S.statusTimer = setInterval(() => { if (!document.hidden) pollStatus(); }, 15000);
 }
 if (TOKEN) {
   fetch("/api/me", { headers: { Authorization: "Bearer " + TOKEN } })

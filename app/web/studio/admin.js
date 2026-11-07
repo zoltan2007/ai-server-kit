@@ -15,12 +15,14 @@ function openDash() {
   loadDash();
   if (!wide()) openSide(false);
 }
-function closeDash() {
+function closeDash(back = false) {
+  const was = document.body.classList.contains("in-dash");
   document.body.classList.remove("in-dash");
   $("#dash-btn").classList.remove("on");
   $("#title").readOnly = false;
+  if (back && was && !S.cur) _ns();
 }
-$("#dash-btn").addEventListener("click", () => (document.body.classList.contains("in-dash") ? closeDash() : openDash()));
+$("#dash-btn").addEventListener("click", () => (document.body.classList.contains("in-dash") ? closeDash(true) : openDash()));
 
 async function loadDash() {
   const box = $("#dash");

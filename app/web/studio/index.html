@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#1b1a19">
 <title>Kiki Cloude</title>
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
@@ -134,7 +134,7 @@
     </header>
 
     <div class="dash" id="dash" hidden></div>
-    <div class="msgs" id="msgs">
+    <div class="msgs" id="msgs" aria-live="polite">
       <div class="empty" id="empty">
         <div class="logo big">K</div>
         <h2>嗨，我是 Kiki，要做什麼？</h2>
@@ -147,7 +147,7 @@
     <form class="composer" id="composer">
       <div class="menu" id="slash" hidden></div>
       <div class="attach-list" id="attach-list"></div>
-      <textarea id="input" rows="1" placeholder="問點什麼…（Enter 送出，Shift+Enter 換行）"></textarea>
+      <textarea id="input" rows="1" placeholder="問點什麼…"></textarea>
       <div class="comp-bar">
         <button class="icon-btn" type="button" id="attach-btn" title="附圖" hidden>
           <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg></button>
@@ -241,7 +241,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script src="studio.js"></script>
 <script src="rooms.js"></script>
 <script src="myai.js"></script>

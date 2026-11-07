@@ -27,4 +27,5 @@ document.addEventListener("mouseover", e => {
   tip.style.left = Math.min(r.left + r.width / 2, innerWidth - 150) + "px"; tip.style.top = r.top - 8 + "px";
 });
 document.addEventListener("mouseout", e => { if (e.target.closest && e.target.closest("[data-tip]")) tip.hidden = true; });
-document.addEventListener("click", e => { const c = e.target.closest("[data-tip]"); if (c) { tip.textContent = c.dataset.tip; tip.hidden = false; const r = c.getBoundingClientRect(); tip.style.left = Math.min(r.left + r.width / 2, innerWidth - 150) + "px"; tip.style.top = r.top - 8 + "px"; } });
+let tipT = 0;
+document.addEventListener("click", e => { const c = e.target.closest("[data-tip]"); if (c) { tip.textContent = c.dataset.tip; tip.hidden = false; const r = c.getBoundingClientRect(); tip.style.left = Math.min(r.left + r.width / 2, innerWidth - 150) + "px"; tip.style.top = r.top - 8 + "px"; clearTimeout(tipT); tipT = setTimeout(() => (tip.hidden = true), 2200); } });

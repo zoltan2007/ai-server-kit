@@ -64,21 +64,22 @@ function contextFor(who, upto) {
 
 // ── 讓某一位 AI 回一則 ──
 async function askAI(who) {
-  const p = partner();
-  const model = who === "kiki" ? S.cur.model : `ext:${p.provider}:${p.model}`;
+  const conv = S.cur, p = partner();
+  if (!conv) return null;
+  const model = who === "kiki" ? conv.model : `ext:${p.provider}:${p.model}`;
   if (!model) { toast("先選一個模型", true); return null; }
   const ai = { role: "assistant", by: who, content: "", thinking: "" };
-  S.cur.messages.push(ai);
+  conv.messages.push(ai);
   const el = msgEl(ai, true); $("#msgs").appendChild(el); scrollMsgs(true);
-  const body = { model, messages: contextFor(who, S.cur.messages.slice(0, -1)) };
+  const body = { model, messages: contextFor(who, conv.messages.slice(0, -1)) };
   if (who === "kiki") {
     const caps = S.caps[model]?.capabilities || [];
     if (caps.includes("thinking")) body.think = /^gpt-oss/.test(model) ? (S.think === "off" ? "low" : S.think === "high" ? "high" : "medium") : S.think !== "off";
   }
   S.busy = true; S.ctrl = new AbortController();
   $("#send").hidden = true; $("#stop").hidden = false;
-  let raf = 0, live = true;
-  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live) { fillMsg(el, ai, true); scrollMsgs(); } }); };
+  let raf = 0, live = true, lastPaint = 0, gotDone = false;
+  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live && performance.now() - lastPaint > 120) { lastPaint = performance.now(); const follow = nearBottom(); paintLive(el, ai); if (follow) scrollMsgs(true); } }); };
   try {
     const r = await api("/api/chat", { body, raw: true, signal: S.ctrl.signal });
     for await (const ev of lines(r)) {
@@ -86,18 +87,22 @@ async function askAI(who) {
       const m = ev.message || {};
       if (m.thinking) ai.thinking += m.thinking;
       if (m.content) ai.content += m.content;
-      if (ev.done && ev.eval_count) {
-        const tps = ev.eval_duration ? ev.eval_count / ev.eval_duration * 1e9 : 0;
-        ai.stats = `${nameOf(who)} · ${model.replace(/^ext:[^:]+:/, "")} · ${ev.eval_count} tokens${tps ? ` · ${tps.toFixed(1)} tokens/秒` : ""}`;
+      if (ev.done) {
+        gotDone = true;
+        if (ev.eval_count) {
+          const tps = ev.eval_duration ? ev.eval_count / ev.eval_duration * 1e9 : 0;
+          ai.stats = `${nameOf(who)} · ${model.replace(/^ext:[^:]+:/, "")} · ${ev.eval_count} tokens${tps ? ` · ${tps.toFixed(1)} tokens/秒` : ""}`;
+        }
       }
       paint();
     }
+    if (!gotDone && !ai.error) ai.error = "連線中斷，回答可能不完整";
   } catch (err) {
     if (err.name === "AbortError") ai.stopped = true; else ai.error = err.message;
   } finally {
     live = false; S.busy = false; S.ctrl = null;
     $("#send").hidden = false; $("#stop").hidden = true;
-    fillMsg(el, ai, false); scrollMsgs(); queueSave(0); renderPartnerChip();
+    fillMsg(el, ai, false); scrollMsgs(); saveNow(conv); if (S.cur === conv) renderPartnerChip();
   }
   return ai;
 }
@@ -110,22 +115,25 @@ async function sendChat(text) {
   const user = { role: "user", by: "user", content: text };
   if (S.attach.length) user.images = S.attach.map(a => a.b64);
   S.attach = []; renderAttach();
-  S.cur.messages.push(user);
+  const conv = S.cur;
+  conv.messages.push(user);
   $("#empty").hidden = true;
   $("#msgs").appendChild(msgEl(user)); scrollMsgs(true);
+  saveNow(conv);                      // 使用者的話先存，重新整理或手機休眠也不會掉
   const p = partner();
   const toPartner = p && mentionsPartner(text), toKiki = !p || !toPartner || mentionsKiki(text);
   PT.depth = 0;
-  if (toKiki) await chain("kiki");
-  if (toPartner && !S.busy) await chain(p.handle);
+  if (toKiki) await chain("kiki", conv);
+  if (toPartner && !S.busy && S.cur === conv) await chain(p.handle, conv);
 }
-async function chain(who) {
-  // 一位 AI 回完，如果它 @ 了另一位，另一位接著回；最多 MAX_HOPS 回合
+async function chain(who, conv) {
+  // 一位 AI 回完，如果它 @ 了另一位，另一位接著回；最多 MAX_HOPS 回合；使用者切走就停
+  if (S.cur !== conv) return;
   const ai = await askAI(who);
-  if (!ai || ai.error || ai.stopped || PT.depth >= MAX_HOPS) return;
+  if (!ai || ai.error || ai.stopped || PT.depth >= MAX_HOPS || S.cur !== conv) return;
   const p = partner(), text = splitThink(ai).content;
   const next = who === "kiki" ? (p && mentionsPartner(text) ? p.handle : null) : (mentionsKiki(text) ? "kiki" : null);
-  if (next) { PT.depth++; await chain(next); }
+  if (next) { PT.depth++; await chain(next, conv); }
 }
 // 討論：夥伴評論 Kiki 最後的回答，Kiki 再回一次
 $("#discuss-btn").addEventListener("click", async () => {
@@ -133,7 +141,7 @@ $("#discuss-btn").addEventListener("click", async () => {
   if (!p || S.busy) return;
   const user = { role: "user", by: "user", content: `@${p.handle} 請看上面 Kiki 的回答，指出你同意或不同意的地方、補充遺漏，最後用 @kiki 把要修正的地方交代給她。` };
   S.cur.messages.push(user); $("#msgs").appendChild(msgEl(user)); scrollMsgs(true);
-  PT.depth = 0; await chain(p.handle);
+  PT.depth = 0; await chain(p.handle, S.cur);
 });
 
 // ── 思考強度（像 Claude Code 的「高」） ──

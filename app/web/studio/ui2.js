@@ -7,7 +7,7 @@ function renderRecent() {
   if (!box) return;
   const rows = S.sessions.filter(s => s.count).slice(0, 4);
   const when = t => { const d = (Date.now() / 1000 - t) / 3600; return d < 1 ? "剛剛" : d < 24 ? `${Math.floor(d)} 小時前` : `${Math.floor(d / 24)} 天前`; };
-  let h = rows.map(s => `<button class="rcard" data-open-s="${s.id}"><b>${esc(s.title || "（沒有標題）")}</b><span>${s.count} 則 · ${esc(s.model.split(":")[0])}${s.partner ? " · " + esc(s.partner.name) : ""}</span><i>${when(s.updated)}</i></button>`).join("");
+  let h = rows.map(s => `<button class="rcard" data-open-s="${esc(s.id)}"><b>${esc(s.title || "（沒有標題）")}</b><span>${s.count} 則 · ${esc((s.model || "—").split(":")[0])}${s.partner ? " · " + esc(s.partner.name) : ""}</span><i>${when(s.updated)}</i></button>`).join("");
   if (S.me?.role === "admin" && S.me.pending) h = `<button class="rcard warn" id="rcard-pending"><b>有 ${S.me.pending} 個帳號申請</b><span>等你核准</span><i>成員</i></button>` + h;
   box.innerHTML = h ? `<div class="recent-head">最近</div><div class="recent">${h}</div>` : "";
 }
@@ -15,7 +15,7 @@ $("#recent").addEventListener("click", e => {
   const p = e.target.closest("#rcard-pending");
   if (p) { $("#users-btn").click(); return; }
   const b = e.target.closest("[data-open-s]");
-  if (b) openSession(b.dataset.openS);
+  if (b && !S.busy) openSession(b.dataset.openS);
 });
 
 // ── 右欄分頁 ──
@@ -52,7 +52,7 @@ $("#project-pane").addEventListener("click", async e => {
     try {
       const r = await api("/api/export/all", { raw: true });
       const name = (r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "KikiCloude.zip";
-      const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
       toast("已下載：" + name);
     } catch (err) { toast(err.message, true); }
     btn.disabled = false; return;
@@ -80,7 +80,7 @@ function exportSession(fmt) {
   }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); a.download = name.replace(/[\\/:*?"<>|]/g, "_");
-  document.body.appendChild(a); a.click(); a.remove();
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   toast("已下載：" + a.download);
 }
 
@@ -160,6 +160,6 @@ function liquid(container) {
     });
   });
   container.addEventListener("mouseleave", () => { pad.style.opacity = "0"; cur = null; });
-  container.addEventListener("scroll", () => { if (cur) place(cur); }, { passive: true });
+  container.addEventListener("scroll", () => { if (cur && cur.isConnected) place(cur); else { pad.style.opacity = "0"; cur = null; } }, { passive: true });
 }
 ["#sess-list", ".menu-list", "#recent", "#model-list", "#settings-pop", "#partner-pop", "#ctx"].forEach(s => liquid($(s)));
