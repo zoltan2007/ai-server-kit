@@ -42,10 +42,21 @@ function renderProjectPane() {
       <div class="kv"><span>最後更新</span><span>${fmt(c.updated)}</span></div></div>
     <div class="stat"><h4>匯出（存在你的裝置）</h4>
       <div class="foot-btns"><button class="btn sm" data-exp="txt">純文字對話</button><button class="btn sm" data-exp="md">AI 記憶檔（Markdown）</button></div>
+      <div class="foot-btns" style="margin-top:8px"><button class="btn sm primary" id="exp-all">匯出我的全部專案與群組（zip）</button></div>
       <p class="muted small" style="margin:8px 0 0">記憶檔整理成別的 AI 讀得懂的格式：標題、成員、每一輪的重點、完整對話。</p></div>`;
 }
-$("#project-pane").addEventListener("click", e => {
+$("#project-pane").addEventListener("click", async e => {
   if (e.target.closest("#pp-members")) { $("#members-btn").click(); return; }
+  if (e.target.closest("#exp-all")) {
+    const btn = e.target.closest("#exp-all"); btn.disabled = true;
+    try {
+      const r = await api("/api/export/all", { raw: true });
+      const name = (r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "KikiCloude.zip";
+      const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      toast("已下載：" + name);
+    } catch (err) { toast(err.message, true); }
+    btn.disabled = false; return;
+  }
   const b = e.target.closest("[data-exp]");
   if (b && S.cur) exportSession(b.dataset.exp);
 });

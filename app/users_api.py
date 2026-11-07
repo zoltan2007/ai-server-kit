@@ -20,7 +20,7 @@ def resolve(app, tok):
 
 
 def allowed(user, path):
-    return user.get("role") == "admin" or path in USER_OK or path.startswith("/api/rooms") or path.startswith("/api/ai") or path == "/api/usage/me"
+    return user.get("role") == "admin" or path in USER_OK or path.startswith("/api/rooms") or path.startswith("/api/ai") or path in ("/api/usage/me", "/api/export/all")
 
 
 def login(h):

@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import agreement  # noqa: E402
+import export_api  # noqa: E402
 import guard  # noqa: E402
 import ai_api  # noqa: E402
 import jobs  # noqa: E402
@@ -607,7 +608,7 @@ GET_ROUTES = {
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
     "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
-    **users_api.GET, **rooms_api.GET, **ai_api.GET,
+    **users_api.GET, **rooms_api.GET, **ai_api.GET, **export_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,

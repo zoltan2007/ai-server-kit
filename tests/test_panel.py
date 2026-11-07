@@ -2,6 +2,7 @@
 
     python -m unittest discover ai-server-kit/tests -v
 """
+import io
 import json
 import os
 import shutil
@@ -291,6 +292,32 @@ class PanelTest(unittest.TestCase):
         server.Handler.app.users.fails.pop("gdx", None)
         self.assertEqual(self.req("/api/login", {"user": "gdx", "password": "gdpassword1"}, token="")[0], 200)
         self.req("/api/users/reject", {"user": "gdx"})
+
+    def test_export_zip(self):
+        import zipfile
+        self.req("/api/users/setup", {"user": "exp", "password": "exppassword1"})
+        tok = self.req("/api/login", {"user": "exp", "password": "exppassword1"}, token="")[1]["token"]
+        self.req("/api/sessions/save", {"title": "台股/筆記?", "model": "qwen3.5:4b", "group": "研究",
+                                        "messages": [{"role": "user", "content": "你好"}, {"role": "assistant", "by": "kiki", "content": "<think>想</think>嗨"}]}, token=tok)
+        self.req("/api/sessions/save", {"title": "第二個", "model": "qwen3.5:4b", "messages": [{"role": "user", "content": "再來"}]}, token=tok)
+        rid = self.req("/api/rooms/create", {"title": "小隊"}, token=tok)[1]["id"]
+        self.req("/api/rooms/post", {"id": rid, "content": "群組第一句"}, token=tok)
+        code, resp = self.req("/api/export/all", token=tok, raw=True)
+        self.assertEqual(code, 200)
+        self.assertIn("attachment", resp.headers["Content-Disposition"])
+        with resp:
+            z = zipfile.ZipFile(io.BytesIO(resp.read()))
+        names = z.namelist()
+        self.assertIn("專案/研究/台股_筆記_.txt", names)
+        self.assertIn("專案/研究/台股_筆記_.記憶檔.md", names)
+        self.assertIn("專案/第二個.txt", names)
+        self.assertIn("群組/小隊.txt", names)
+        self.assertIn("index.md", names)
+        md = z.read("專案/研究/台股_筆記_.記憶檔.md").decode("utf-8")
+        self.assertIn("### 2. Kiki", md); self.assertIn("嗨", md); self.assertNotIn("<think>", md)
+        self.assertIn("群組第一句", z.read("群組/小隊.txt").decode("utf-8"))
+        self.assertEqual(self.req("/api/export/all", token="")[0], 401)
+        self.req("/api/users/reject", {"user": "exp"})
 
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
