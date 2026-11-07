@@ -449,5 +449,4 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .sess:hover, .item:hover, .grp:hover, .rcard:hover, #model-list button:hover, .menu button:hover, #ctx button:hover { background: transparent; box-shadow: none; }
 @media (hover: none) { .liquid { display: none; } .sess:hover, .item:hover { box-shadow: var(--raise-sm); } }
 .sess-list { overflow-anchor: none; scroll-behavior: auto; }
-.tree { animation: unfold .15s ease-out; }
-@keyframes unfold { from { opacity: 0; } to { opacity: 1; } }
+/* 展開分支不做動畫：每次重畫整張清單時所有分支都會重播，看起來像在抽動 */
