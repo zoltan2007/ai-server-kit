@@ -130,11 +130,18 @@ function liquid(container) {
     pad.style.opacity = "1";
   };
   container.addEventListener("mousemove", e => {
-    if (!pad.isConnected) container.prepend(pad);   // 清單用 innerHTML 重畫過，墊子要放回去
+    let fresh = false;
+    if (!pad.isConnected) { container.prepend(pad); fresh = true; }   // 清單用 innerHTML 重畫過，墊子要放回去
     const el = e.target.closest(".sess, .grp, .item, .rcard, #model-list button, .menu button");
     if (!el || !container.contains(el)) { pad.style.opacity = "0"; cur = null; return; }
-    if (el !== cur) { cur = el; pad.classList.remove("bulge"); void pad.offsetWidth; pad.classList.add("bulge"); }
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (cur) place(cur, e.clientX, e.clientY); });
+    const appear = fresh || cur === null;       // 從看不見變成看得見：直接出現在原地，不要從老遠滑過來
+    if (el !== cur) { cur = el; if (!appear) { pad.classList.remove("bulge"); void pad.offsetWidth; pad.classList.add("bulge"); } }
+    if (!raf) raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (!cur) return;
+      if (appear) { pad.style.transition = "none"; place(cur, e.clientX, e.clientY); void pad.offsetWidth; pad.style.transition = ""; }
+      else place(cur, e.clientX, e.clientY);
+    });
   });
   container.addEventListener("mouseleave", () => { pad.style.opacity = "0"; cur = null; });
   container.addEventListener("scroll", () => { if (cur) place(cur); }, { passive: true });
