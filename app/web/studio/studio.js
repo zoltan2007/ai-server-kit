@@ -15,7 +15,7 @@ const heat = p => p >= 95 ? "crit" : p >= 80 ? "hot" : "";
 const later = typeof requestAnimationFrame === "function" ? requestAnimationFrame : f => setTimeout(f, 16);
 
 let TOKEN = ls.get("token", "") || (() => { try { return JSON.parse(localStorage.getItem("aisk.token") || '""'); } catch { return ""; } })();
-const S = { status: null, models: [], caps: {}, sessions: [], cur: null, busy: false, ctrl: null, attach: [], saveTimer: 0, me: null };
+const S = { status: null, models: [], caps: {}, sessions: [], cur: null, busy: false, ctrl: null, attach: [], saveTimer: 0, me: null, listMode: "sessions" };
 
 // ── 連線 ──
 async function api(path, opt = {}) {
@@ -250,6 +250,8 @@ $("#model-list").addEventListener("click", e => {
 document.addEventListener("click", e => { if (!e.target.closest("#model-pop, #model-chip")) $("#model-pop").hidden = true; });
 
 // ── 對話清單（群組 ▸ 對話 ▸ 分支） ──
+function setListMode(m) { S.listMode = m; $("#rooms-btn").classList.toggle("on", m === "rooms"); }
+$("#rooms-btn").addEventListener("click", () => { setListMode(S.listMode === "rooms" ? "sessions" : "rooms"); renderList(); });
 const H = { list: [], i: -1 };   // 開過的對話，給上一個／下一個用
 function remember(id) {
   if (!id || H.list[H.i] === id) return;
@@ -266,6 +268,7 @@ $("#hist-fwd").addEventListener("click", () => goHist(1));
 
 function newSession(extra = {}) {
   if (typeof leaveRoomView === "function") leaveRoomView();
+  setListMode("sessions");
   S.cur = Object.assign({ id: "", title: "", model: ls.get("model", "") || S.models[0] || "", pinned: false, group: "", parent: "",
     messages: [], settings: { think: true, status: false } }, extra);
   renderCur(); renderList();
@@ -274,6 +277,7 @@ function newSession(extra = {}) {
 }
 async function openSession(id, track = true) {
   if (typeof leaveRoomView === "function") leaveRoomView();
+  setListMode("sessions");
   try { S.cur = await api("/api/sessions/get?id=" + id); }
   catch (err) { toast(err.message, true); return; }
   S.cur.settings = S.cur.settings || {};
@@ -320,7 +324,7 @@ function renderList() {
     if (on) h += `<div class="tree">${renderTree(list, mine)}</div>`;
   }
   h += renderTree(list, roots.filter(s => !s.group));
-  if (typeof renderRooms === "function") h = renderRooms() + h;
+  if (S.listMode === "rooms" && typeof renderRooms === "function") h = renderRooms();
   $("#sess-list").innerHTML = h || `<div class="muted small" style="padding:12px">還沒有對話</div>`;
 }
 $("#search-btn").addEventListener("click", () => { const b = $("#search"); b.hidden = !b.hidden; if (!b.hidden) b.focus(); else { b.value = ""; renderList(); } });

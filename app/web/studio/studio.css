@@ -103,6 +103,7 @@ a { color: inherit; text-decoration: none; }
 .menu-list { display: grid; padding: 6px 8px 10px; }
 .item { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 15px; }
 .item:hover { background: var(--surface); }
+.item.on { background: var(--surface-2); }
 .item svg { width: 18px; height: 18px; color: var(--text); }
 .item .badge { margin-left: auto; }
 .grp { display: flex; align-items: center; gap: 6px; width: 100%; border: 0; background: transparent; color: var(--muted); text-align: left; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }

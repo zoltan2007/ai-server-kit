@@ -242,11 +242,12 @@ class PanelTest(unittest.TestCase):
             providers._open = real
 
     def test_usage_heatmap(self):
+        before = sum(self.req("/api/usage/me?days=7")[1]["days"][-1]["cells"])   # 其他測試也會記到 admin
         self.stream("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "hi"}]})
         code, r = self.req("/api/usage/me?days=7")
         self.assertEqual((code, len(r["days"]), r["days"][-1]["label"]), (200, 7, "今天"))
-        self.assertEqual(sum(r["days"][-1]["cells"]), 54)   # 假模型 12 + 42
-        self.assertEqual(r["days"][-1]["calls"], 1)
+        self.assertEqual(sum(r["days"][-1]["cells"]) - before, 54)   # 假模型 12 + 42
+        self.assertGreaterEqual(r["days"][-1]["calls"], 1)
 
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")

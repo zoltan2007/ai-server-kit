@@ -7,9 +7,9 @@ function renderRooms() {
   const rows = RM.list.map(r => `<button class="sess room ${RM.cur?.id === r.id ? "on" : ""}" data-room="${r.id}">
     <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-5-5.9"/></svg>
     <span class="t">${esc(r.title)}</span><span class="grow"></span><span class="m">${r.members.length} 人</span></button>`).join("");
-  return `<div class="grp-row"><button class="grp open" data-open="g:__rooms"><span>群組</span><span class="caret">▶</span></button>
+  return `<div class="grp-row"><span class="grp open"><span>我的群組</span></span>
     <button class="tool" id="room-new" title="建立群組" aria-label="建立群組"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
-    ${isOpen("g:__rooms") ? `<div class="tree">${rows || `<div class="muted small" style="padding:6px 12px">還沒有群組，按 ＋ 建一個</div>`}</div>` : ""}`;
+    ${rows || `<div class="muted small" style="padding:6px 12px">還沒有群組，按 ＋ 建一個；群組和你的專案是分開的</div>`}`;
 }
 async function loadRooms() {
   try { RM.list = (await api("/api/rooms")).rooms; } catch (err) { toast(err.message, true); }
@@ -39,6 +39,7 @@ async function openRoom(id) {
   let r;
   try { r = await api("/api/rooms/get?id=" + id + "&since=0"); } catch (err) { toast(err.message, true); return; }
   RM.cur = r; RM.seq = 0; S.cur = null;
+  setListMode("rooms");
   document.body.classList.add("in-room");
   $("#title").value = r.title; $("#title").readOnly = true;
   $("#model-name").textContent = r.model || "（沒有模型）";
