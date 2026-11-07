@@ -114,3 +114,29 @@ $("#users-side").addEventListener("click", async e => {
 const _origRenderPartnerChip = renderPartnerChip;
 renderPartnerChip = function () { _origRenderPartnerChip(); renderParty(); };
 showRTab(ls.get("rtab", "host"));
+
+// ── Liquid bulge：清單的滑鼠反白是一塊會跟著游標滑動、微微鼓起的軟墊 ──
+function liquid(container) {
+  if (!container || container.querySelector(":scope > .liquid")) return;
+  const pad = document.createElement("div");
+  pad.className = "liquid"; container.prepend(pad);
+  let cur = null, raf = 0;
+  const place = (el, mx, my) => {
+    const c = container.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const dx = mx == null ? 0 : ((mx - (r.left + r.width / 2)) / r.width) * 6;    // 往游標那邊靠一點點，像液體被推
+    const dy = my == null ? 0 : ((my - (r.top + r.height / 2)) / r.height) * 4;
+    pad.style.width = r.width + "px"; pad.style.height = r.height + "px";
+    pad.style.transform = `translate(${r.left - c.left + container.scrollLeft + dx}px, ${r.top - c.top + container.scrollTop + dy}px)`;
+    pad.style.opacity = "1";
+  };
+  container.addEventListener("mousemove", e => {
+    if (!pad.isConnected) container.prepend(pad);   // 清單用 innerHTML 重畫過，墊子要放回去
+    const el = e.target.closest(".sess, .grp, .item, .rcard, #model-list button, .menu button");
+    if (!el || !container.contains(el)) { pad.style.opacity = "0"; cur = null; return; }
+    if (el !== cur) { cur = el; pad.classList.remove("bulge"); void pad.offsetWidth; pad.classList.add("bulge"); }
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (cur) place(cur, e.clientX, e.clientY); });
+  });
+  container.addEventListener("mouseleave", () => { pad.style.opacity = "0"; cur = null; });
+  container.addEventListener("scroll", () => { if (cur) place(cur); }, { passive: true });
+}
+["#sess-list", ".menu-list", "#recent", "#model-list", "#settings-pop", "#partner-pop", "#ctx"].forEach(s => liquid($(s)));

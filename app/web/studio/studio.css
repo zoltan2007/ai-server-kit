@@ -438,3 +438,13 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .msg.partner[data-prov="xai"] .body::before { background: var(--c-xai); }
 .msg.partner[data-prov="xai"] .who { color: var(--muted); }
 .msg.partner .who { background: transparent !important; }
+/* Liquid bulge 反白墊 */
+.sess-list, .menu-list, #recent, #model-list, #settings-pop, #partner-pop, #ctx { position: relative; }
+.liquid { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; opacity: 0; border-radius: 12px; background: var(--bg);
+  box-shadow: var(--raise-sm); transform-origin: center;
+  transition: transform .32s cubic-bezier(.22, 1.1, .36, 1), width .25s ease, height .25s ease, opacity .18s ease; }
+.liquid.bulge { animation: bulge .45s cubic-bezier(.22, 1.1, .36, 1); }
+@keyframes bulge { 0% { box-shadow: var(--raise-sm); } 40% { box-shadow: var(--raise); } 100% { box-shadow: var(--raise-sm); } }
+.sess-list > *, .menu-list > *, #recent .recent, #model-list > *, #settings-pop > *, #partner-pop > *, #ctx > * { position: relative; z-index: 1; }
+.sess:hover, .item:hover, .grp:hover, .rcard:hover, #model-list button:hover, .menu button:hover, #ctx button:hover { background: transparent; box-shadow: none; }
+@media (hover: none) { .liquid { display: none; } .sess:hover, .item:hover { box-shadow: var(--raise-sm); } }
