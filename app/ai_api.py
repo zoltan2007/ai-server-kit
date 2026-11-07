@@ -96,7 +96,9 @@ def my_usage(h, q):
         days = max(1, min(31, int(q.get("days", 7) or 7)))
     except ValueError:
         days = 7
-    h.json({"days": h.app.usage.hourly(h.user["name"], days)})
+    out = {"days": h.app.usage.hourly(h.user["name"], days)}
+    out.update(h.app.usage.totals(h.user["name"]))
+    h.json(out)
 
 
 GET = {"/api/ai": list_ai, "/api/usage/me": my_usage}

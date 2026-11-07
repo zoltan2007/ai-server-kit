@@ -107,8 +107,7 @@
       <button class="icon-btn" id="side-open" title="對話清單" aria-label="對話清單">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <input class="title" id="title" placeholder="新對話" maxlength="120">
-      <button class="chip" id="model-chip" title="切換模型"><span id="model-name">選模型</span>
-        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <span class="party chat-only" id="party">你、Kiki</span>
       <button class="icon-btn room-only" id="members-btn" title="成員" aria-label="成員">
         <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-5-5.9"/></svg></button>
       <button class="icon-btn chat-only" id="pin-btn" title="釘選" aria-label="釘選">
@@ -136,8 +135,13 @@
         <button class="icon-btn" type="button" id="attach-btn" title="附圖" hidden>
           <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg></button>
         <input id="attach-input" type="file" accept="image/*" multiple hidden>
-        <label class="toggle chat-only" id="think-wrap"><input type="checkbox" id="think" checked><span>思考</span></label>
-        <label class="toggle chat-only"><input type="checkbox" id="with-status"><span>帶主機狀態</span></label>
+        <button class="chip chat-only" type="button" id="model-chip" title="Kiki 用的模型"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg><span id="model-name">選模型</span>
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button class="chip chat-only" type="button" id="think-chip" title="思考強度（點一下切換）"><span>思考 高</span></button>
+        <input type="checkbox" id="think" checked hidden>
+        <button class="chip chat-only" type="button" id="partner-chip" title="加入你自己的 AI 當第三位成員"><span>＋ 加入我的 AI</span></button>
+        <button class="chip chat-only" type="button" id="discuss-btn" title="讓夥伴和 Kiki 討論上一題" hidden><span>討論</span></button>
+        <label class="toggle chat-only" title="把主機狀態給 Kiki 看（夥伴永遠看不到）"><input type="checkbox" id="with-status"><span>主機狀態</span></label>
         <span class="caps muted chat-only" id="caps"></span><span class="caps muted room-only">打 @Kiki 她才會回</span>
         <span class="grow"></span>
         <button class="send" type="submit" id="send" title="送出" aria-label="送出"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
@@ -153,6 +157,8 @@
     </div>
     <div class="right-body" id="status"></div>
   </aside>
+
+  <div class="popover" id="partner-pop" hidden></div>
 
   <!-- 模型選單 -->
   <div class="popover" id="model-pop" hidden>
@@ -203,6 +209,7 @@
 <script src="studio.js"></script>
 <script src="rooms.js"></script>
 <script src="myai.js"></script>
+<script src="partner.js"></script>
 <script src="heat.js"></script>
 </body>
 </html>

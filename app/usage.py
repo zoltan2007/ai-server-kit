@@ -81,3 +81,17 @@ class Usage:
             out.append({"date": d.isoformat(), "label": label, "cells": grid[d], "total": sum(grid[d]), "calls": calls[d]})
         return out
 
+    def totals(self, user):
+        """這週（週一起）和從頭到現在的 token 總量。"""
+        today = dt.date.today()
+        week_start = today - dt.timedelta(days=today.weekday())
+        week = total = 0
+        for r in self.rows():
+            if r["user"] != user:
+                continue
+            n = r["prompt"] + r["completion"]
+            total += n
+            if dt.datetime.fromisoformat(r["ts"]).date() >= week_start:
+                week += n
+        return {"week": week, "total": total}
+

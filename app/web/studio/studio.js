@@ -212,22 +212,16 @@ async function loadModels() {
 }
 function renderModelChip() {
   const m = S.cur?.model || "";
-  const lab = m.startsWith("ext:") ? ((typeof myModels === "function" ? myModels() : []).find(x => x.value === m)?.label || m) : m;
-  $("#model-name").textContent = lab || (S.models.length ? "選模型" : "還沒有模型");
-  const ext = typeof myModels === "function" ? myModels() : [];
-  const found = S.models.includes(m) || ext.some(x => x.value === m);
-  if (m && !found) $("#model-name").textContent = m.startsWith("ext:") ? m.split(":")[1] + "（沒有金鑰）" : m;
-  $("#model-list").innerHTML = (S.models.length || ext.length)
+  $("#model-name").textContent = m || (S.models.length ? "選模型" : "還沒有模型");
+  $("#model-list").innerHTML = S.models.length
     ? S.models.map(n => `<button data-model="${esc(n)}" class="${n === m ? "on" : ""}"><span>${esc(n)}</span>${n === m ? '<span class="muted">目前</span>' : ""}</button>`).join("")
-      + ext.map(x => `<button data-model="${esc(x.value)}" class="ext ${x.value === m ? "on" : ""}"><span>${esc(x.label)}</span><span class="muted">${esc(x.sub)}</span></button>`).join("")
-    : `<div class="muted small" style="padding:8px">還沒有模型，先到面板下載，或在自訂裡接上你的 AI</div>`;
+    : `<div class="muted small" style="padding:8px">還沒有模型，先到面板下載</div>`;
+  if (typeof renderPartnerChip === "function" && S.cur) renderPartnerChip();
   updateCaps();
 }
 async function updateCaps() {
   const name = S.cur?.model;
   if (!name) { $("#caps").textContent = ""; $("#attach-btn").hidden = true; return; }
-  if (name.startsWith("ext:")) { $("#caps").textContent = "雲端 AI：只送對話文字"; $("#attach-btn").hidden = true; $("#think").disabled = true; $("#with-status").checked = false; $("#with-status").disabled = true; return; }
-  $("#with-status").disabled = false;
   if (!S.caps[name]) { try { S.caps[name] = await api("/api/models/show?name=" + encodeURIComponent(name)); } catch { S.caps[name] = { capabilities: [] }; } }
   const caps = S.caps[name].capabilities || [];
   $("#attach-btn").hidden = !caps.includes("vision");
@@ -238,7 +232,7 @@ async function updateCaps() {
 $("#model-chip").addEventListener("click", e => {
   const p = $("#model-pop"), r = e.currentTarget.getBoundingClientRect();
   p.hidden = !p.hidden;
-  p.style.top = r.bottom + 6 + "px"; p.style.left = Math.max(8, Math.min(r.left, innerWidth - 370)) + "px";
+  p.style.top = Math.max(8, r.top - 8) + "px"; p.style.transform = "translateY(-100%)"; p.style.left = Math.max(8, Math.min(r.left, innerWidth - 370)) + "px";
 });
 $("#model-list").addEventListener("click", e => {
   const b = e.target.closest("[data-model]");
@@ -386,7 +380,7 @@ async function deleteSession(id) {
 }
 async function saveSession(c) {
   const r = await api("/api/sessions/save", { body: { id: c.id, title: c.title, model: c.model, pinned: c.pinned, group: c.group, parent: c.parent,
-    settings: c.settings, messages: c.messages } });
+    partner: c.partner || null, settings: c.settings, messages: c.messages } });
   const i = S.sessions.findIndex(s => s.id === r.id);
   const row = { id: r.id, title: r.title, model: r.model, updated: r.updated, pinned: r.pinned, group: r.group, parent: r.parent, count: r.messages.length };
   if (i >= 0) S.sessions[i] = row; else S.sessions.unshift(row);
@@ -422,7 +416,7 @@ async function saveNow() {
   const c = S.cur;
   if (!c || !c.messages.length && !c.title) return;
   if (!c.title) c.title = (c.messages.find(m => m.role === "user")?.content || "").slice(0, 40).replace(/\n.*/s, "") || "新對話";
-  const body = Object.assign({}, c, { messages: c.messages.map(m => ({ role: m.role, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images })) });
+  const body = Object.assign({}, c, { messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images })) });
   try {
     const r = await saveSession(body);
     c.id = r.id; c.updated = r.updated;
@@ -440,6 +434,7 @@ function renderCur() {
   $("#with-status").checked = !!c.settings?.status;
   if (c.model && !c.model.startsWith("ext:") && !S.models.includes(c.model) && S.models.length) toast(`這個對話用的模型 ${c.model} 已經不在了，先換一個`, true);
   renderModelChip();
+  if (typeof renderThinkChip === "function") renderThinkChip();
   const box = $("#msgs");
   $$(".msg", box).forEach(x => x.remove());
   $("#empty").hidden = !!c.messages.length;
@@ -515,7 +510,10 @@ function fillMsg(d, m, live) {
     return;
   }
   const { content, thinking } = splitThink(m);
-  let h = `<div class="av">K</div><div class="body">`;
+  const by = m.by || "kiki", isP = by !== "kiki";
+  d.classList.toggle("partner", isP);
+  const pname = typeof nameOf === "function" ? nameOf(by) : by;
+  let h = `<div class="av">${esc(isP ? pname[0].toUpperCase() : "K")}</div><div class="body">${isP ? `<div class="who">${esc(pname)}</div>` : ""}`;
   if (thinking) h += `<details class="think" ${live && !content ? "open" : ""}><summary>思考過程</summary><div>${esc(thinking)}</div></details>`;
   h += `<div class="${live ? "cursor" : ""}">${md(content)}</div>`;
   if (m.error) h += `<div class="err">${esc(m.error)}</div>`;
@@ -528,7 +526,7 @@ $("#msgs").addEventListener("click", e => {
 });
 
 // ── 送出 ──
-async function sendChat(text) {
+async function sendChatLegacy(text) {
   const model = S.cur.model;
   if (!model) { toast("先選一個模型", true); return; }
   const user = { role: "user", content: text };
@@ -607,7 +605,9 @@ $("#stop").addEventListener("click", () => S.ctrl?.abort());
 // ── 快捷指令（輸入 / 開頭） ──
 const SLASH = [
   { k: "/新", d: "開新對話", run: () => newSession() },
-  { k: "/模型", d: "切換模型", run: () => $("#model-chip").click() },
+  { k: "/模型", d: "切換 Kiki 用的模型", run: () => $("#model-chip").click() },
+  { k: "/夥伴", d: "加入或移出我的 AI 夥伴", run: () => $("#partner-chip").click() },
+  { k: "/討論", d: "讓夥伴和 Kiki 討論上一題", run: () => $("#discuss-btn").click() },
   { k: "/狀態", d: "把主機狀態貼進對話，讓 AI 看", run: () => { $("#with-status").checked = true; sendChat("幫我看一下這台主機現在的狀態，哪裡該注意？"); } },
   { k: "/釘選", d: "釘選／取消釘選這個對話", run: () => $("#pin-btn").click() },
   { k: "/分支", d: "把目前對話分支出一個新對話", run: () => S.cur.id && forkSession(S.cur.id) },

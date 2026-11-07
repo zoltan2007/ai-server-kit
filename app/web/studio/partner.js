@@ -1,0 +1,149 @@
+"use strict";
+// 專案裡的第三位成員：使用者自己訂閱的 AI（夥伴）。Kiki 用本機模型，夥伴用雲端；兩個 AI 可以互相討論。
+// 訊息多一個 by 欄位：user／kiki／<夥伴代號>。接在 myai.js 後面載入。
+
+const PT = { depth: 0 };
+const MAX_HOPS = 2;   // AI 互相接話最多幾回合，免得無限迴圈
+
+function partner() { return S.cur?.partner || null; }
+function partnerLabel(p) { return p ? `${p.name}（${p.model}）` : ""; }
+
+function renderPartnerChip() {
+  const p = partner();
+  const chip = $("#partner-chip"), pop = $("#partner-pop");
+  chip.querySelector("span").textContent = p ? p.name : "＋ 加入我的 AI";
+  chip.classList.toggle("on", !!p);
+  const mine = (typeof AI !== "undefined" ? AI.mine : []).filter(a => a.has_key);
+  pop.innerHTML = `<div class="pop-head">我的 AI 夥伴 <span class="muted small">加入後這個專案有三個人：你、Kiki、它</span></div>` +
+    (mine.length ? mine.map(a => `<button data-partner="${a.provider}" class="${p?.provider === a.provider ? "on" : ""}"><span>${esc(a.name)}</span><span class="muted">${esc(a.model)} · @${esc(a.handle)}</span></button>`).join("")
+      : `<div class="muted small" style="padding:8px">先到「自訂 → 我的 AI」填金鑰</div>`) +
+    (p ? `<button data-partner="" class="danger">把 ${esc(p.name)} 移出這個專案</button>` : "");
+  $("#party").textContent = p ? `你、Kiki、${p.name}` : "你、Kiki";
+  $("#discuss-btn").hidden = !p || !S.cur?.messages?.some(m => (m.by || (m.role === "assistant" ? "kiki" : "user")) === "kiki");
+}
+$("#partner-chip").addEventListener("click", e => {
+  e.stopPropagation();
+  const pop = $("#partner-pop"), r = e.currentTarget.getBoundingClientRect();
+  renderPartnerChip(); pop.hidden = !pop.hidden;
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - 370)) + "px"; pop.style.top = Math.max(8, r.top - 8) + "px"; pop.style.transform = "translateY(-100%)";
+});
+$("#partner-pop").addEventListener("click", e => {
+  const b = e.target.closest("[data-partner]");
+  if (!b || !S.cur) return;
+  $("#partner-pop").hidden = true;
+  const a = AI.mine.find(x => x.provider === b.dataset.partner);
+  S.cur.partner = a ? { provider: a.provider, model: a.model, name: a.name, handle: a.handle } : null;
+  renderPartnerChip(); queueSave(0);
+  if (a) toast(`${a.name} 加入了。打 @${a.handle} 叫它；按「討論」讓它和 Kiki 互相討論`);
+});
+document.addEventListener("click", e => { if (!e.target.closest("#partner-pop, #partner-chip")) $("#partner-pop").hidden = true; });
+
+// ── 給兩種 AI 看的對話內容 ──
+function speaker(m) { return m.by || (m.role === "assistant" ? "kiki" : "user"); }
+function nameOf(by) { const p = partner(); return by === "user" ? (S.me?.name || "使用者") : by === "kiki" ? "Kiki" : (p && by === p.handle ? p.name : by); }
+function contextFor(who, upto) {
+  // who 自己說過的話當 assistant，其他人的話當 user 並標名字；Kiki 另外可帶主機狀態
+  const msgs = [];
+  if (who === "kiki" && $("#with-status").checked && statusForAI()) msgs.push({ role: "system", content: statusForAI() });
+  const p = partner();
+  if (who === "kiki" && p) msgs.push({ role: "system", content: `這個專案有三位成員：使用者「${S.me?.name}」、你（Kiki）、使用者自己的 AI 夥伴「${p.name}」（代號 @${p.handle}）。夥伴的話會標「${p.name}：」；它可能對你下指令或和你討論，照常回應，必要時用 @${p.handle} 回它。` });
+  for (const m of upto) {
+    const by = speaker(m);
+    const text = by === "user" ? m.content : splitThink(m).content;
+    if (!text && !m.images) continue;
+    if (by === who) msgs.push({ role: "assistant", content: text });
+    else {
+      const x = { role: "user", content: by === "user" ? text : `${nameOf(by)}：${text}` };
+      if (m.images && who === "kiki") x.images = m.images;
+      msgs.push(x);
+    }
+  }
+  return msgs;
+}
+
+// ── 讓某一位 AI 回一則 ──
+async function askAI(who) {
+  const p = partner();
+  const model = who === "kiki" ? S.cur.model : `ext:${p.provider}:${p.model}`;
+  if (!model) { toast("先選一個模型", true); return null; }
+  const ai = { role: "assistant", by: who, content: "", thinking: "" };
+  S.cur.messages.push(ai);
+  const el = msgEl(ai, true); $("#msgs").appendChild(el); scrollMsgs(true);
+  const body = { model, messages: contextFor(who, S.cur.messages.slice(0, -1)) };
+  if (who === "kiki") {
+    const caps = S.caps[model]?.capabilities || [];
+    if (caps.includes("thinking")) body.think = /^gpt-oss/.test(model) ? (S.think === "off" ? "low" : S.think === "high" ? "high" : "medium") : S.think !== "off";
+  }
+  S.busy = true; S.ctrl = new AbortController();
+  $("#send").hidden = true; $("#stop").hidden = false;
+  let raf = 0, live = true;
+  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live) { fillMsg(el, ai, true); scrollMsgs(); } }); };
+  try {
+    const r = await api("/api/chat", { body, raw: true, signal: S.ctrl.signal });
+    for await (const ev of lines(r)) {
+      if (ev.error) { ai.error = ev.error; break; }
+      const m = ev.message || {};
+      if (m.thinking) ai.thinking += m.thinking;
+      if (m.content) ai.content += m.content;
+      if (ev.done && ev.eval_count) {
+        const tps = ev.eval_duration ? ev.eval_count / ev.eval_duration * 1e9 : 0;
+        ai.stats = `${nameOf(who)} · ${model.replace(/^ext:[^:]+:/, "")} · ${ev.eval_count} tokens${tps ? ` · ${tps.toFixed(1)} tokens/秒` : ""}`;
+      }
+      paint();
+    }
+  } catch (err) {
+    if (err.name === "AbortError") ai.stopped = true; else ai.error = err.message;
+  } finally {
+    live = false; S.busy = false; S.ctrl = null;
+    $("#send").hidden = false; $("#stop").hidden = true;
+    fillMsg(el, ai, false); scrollMsgs(); queueSave(0); renderPartnerChip();
+  }
+  return ai;
+}
+
+// ── 誰該接話 ──
+const mentionsKiki = t => /(^|[\s,，。！？!?(（])@(kiki|小機|ai)\b/i.test(t);
+const mentionsPartner = t => { const p = partner(); return !!p && new RegExp(`(^|[\\s,，。！？!?(（])@${p.handle}\\b`, "i").test(t); };
+async function sendChat(text) {
+  if (!S.cur.model) { toast("先選一個模型", true); return; }
+  const user = { role: "user", by: "user", content: text };
+  if (S.attach.length) user.images = S.attach.map(a => a.b64);
+  S.attach = []; renderAttach();
+  S.cur.messages.push(user);
+  $("#empty").hidden = true;
+  $("#msgs").appendChild(msgEl(user)); scrollMsgs(true);
+  const p = partner();
+  const toPartner = p && mentionsPartner(text), toKiki = !p || !toPartner || mentionsKiki(text);
+  PT.depth = 0;
+  if (toKiki) await chain("kiki");
+  if (toPartner && !S.busy) await chain(p.handle);
+}
+async function chain(who) {
+  // 一位 AI 回完，如果它 @ 了另一位，另一位接著回；最多 MAX_HOPS 回合
+  const ai = await askAI(who);
+  if (!ai || ai.error || ai.stopped || PT.depth >= MAX_HOPS) return;
+  const p = partner(), text = splitThink(ai).content;
+  const next = who === "kiki" ? (p && mentionsPartner(text) ? p.handle : null) : (mentionsKiki(text) ? "kiki" : null);
+  if (next) { PT.depth++; await chain(next); }
+}
+// 討論：夥伴評論 Kiki 最後的回答，Kiki 再回一次
+$("#discuss-btn").addEventListener("click", async () => {
+  const p = partner();
+  if (!p || S.busy) return;
+  const user = { role: "user", by: "user", content: `@${p.handle} 請看上面 Kiki 的回答，指出你同意或不同意的地方、補充遺漏，最後用 @kiki 把要修正的地方交代給她。` };
+  S.cur.messages.push(user); $("#msgs").appendChild(msgEl(user)); scrollMsgs(true);
+  PT.depth = 0; await chain(p.handle);
+});
+
+// ── 思考強度（像 Claude Code 的「高」） ──
+S.think = ls.get("think", "high");
+function renderThinkChip() {
+  const zh = { high: "高", mid: "中", off: "關" };
+  $("#think-chip span").textContent = "思考 " + zh[S.think];
+  $("#think").checked = S.think !== "off";
+}
+$("#think-chip").addEventListener("click", () => {
+  S.think = { high: "mid", mid: "off", off: "high" }[S.think]; ls.set("think", S.think); renderThinkChip();
+  if (S.cur) { S.cur.settings = Object.assign({}, S.cur.settings, { think: S.think !== "off" }); queueSave(); }
+});
+renderThinkChip();

@@ -55,6 +55,7 @@ class SessionStore:
         body = {"id": sid, "title": str(s.get("title", ""))[:120], "model": str(s.get("model", ""))[:200],
                 "pinned": bool(s.get("pinned")), "settings": s.get("settings") or {},
                 "group": str(s.get("group") or "")[:60], "parent": str(s.get("parent") or "")[:12],
+                "partner": s.get("partner") if isinstance(s.get("partner"), dict) else None,
                 "messages": s.get("messages") or [], "updated": time.time()}
         if not isinstance(body["messages"], list):
             raise ValueError("messages 要是清單")

@@ -6,15 +6,16 @@ const fmtTok = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3)
 async function loadHeat() {
   const box = $("#heat");
   if (!box) return;
-  let days;
-  try { days = (await api("/api/usage/me?days=7")).days; } catch { box.hidden = true; return; }
+  let days, tot;
+  try { tot = await api("/api/usage/me?days=7"); days = tot.days; } catch { box.hidden = true; return; }
   const max = Math.max(1, ...days.flatMap(d => d.cells));
   const lvl = v => v <= 0 ? 0 : Math.min(5, 1 + Math.floor(v / max * 4.999));
   box.hidden = false;
   box.innerHTML = `<div class="heat-head"><b>時段記錄</b><span class="legend">少 ${[1, 2, 3, 4, 5].map(i => `<i class="c${i}"></i>`).join("")} 多</span></div>` +
     days.map(d => `<div class="heat-row"><div class="heat-lab"><b>${esc(d.label)}</b><span>${d.calls} 次 · ${fmtTok(d.total)}</span></div>
       <div class="heat-cells">${d.cells.map((v, h) => `<i class="c${lvl(v)}" data-tip="${esc(d.label)} ${String(h).padStart(2, "0")}:00–${String(h + 1).padStart(2, "0")}:00 · ${v.toLocaleString()} tokens"></i>`).join("")}</div></div>`).join("") +
-    `<div class="heat-row"><div class="heat-lab"></div><div class="heat-axis">${[0, 3, 6, 9, 12, 15, 18, 21].map(h => `<span>${h}:00</span>`).join("")}</div></div>`;
+    `<div class="heat-row"><div class="heat-lab"></div><div class="heat-axis">${[0, 3, 6, 9, 12, 15, 18, 21].map(h => `<span>${h}:00</span>`).join("")}</div></div>` +
+    `<div class="heat-tot"><span>本週 <b>${fmtTok(tot.week)}</b></span><span>總用量 <b>${fmtTok(tot.total)}</b></span></div>`;
 }
 const tip = document.createElement("div");
 tip.className = "heat-tip"; tip.hidden = true; document.body.appendChild(tip);

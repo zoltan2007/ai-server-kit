@@ -13,7 +13,24 @@ sys.path.insert(0, os.path.join(ROOT, "app"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 
 import fake_ollama  # noqa: E402
+import providers  # noqa: E402
 import server  # noqa: E402
+
+
+def fake_cloud(url, headers, body):
+    """預覽用的假雲端 AI：不連網，回一段固定的話（會 @kiki 一次，看兩個 AI 接話）。"""
+    import io
+    import json as _json
+    import time as _time
+    _time.sleep(0.4)
+    text = "（預覽用的假雲端 AI）我大致同意，但第二點要補充：先量實際溫度再決定功耗上限。@kiki 請把步驟整理成三點。"
+    lines = ["data: " + _json.dumps({"choices": [{"delta": {"content": ch}}]}) for ch in text]
+    lines.append('data: {"choices":[],"usage":{"prompt_tokens":120,"completion_tokens":48}}')
+    lines.append("data: [DONE]")
+    return io.BytesIO(chr(10).join(lines).encode("utf-8"))
+
+
+providers._open = fake_cloud
 
 DEV_TOKEN = "dev-preview-token-2026"
 
