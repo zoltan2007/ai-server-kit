@@ -418,3 +418,6 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .sess-group, .recent-head, .heat-tot { border-color: var(--line); }
 .title:not(:focus) { box-shadow: none !important; }
 .comp-bar .chip { box-shadow: var(--raise-sm); }
+/* 夥伴的頭像用藍色，和 Kiki 的湖水綠分開 */
+.msg.ai.partner .av { background: #4b7bec; color: #fff; }
+.msg.ai.partner .who { color: #6a93f5; }
