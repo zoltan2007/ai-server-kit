@@ -354,7 +354,7 @@ body.in-room .chat-only { display: none !important; }
 :root {
   --bg: #26282e; --side: #26282e; --surface: #26282e; --surface-2: #2c2e35; --user: #2c2e35; --code-bg: #202228;
   --border: transparent; --text: #e4e6ec; --muted: #9a9fab;
-  --accent: #2fb5a3; --accent-ink: #0d2a26; --ok: #2fb5a3;
+  --accent: #9b5cff; --accent-ink: #ffffff; --ok: #2fb5a3;
   --nm-l: rgba(255, 255, 255, .06); --nm-d: rgba(0, 0, 0, .55);
   --raise: 6px 6px 12px var(--nm-d), -6px -6px 12px var(--nm-l);
   --raise-sm: 3px 3px 7px var(--nm-d), -3px -3px 7px var(--nm-l);
@@ -364,7 +364,7 @@ body.in-room .chat-only { display: none !important; }
 }
 :root[data-theme="light"] {
   --bg: #e6e9ef; --side: #e6e9ef; --surface: #e6e9ef; --surface-2: #dfe3ea; --user: #dfe3ea; --code-bg: #dde1e8;
-  --border: transparent; --text: #363b47; --muted: #7b8190; --accent: #1f9c8b; --accent-ink: #ffffff; --ok: #1f9c8b;
+  --border: transparent; --text: #363b47; --muted: #7b8190; --accent: #6d3fd6; --accent-ink: #ffffff; --ok: #1f9c8b;
   --nm-l: rgba(255, 255, 255, .95); --nm-d: rgba(163, 177, 198, .65);
   --line: rgba(120, 130, 150, .18);
 }
@@ -419,5 +419,8 @@ input:not([type=checkbox]):not([type=range]):not([type=file]):not([hidden]), sel
 .title:not(:focus) { box-shadow: none !important; }
 .comp-bar .chip { box-shadow: var(--raise-sm); }
 /* 夥伴的頭像用藍色，和 Kiki 的湖水綠分開 */
-.msg.ai.partner .av { background: #4b7bec; color: #fff; }
-.msg.ai.partner .who { color: #6a93f5; }
+.msg.ai.partner .av { background: #2fb5a3; color: #0d2a26; }
+.msg.ai.partner .who { color: #35c4b0; }
+.msg.partner .body::before { background: #2fb5a3; }
+.pav.p { background: #2fb5a3; color: #0d2a26; }
+:root[data-theme="light"] .msg.ai.partner .who { color: #1f9c8b; }
