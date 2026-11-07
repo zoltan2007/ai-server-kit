@@ -67,8 +67,8 @@ class UserStore:
         u = self.users.get(name)
         if not u:
             return None
-        return {"name": name, "role": u["role"], "status": u["status"], "note": u.get("note", ""),
-                "created": u.get("created"), "last_login": u.get("last_login")}
+        return {"name": name, "role": u["role"], "status": u["status"], "note": u.get("note", ""), "email": u.get("email", ""),
+                "verified": bool(u.get("verified", True)), "created": u.get("created"), "last_login": u.get("last_login")}
 
     def list(self):
         rows = [self.public(n) for n in self.users]
@@ -78,7 +78,7 @@ class UserStore:
     def pending_count(self):
         return sum(1 for u in self.users.values() if u.get("status") == "pending")
 
-    def create(self, name, pw, role="user", status="pending", note=""):
+    def create(self, name, pw, role="user", status="pending", note="", email="", verified=True):
         if not self.valid_name(name):
             raise ValueError("帳號只能用小寫英文、數字、_ . -，3～20 個字")
         self.check_password(pw)
@@ -93,9 +93,15 @@ class UserStore:
                 raise ValueError("這個名字不能用")
             salt = secrets.token_hex(16)
             self.users[name] = {"salt": salt, "hash": _hash(pw, salt), "role": role, "status": status,
-                                "note": str(note or "")[:200], "created": time.time()}
+                                "note": str(note or "")[:200], "created": time.time(), "email": str(email or "")[:120], "verified": bool(verified)}
             self._save(self.path, self.users)
         return self.public(name)
+
+    def set_verified(self, name):
+        with self.lock:
+            if name in self.users:
+                self.users[name]["verified"] = True
+                self._save(self.path, self.users)
 
     def set_status(self, name, status, role=None):
         with self.lock:

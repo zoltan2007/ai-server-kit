@@ -60,6 +60,7 @@ class PanelTest(unittest.TestCase):
     # ── 小工具 ──
     def setUp(self):
         server.Handler.app.guard.hits.clear()   # 每個測試的頻率限制各自算，不然測試之間會互相擋到
+        server.Handler.app.fails.clear()        # 登入失敗次數也是
 
     def req(self, path, body=None, method=None, token=TOKEN, raw=False, data=None):
         h = {"Authorization": "Bearer " + token} if token else {}
@@ -143,10 +144,10 @@ class PanelTest(unittest.TestCase):
         # 申請 → 還不能登入 → 管理員核准 → 登入 → 只能用對話相關的功能 → 停用後憑證失效
         self.assertEqual(self.req("/api/apply", {"user": "Amy", "password": "short", "note": "x"}, token="")[0], 400)
         self.assertEqual(self.req("/api/apply", {"user": "bad name!", "password": "longenough1"}, token="")[0], 400)
-        code, r = self.req("/api/apply", {"user": "amy", "password": "longenough1", "note": "朋友"}, token="")
+        code, r = self.req("/api/apply", {"user": "amy", "password": "longenough1", "note": "朋友", "email": "amy@gmail.com"}, token="")
         self.assertEqual((code, r["status"]), (200, "pending"), r)
         server.Handler.app.guard.hits.clear()
-        self.assertEqual(self.req("/api/apply", {"user": "amy", "password": "longenough1"}, token="")[0], 400)
+        self.assertEqual(self.req("/api/apply", {"user": "amy", "password": "longenough1", "email": "amy2@gmail.com"}, token="")[0], 400)
         code, r = self.req("/api/login", {"user": "amy", "password": "longenough1"}, token="")
         self.assertEqual(code, 403, r)
         code, r = self.req("/api/me")
@@ -240,7 +241,7 @@ class PanelTest(unittest.TestCase):
                 time.sleep(0.2)
             self.assertEqual((ai[-1]["user"], ai[-1]["content"]), ("grok", "OK從雲端"))
             self.assertIn("zed：@grok 幫我看看", seen["body"]["messages"][-1]["content"])
-            self.req("/api/apply", {"user": "guest1", "password": "guestpass1"}, token="")
+            self.req("/api/apply", {"user": "guest1", "password": "guestpass1", "email": "guest1@gmail.com"}, token="")
             self.req("/api/users/approve", {"user": "guest1"})
             g1 = self.req("/api/login", {"user": "guest1", "password": "guestpass1"}, token="")[1]["token"]
             self.req("/api/rooms/invite", {"id": rid, "user": "guest1"}, token=zed)
@@ -268,7 +269,7 @@ class PanelTest(unittest.TestCase):
         # 頻率：同一路徑一分鐘超過上限就 429（申請帳號 3 次）
         g = server.Handler.app.guard
         g.hits.clear()
-        codes = [self.req("/api/apply", {"user": "r%d" % i, "password": "x"}, token="")[0] for i in range(5)]
+        codes = [self.req("/api/apply", {"user": "r%d" % i, "password": "x", "email": "r%d@gmail.com" % i}, token="")[0] for i in range(5)]
         self.assertEqual(codes[-1], 429, codes)
         g.hits.clear(); server.Handler.app.fails.clear()
         # 內容大小：一般路徑 256KB 上限
@@ -323,7 +324,7 @@ class PanelTest(unittest.TestCase):
         self.req("/api/users/reject", {"user": "exp"})
 
     def test_admin_dashboard(self):
-        self.req("/api/apply", {"user": "dashu", "password": "dashupass1"}, token="")
+        self.req("/api/apply", {"user": "dashu", "password": "dashupass1", "email": "dashu@gmail.com"}, token="")
         self.req("/api/users/approve", {"user": "dashu"})
         tok = self.req("/api/login", {"user": "dashu", "password": "dashupass1"}, token="")[1]["token"]
         sid = self.req("/api/sessions/save", {"title": "小明的專案", "model": "qwen3.5:4b", "messages": [{"role": "user", "content": "祕密"}]}, token=tok)[1]["id"]
@@ -342,8 +343,51 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/admin/session?user=../x&id=" + sid)[0], 400)
         self.req("/api/users/reject", {"user": "dashu"})
 
+    def test_gmail_verification(self):
+        import mail as mailmod
+        sent = []
+
+        class FakeSMTP:
+            def __init__(self, host, port, timeout=0): sent.append({"host": host, "port": port})
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def ehlo(self): pass
+            def starttls(self): pass
+            def login(self, u, p): sent[-1]["login"] = (u, p)
+            def send_message(self, msg): sent[-1]["to"] = msg["To"]; sent[-1]["body"] = msg.get_content()
+        real = mailmod.smtplib.SMTP
+        mailmod.smtplib.SMTP = FakeSMTP
+        try:
+            self.assertEqual(self.req("/api/apply", {"user": "nomail", "password": "longenough1"}, token="")[0], 400)   # 沒填 Gmail
+            self.assertEqual(self.req("/api/apply", {"user": "nomail", "password": "longenough1", "email": "x@yahoo.com"}, token="")[0], 400)
+            # 還沒設定寄信 → 直接進待核准
+            code, r = self.req("/api/apply", {"user": "nomail", "password": "longenough1", "email": "nomail@gmail.com"}, token="")
+            self.assertEqual((code, r["status"]), (200, "pending"))
+            self.assertEqual(self.req("/api/mail/set", {"user": "boss@gmail.com", "password": "app-pass"}, token="")[0], 401)
+            self.assertEqual(self.req("/api/mail/set", {"user": "boss@gmail.com", "password": "app-pass"})[1]["configured"], True)
+            self.assertNotIn("app-pass", json.dumps(self.req("/api/mail")[1]))
+            self.assertEqual(self.req("/api/mail/test", {})[1]["to"], "boss@gmail.com")
+            # 設定後 → 寄驗證碼
+            server.Handler.app.guard.hits.clear()
+            code, r = self.req("/api/apply", {"user": "gmx", "password": "longenough1", "email": "Gm.User+1@gmail.com"}, token="")
+            self.assertEqual((code, r["status"]), (200, "verify"), r)
+            self.assertEqual(sent[-1]["to"], "gm.user+1@gmail.com"); self.assertEqual(sent[-1]["login"], ("boss@gmail.com", "app-pass"))
+            import re as _re
+            code6 = _re.search(r"驗證碼：(\d{6})", sent[-1]["body"]).group(1)
+            self.req("/api/users/approve", {"user": "gmx"})
+            self.assertEqual(self.req("/api/login", {"user": "gmx", "password": "longenough1"}, token="")[0], 403)   # 沒驗證不能登入
+            self.assertEqual(self.req("/api/apply/verify", {"user": "gmx", "code": "000000"}, token="")[0], 400)
+            self.assertEqual(self.req("/api/apply/verify", {"user": "gmx", "code": code6}, token="")[0], 200)
+            self.assertEqual(self.req("/api/login", {"user": "gmx", "password": "longenough1"}, token="")[0], 200)
+            self.assertEqual(self.req("/api/apply", {"user": "gmx2", "password": "longenough1", "email": "gm.user+1@gmail.com"}, token="")[0], 400)   # 信箱重複
+            self.assertTrue(next(u for u in self.req("/api/users")[1]["users"] if u["name"] == "gmx")["verified"])
+        finally:
+            mailmod.smtplib.SMTP = real
+            server.Handler.app.mailer.cfg = {}
+            self.req("/api/users/reject", {"user": "nomail"}); self.req("/api/users/reject", {"user": "gmx"})
+
     def test_rooms(self):
-        self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
+        self.req("/api/apply", {"user": "bob", "password": "bobpassword1", "email": "bob@gmail.com"}, token="")
         self.req("/api/users/approve", {"user": "bob"})
         bob = self.req("/api/login", {"user": "bob", "password": "bobpassword1"}, token="")[1]["token"]
         code, room = self.req("/api/rooms/create", {"title": "研究室"})

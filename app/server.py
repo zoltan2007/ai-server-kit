@@ -27,6 +27,7 @@ import export_api  # noqa: E402
 import guard  # noqa: E402
 import ai_api  # noqa: E402
 import jobs  # noqa: E402
+import mail  # noqa: E402
 import ollama_api  # noqa: E402
 import rooms  # noqa: E402
 import rooms_api  # noqa: E402
@@ -63,6 +64,7 @@ class App:
         self.rooms = rooms.RoomStore(self.data_dir)
         self.usage = usage.Usage(self.data_dir)
         self.guard = guard.Guard()
+        self.mailer = mail.Mailer(self.data_dir)
         self.version = VERSION
         self.session_stores = {}
         self.store_lock = threading.Lock()
@@ -202,10 +204,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         path, q = self.route()
         try:
-            if path in ("/api/login", "/api/apply"):
+            if path in ("/api/login", "/api/apply", "/api/apply/verify", "/api/apply/resend"):
                 if not self.app.guard.allow("ip:" + self.client_address[0], path):
                     return self.err("太頻繁了，等一分鐘再試", 429)
-                return users_api.login(self) if path == "/api/login" else users_api.apply(self)
+                fn = {"/api/login": users_api.login, "/api/apply": users_api.apply, "/api/apply/verify": users_api.apply_verify,
+                      "/api/apply/resend": users_api.apply_resend}[path]
+                return fn(self)
             if not self.authed(path):
                 return
             if not self.app.guard.allow(self.user["name"], path):

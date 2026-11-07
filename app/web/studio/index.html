@@ -33,12 +33,23 @@
     <h1>申請帳號</h1>
     <p class="muted">送出後要等管理員核准才能登入。</p>
     <input id="apply-user" autocomplete="username" placeholder="想用的帳號（小寫英數，3～20 字）" autocapitalize="none" spellcheck="false" required>
+    <input id="apply-email" type="email" autocomplete="email" placeholder="Gmail 信箱（會寄驗證碼）" required>
     <input id="apply-pass" type="password" autocomplete="new-password" placeholder="密碼（至少 8 個字）" required>
     <input id="apply-pass2" type="password" autocomplete="new-password" placeholder="再輸入一次密碼" required>
     <input id="apply-note" placeholder="給管理員的話（你是誰）" maxlength="200">
     <button class="btn primary" type="submit">送出申請</button>
     <p class="err" id="apply-err"></p>
     <div class="links"><button type="button" class="link" id="to-login">回登入</button></div>
+  </form>
+
+  <form class="card" id="verify-form" hidden>
+    <div class="logo">K</div>
+    <h1>輸入驗證碼</h1>
+    <p class="muted" id="verify-tip">驗證碼已寄到你的 Gmail，15 分鐘內有效。</p>
+    <input id="verify-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6 位數驗證碼" required>
+    <button class="btn primary" type="submit">驗證</button>
+    <p class="err" id="verify-err"></p>
+    <div class="links"><button type="button" class="link" id="verify-resend">重寄驗證碼</button><button type="button" class="link" id="verify-back">回登入</button></div>
   </form>
 
   <form class="card" id="setup-form" hidden>
@@ -100,6 +111,7 @@
     <button class="btn sm" id="theme-btn">切換深／淺色</button>
     <button class="btn sm" id="myai-btn">我的 AI</button>
     <button class="btn sm" id="pw-btn">改我的密碼</button>
+    <button class="btn sm" id="mail-btn" hidden>寄信設定（Gmail 驗證）</button>
     <button class="btn sm" id="logout-btn">登出</button>
   </div>
 
@@ -197,6 +209,20 @@
     <div class="invite-row" id="bot-row"><select id="bot-sel"></select><button class="btn sm primary" id="bot-btn">接上我的 AI</button></div>
     <div class="foot-btns" style="margin-top:12px"><button class="btn sm" id="room-rename">改名</button><button class="btn sm danger" id="room-leave">離開群組</button></div>
   </div>
+</div>
+
+<!-- 寄信設定（管理員） -->
+<div class="modal" id="mail-modal" hidden>
+  <form class="modal-card pw-form" id="mail-form">
+    <div class="side-head"><b>寄信設定</b><button class="icon-btn" type="button" id="mail-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="muted small" style="margin:0">用你自己的 Gmail 寄驗證碼。到 Google 帳戶 → 安全性 → 兩步驟驗證 → 應用程式密碼，產生一組 16 字密碼填在這裡。密碼只存在主機。</p>
+    <input name="user" type="email" placeholder="寄件 Gmail" required>
+    <input name="password" type="password" autocomplete="off" placeholder="應用程式密碼（已設定的話留空）">
+    <input name="sender" placeholder="寄件人名稱（預設 Kiki Cloude）">
+    <label class="toggle"><input type="checkbox" name="require" checked><span>申請帳號必須通過 Gmail 驗證</span></label>
+    <div class="foot-btns"><button class="btn sm primary" type="submit">儲存</button><button class="btn sm" type="button" id="mail-test">寄測試信給自己</button></div>
+    <p class="muted small" id="mail-state" style="margin:0"></p>
+  </form>
 </div>
 
 <!-- 帳號管理 -->

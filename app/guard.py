@@ -4,7 +4,7 @@ import time
 
 # 每個路徑每分鐘的次數上限（以帳號計；沒登入的以 IP 計）。沒列的用 DEFAULT。
 LIMITS = {
-    "/api/login": 10, "/api/apply": 3, "/api/chat": 30, "/api/rooms/post": 60, "/api/rooms/create": 10,
+    "/api/login": 10, "/api/apply": 3, "/api/apply/verify": 10, "/api/apply/resend": 2, "/api/mail/test": 3, "/api/chat": 30, "/api/rooms/post": 60, "/api/rooms/create": 10,
     "/api/ai/test": 6, "/api/export/all": 3, "/api/sessions/save": 120, "/api/upload": 10, "/api/models/pull": 10, "/api/term/run": 60,
 }
 DEFAULT = 240

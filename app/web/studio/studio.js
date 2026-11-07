@@ -90,10 +90,20 @@ $("#apply-form").addEventListener("submit", async e => {
   e.preventDefault();
   if ($("#apply-pass").value !== $("#apply-pass2").value) { $("#apply-err").textContent = "兩次密碼不一樣"; return; }
   try {
-    await post("/api/apply", { user: $("#apply-user").value.trim(), password: $("#apply-pass").value, note: $("#apply-note").value.trim() });
-    $("#apply-form").reset(); showLogin("申請已送出，等管理員核准後就能用這個帳號登入");
+    const r = await post("/api/apply", { user: $("#apply-user").value.trim(), email: $("#apply-email").value.trim(), password: $("#apply-pass").value, note: $("#apply-note").value.trim() });
+    gate.applyUser = $("#apply-user").value.trim().toLowerCase();
+    $("#apply-form").reset();
+    if (r.status === "verify") { showCard("verify-form"); $("#verify-code").focus(); }
+    else showLogin("申請已送出，等管理員核准後就能用這個帳號登入");
   } catch (err) { $("#apply-err").textContent = err.message; }
 });
+$("#verify-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  try { await post("/api/apply/verify", { user: gate.applyUser, code: $("#verify-code").value.trim() }); $("#verify-form").reset(); showLogin("信箱驗證完成，等管理員核准後就能登入"); }
+  catch (err) { $("#verify-err").textContent = err.message; }
+});
+$("#verify-resend").addEventListener("click", async () => { try { await post("/api/apply/resend", { user: gate.applyUser }); $("#verify-err").textContent = ""; $("#verify-tip").textContent = "已重寄，看一下信箱（含垃圾信）。"; } catch (err) { $("#verify-err").textContent = err.message; } });
+$("#verify-back").addEventListener("click", () => showLogin());
 $("#setup-form").addEventListener("submit", async e => {
   e.preventDefault();
   try {
@@ -110,7 +120,7 @@ async function loadMe() {
   const me = await api("/api/me");
   S.me = me;
   $("#who").textContent = (me.role === "admin" ? "管理員 " : "") + me.name;
-  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin";
+  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin"; $("#mail-btn").hidden = me.role !== "admin";
   $("#pw-details").hidden = !!me.master;
   $("#users-badge").hidden = !me.pending; $("#users-badge").textContent = me.pending || 0;
   if (me.pending) toast(`有 ${me.pending} 個帳號申請等你核准`);
@@ -123,7 +133,7 @@ async function renderUsers(target = "#users-list") {
     const acts = u.status === "pending" ? act("approve", u.name, "核准", "primary") + act("reject", u.name, "拒絕")
       : u.status === "active" ? act("disable", u.name, "停用") + (u.role !== "admin" ? act("admin", u.name, "設為管理員") : "")
       : act("enable", u.name, "啟用") + act("reject", u.name, "刪除");
-    return `<div class="user"><span class="n">${esc(u.name)}</span><span class="s ${u.status}">${zh[u.status] || u.status}${u.role === "admin" ? " · 管理員" : ""}</span>
+    return `<div class="user"><span class="n">${esc(u.name)}</span><span class="s ${u.status}">${zh[u.status] || u.status}${u.role === "admin" ? " · 管理員" : ""}${u.email ? ` · ${esc(u.email)}${u.verified ? " ✓" : "（未驗證）"}` : ""}</span>
       <span class="acts">${acts}${act("reset", u.name, "重設密碼")}</span>${u.note ? `<span class="note">${esc(u.note)}</span>` : ""}</div>`;
   }).join("") || `<div class="muted small">還沒有任何帳號申請</div>`;
 }
@@ -675,3 +685,18 @@ if (TOKEN) {
   fetch("/api/me", { headers: { Authorization: "Bearer " + TOKEN } })
     .then(r => (r.ok ? boot() : showLogin())).catch(() => showLogin("連不到主機"));
 } else showLogin();
+
+// ── 寄信設定（管理員） ──
+$("#mail-btn").addEventListener("click", async () => {
+  $("#settings-pop").hidden = true; $("#mail-modal").hidden = false;
+  try { const m = await api("/api/mail"); const f = $("#mail-form"); f.user.value = m.user; f.sender.value = m.sender; f.require.checked = m.require; $("#mail-state").textContent = m.configured ? "已設定" : "還沒設定：申請帳號時不會寄驗證信（會直接進待核准）"; }
+  catch (err) { toast(err.message, true); }
+});
+$("#mail-close").addEventListener("click", () => ($("#mail-modal").hidden = true));
+$("#mail-modal").addEventListener("click", e => { if (e.target === e.currentTarget) $("#mail-modal").hidden = true; });
+$("#mail-form").addEventListener("submit", async e => {
+  e.preventDefault(); const f = e.target;
+  try { const m = await api("/api/mail/set", { body: { user: f.user.value.trim(), password: f.password.value, sender: f.sender.value.trim(), require: f.require.checked } }); f.password.value = ""; $("#mail-state").textContent = m.configured ? "已儲存" : "還沒設定密碼"; toast("已儲存"); }
+  catch (err) { toast(err.message, true); }
+});
+$("#mail-test").addEventListener("click", async () => { try { const r = await api("/api/mail/test", { body: {} }); toast("測試信已寄到 " + r.to); } catch (err) { toast(err.message, true); } });
