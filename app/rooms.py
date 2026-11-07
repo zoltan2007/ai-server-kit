@@ -9,7 +9,7 @@ import time
 ID_RE = re.compile(r"^[a-f0-9]{12}$")
 MENTION_RE = re.compile(r"(^|[\s,，。！？!?(（])@(kiki( cloude)?|ai|小機)\b", re.I)
 HANDLE_RE = re.compile(r"(^|[\s,，。！？!?(（])@([a-z][a-z0-9_-]{1,20})", re.I)
-MAX_MSGS = 2000
+MAX_MSGS = 600
 CONTEXT_MSGS = 40
 SYSTEM = ("你是 Kiki，這個群組的 AI 成員。平常只默默觀察大家的討論，只有被 @ 到才回話。"
           "回答要針對 @ 你的人、簡短、用繁體中文（台灣用語）。下面的對話紀錄格式是「名字：內容」，你自己的發言標為「Kiki」。")
@@ -78,6 +78,8 @@ class RoomStore:
 
     def create(self, owner, title, model):
         with self.lock:
+            if sum(1 for r in self.list_for(owner) if r["owner"] == owner) >= 100:
+                raise ValueError("群組數量到上限了")
             room = {"id": secrets.token_hex(6), "title": str(title or "新群組")[:80], "owner": owner, "members": [owner],
                     "model": str(model or "")[:200], "messages": [], "seq": 0, "created": time.time()}
             self._write(room)
@@ -121,6 +123,21 @@ class RoomStore:
             self._write(room)
             return self.summary(room, user)
 
+    def purge_user(self, name):
+        """帳號刪掉時：他建的群組刪掉、他參加的群組把他移出。"""
+        with self.lock:
+            for fn in os.listdir(self.dir):
+                if not fn.endswith(".json"):
+                    continue
+                room = self._read(fn[:-5])
+                if not room:
+                    continue
+                if room["owner"] == name:
+                    os.remove(self._path(room["id"]))
+                elif name in room["members"]:
+                    room["members"].remove(name)
+                    self._write(room)
+
     def rename(self, rid, user, title):
         with self.lock:
             room = self._owned(rid, user)
@@ -152,8 +169,8 @@ class RoomStore:
         content = str(content or "").strip()
         if not content:
             raise ValueError("沒有內容")
-        if len(content) > 20000:
-            raise ValueError("訊息太長")
+        if len(content) > 6000:
+            raise ValueError("訊息太長（最多 6000 字）")
         with self.lock:
             room = self._read(rid)
             if not room or user not in room["members"]:

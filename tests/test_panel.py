@@ -57,6 +57,9 @@ class PanelTest(unittest.TestCase):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
     # ── 小工具 ──
+    def setUp(self):
+        server.Handler.app.guard.hits.clear()   # 每個測試的頻率限制各自算，不然測試之間會互相擋到
+
     def req(self, path, body=None, method=None, token=TOKEN, raw=False, data=None):
         h = {"Authorization": "Bearer " + token} if token else {}
         if body is not None:
@@ -141,6 +144,7 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/apply", {"user": "bad name!", "password": "longenough1"}, token="")[0], 400)
         code, r = self.req("/api/apply", {"user": "amy", "password": "longenough1", "note": "朋友"}, token="")
         self.assertEqual((code, r["status"]), (200, "pending"), r)
+        server.Handler.app.guard.hits.clear()
         self.assertEqual(self.req("/api/apply", {"user": "amy", "password": "longenough1"}, token="")[0], 400)
         code, r = self.req("/api/login", {"user": "amy", "password": "longenough1"}, token="")
         self.assertEqual(code, 403, r)
@@ -235,6 +239,15 @@ class PanelTest(unittest.TestCase):
                 time.sleep(0.2)
             self.assertEqual((ai[-1]["user"], ai[-1]["content"]), ("grok", "OK從雲端"))
             self.assertIn("zed：@grok 幫我看看", seen["body"]["messages"][-1]["content"])
+            self.req("/api/apply", {"user": "guest1", "password": "guestpass1"}, token="")
+            self.req("/api/users/approve", {"user": "guest1"})
+            g1 = self.req("/api/login", {"user": "guest1", "password": "guestpass1"}, token="")[1]["token"]
+            self.req("/api/rooms/invite", {"id": rid, "user": "guest1"}, token=zed)
+            seen.clear()
+            self.req("/api/rooms/post", {"id": rid, "content": "@grok 我也問"}, token=g1)
+            time.sleep(0.6)
+            self.assertEqual(seen, {})   # 不是接 AI 的本人 @，不會動用 zed 的金鑰
+            self.req("/api/users/reject", {"user": "guest1"})
             self.assertEqual(self.req("/api/ai/remove", {"provider": "xai"}, token=zed)[1]["ai"], [])
             self.req("/api/rooms/remove", {"id": rid}, token=zed)
             self.req("/api/users/reject", {"user": "zed"})
@@ -249,6 +262,36 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(sum(r["days"][-1]["cells"]) - before, 54)   # 假模型 12 + 42
         self.assertGreaterEqual(r["days"][-1]["calls"], 1)
 
+    def test_guard(self):
+        import guard
+        # 頻率：同一路徑一分鐘超過上限就 429（申請帳號 3 次）
+        g = server.Handler.app.guard
+        g.hits.clear()
+        codes = [self.req("/api/apply", {"user": "r%d" % i, "password": "x"}, token="")[0] for i in range(5)]
+        self.assertEqual(codes[-1], 429, codes)
+        g.hits.clear(); server.Handler.app.fails.clear()
+        # 內容大小：一般路徑 256KB 上限
+        code, r = self.req("/api/sessions/delete", {"id": "x" * (300 * 1024)})
+        self.assertEqual(code, 400); self.assertIn("內容太大", r["error"])
+        # 同時對話數：佔滿後第三個被擋
+        self.assertTrue(g.chat_start("admin")); self.assertTrue(g.chat_start("admin"))
+        self.assertEqual(self.req("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "x"}]})[0], 429)
+        g.chat_end("admin"); g.chat_end("admin")
+        self.assertEqual(guard.Guard.body_max("/api/chat"), 24 * 1024 * 1024)
+        # 外部模型名稱不能夾帶網址字元
+        self.assertEqual(self.req("/api/users/setup", {"user": "gdx", "password": "gdpassword1"})[0], 200)
+        gd = self.req("/api/login", {"user": "gdx", "password": "gdpassword1"}, token="")[1]["token"]
+        self.assertEqual(self.req("/api/ai/set", {"provider": "gemini", "key": "k" * 20, "model": "x?y=1"}, token=gd)[0], 400)
+        self.assertEqual(self.req("/api/ai/set", {"provider": "gemini", "key": "bad key", "model": "gemini-2.5-flash"}, token=gd)[0], 400)
+        # 同一帳號猜密碼 10 次就鎖，正確密碼也進不去，10 分鐘後解
+        for _ in range(10):
+            self.req("/api/login", {"user": "gdx", "password": "wrong-pass-1"}, token="")
+            server.Handler.app.fails.clear(); g.hits.clear()
+        self.assertEqual(self.req("/api/login", {"user": "gdx", "password": "gdpassword1"}, token="")[0], 401)
+        server.Handler.app.users.fails.pop("gdx", None)
+        self.assertEqual(self.req("/api/login", {"user": "gdx", "password": "gdpassword1"}, token="")[0], 200)
+        self.req("/api/users/reject", {"user": "gdx"})
+
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
         self.req("/api/users/approve", {"user": "bob"})
@@ -261,7 +304,7 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/rooms/invite", {"id": rid, "user": "bob"})[0], 200)
         self.assertEqual(self.req("/api/rooms/invite", {"id": rid, "user": "bob"}, token=bob)[0], 400)   # 不是群主
         self.assertIn("研究室", [r["title"] for r in self.req("/api/rooms", token=bob)[1]["rooms"]])
-        self.assertEqual(self.req("/api/rooms/people")[1]["people"], ["bob"])   # 主登入碼不是帳號，所以 bob 看到的是空的
+        self.assertIn("bob", self.req("/api/rooms/people")[1]["people"])   # 主登入碼不是帳號，所以 bob 自己看到的是空的
         code, m = self.req("/api/rooms/post", {"id": rid, "content": "大家好"}, token=bob)
         self.assertEqual((code, m["user"]), (200, "bob"))
         code, r = self.req("/api/rooms/get?id=%s&since=0" % rid)

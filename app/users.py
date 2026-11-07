@@ -11,6 +11,7 @@ import threading
 import time
 
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{2,19}$")   # 3～20 字，小寫英數
+RESERVED = {"admin", "kiki", "claude", "gpt", "gemini", "grok", "system", "root", "ai"}
 TOKEN_DAYS = 30
 MIN_PW = 8
 ROUNDS = 200_000
@@ -27,6 +28,7 @@ class UserStore:
         self.lock = threading.Lock()
         self.users = self._load(self.path)
         self.tokens = self._load(self.tok_path)
+        self.fails = {}   # 帳號 → 最近失敗的時間（只放記憶體）
 
     @staticmethod
     def _load(path):
@@ -55,6 +57,8 @@ class UserStore:
     def check_password(pw):
         if len(pw or "") < MIN_PW:
             raise ValueError("密碼至少 %d 個字" % MIN_PW)
+        if len(pw) > 128:
+            raise ValueError("密碼最多 128 個字")
 
     def has_admin(self):
         return any(u.get("role") == "admin" and u.get("status") == "active" for u in self.users.values())
@@ -83,6 +87,10 @@ class UserStore:
                 raise ValueError("這個帳號已經有人用了")
             if len(self.users) >= 200:
                 raise ValueError("帳號數量到上限了")
+            if status == "pending" and sum(1 for u in self.users.values() if u.get("status") == "pending") >= 20:
+                raise ValueError("等待核准的申請太多了，請晚點再試")
+            if name in RESERVED:
+                raise ValueError("這個名字不能用")
             salt = secrets.token_hex(16)
             self.users[name] = {"salt": salt, "hash": _hash(pw, salt), "role": role, "status": status,
                                 "note": str(note or "")[:200], "created": time.time()}
@@ -127,13 +135,24 @@ class UserStore:
             self._save(self.path, self.users)
 
     def verify(self, name, pw):
-        """帳號密碼對了就回公開資料，不對回 None；還沒核准或停用也回 None（錯誤訊息由呼叫端決定）。"""
+        """帳號密碼對了就回公開資料，不對回 None；還沒核准或停用也回 None（錯誤訊息由呼叫端決定）。
+        同一個帳號 10 分鐘內錯 10 次就鎖住，防止分散 IP 猜密碼。"""
         u = self.users.get(name or "")
-        if not u:
-            _hash(pw or "", "00" * 16)   # 不存在的帳號也算一次，讓時間差不出來
+        if not u or len(pw or "") > 128:
+            _hash("x", "00" * 16)   # 不存在的帳號也算一次，讓時間差不出來
             return None
-        if not secrets.compare_digest(_hash(pw or "", u["salt"]), u["hash"]):
+        now = time.time()
+        with self.lock:
+            fails = [t for t in self.fails.get(name, []) if now - t < 600]
+            self.fails[name] = fails
+        if len(fails) >= 10:
             return None
+        if not secrets.compare_digest(_hash(pw, u["salt"]), u["hash"]):
+            with self.lock:
+                self.fails[name] = fails + [now]
+            return None
+        with self.lock:
+            self.fails.pop(name, None)
         return self.public(name)
 
     # ── 登入憑證 ──

@@ -3,6 +3,7 @@
 權限：管理員登入碼（config.json 的 token）＝「主管理員」，永遠可用；一般帳號登入後拿到 30 天的憑證。
 一般帳號只能用：狀態、模型清單、對話、自己的對話紀錄；其他（下載模型、終端機、帳號管理）要管理員。
 """
+import os
 import time
 
 USER_OK = {"/api/status", "/api/models", "/api/models/show", "/api/chat", "/api/me", "/api/logout", "/api/password",
@@ -36,7 +37,7 @@ def login(h):
             return h.json({"ok": True, "token": tok, "user": MASTER["name"], "role": "admin", "master": True,
                            "needs_setup": not h.app.users.has_admin(), "version": h.app.version})
         return _fail(h, ip, "登入碼不對")
-    name, pw = str(b.get("user", "")).strip().lower(), str(b.get("password", ""))
+    name, pw = str(b.get("user", "")).strip().lower()[:40], str(b.get("password", ""))[:256]
     u = h.app.users.verify(name, pw)
     if not u:
         return _fail(h, ip, "帳號或密碼不對")
@@ -124,9 +125,14 @@ def approve(h, b):
 
 def reject(h, b):
     try:
-        h.app.users.delete(_target(h, b))
+        name = _target(h, b)
+        h.app.users.delete(name)
     except ValueError as e:
         return h.err(str(e))
+    h.app.rooms.purge_user(name)
+    import shutil
+    shutil.rmtree(os.path.join(h.app.data_dir, "sessions", name), ignore_errors=True)
+    h.app.session_stores.pop(name, None)
     h.json({"ok": True})
 
 

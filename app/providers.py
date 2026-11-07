@@ -4,8 +4,11 @@
 金鑰只存在主機（users.json，0600），不會回傳給瀏覽器。
 """
 import json
+import re
 import urllib.error
 import urllib.request
+
+MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$")   # 模型名會進網址，只准這些字
 
 PROVIDERS = {
     "anthropic": {"name": "Claude", "handle": "claude", "example": "claude-sonnet-5-5", "url": "https://api.anthropic.com/v1/messages"},
@@ -71,11 +74,14 @@ def stream(provider, key, model, messages, system):
         raise ProviderError("不支援的服務：%s" % provider)
     if not key:
         raise ProviderError("還沒設定 %s 的金鑰" % p["name"])
+    model = model or p["example"]
+    if not MODEL_RE.match(model):
+        raise ProviderError("模型名稱只能用英數、. _ : / -")
     msgs = _clean(messages)
     if not msgs:
         raise ProviderError("沒有內容")
     fn = {"anthropic": _anthropic, "openai": _openai_like, "gemini": _gemini, "xai": _openai_like}[provider]
-    return fn(p, key, model or p["example"], msgs, system)
+    return fn(p, key, model, msgs, system)
 
 
 def _anthropic(p, key, model, msgs, system):

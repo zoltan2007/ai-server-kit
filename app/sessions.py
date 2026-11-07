@@ -9,6 +9,7 @@ import time
 ID_RE = re.compile(r"^[a-f0-9]{12}$")
 MAX_BYTES = 8 * 1024 * 1024      # 一個對話最多 8 MB（含圖片）
 MAX_COUNT = 500
+MAX_TOTAL = 300 * 1024 * 1024     # 一個帳號所有對話加起來最多 300 MB
 
 
 class SessionStore:
@@ -63,6 +64,9 @@ class SessionStore:
         with self.lock:
             if not os.path.exists(path) and len(os.listdir(self.dir)) >= MAX_COUNT:
                 raise ValueError("對話數量到上限了，先刪掉一些舊的")
+            total = sum(os.path.getsize(os.path.join(self.dir, f)) for f in os.listdir(self.dir) if f.endswith(".json") and f != sid + ".json")
+            if total + len(data.encode("utf-8")) > MAX_TOTAL:
+                raise ValueError("你的對話總量超過 300 MB，先刪掉一些舊的")
             tmp = path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 f.write(data)

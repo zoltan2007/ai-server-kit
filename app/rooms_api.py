@@ -4,6 +4,7 @@ import time
 
 import ai_api
 import rooms as R
+from ollama_api import NAME_RE
 
 PATHS = {"/api/rooms", "/api/rooms/get", "/api/rooms/people", "/api/rooms/create", "/api/rooms/invite",
          "/api/rooms/remove", "/api/rooms/rename", "/api/rooms/post"}
@@ -39,7 +40,9 @@ def create(h, b):
             model = installed[0] if installed else ""
         except Exception:
             model = ""
-    h.json(h.app.rooms.create(h.user["name"], b.get("title", ""), model))
+    if model and not ai_api.ext_model(model) and not NAME_RE.match(model):
+        return h.err("模型名稱不對")
+    _call(h, h.app.rooms.create, h.user["name"], b.get("title", ""), model)
 
 
 def _call(h, fn, *args):
@@ -72,10 +75,14 @@ def post(h, b):
     except ValueError as e:
         return h.err(str(e))
     if R.mentioned(msg["content"]):
-        threading.Thread(target=reply, args=(h.app, rid), daemon=True).start()
+        threading.Thread(target=reply, args=(h.app, rid, h.user["name"]), daemon=True).start()
     room = h.app.rooms.get(rid, h.user["name"], 10 ** 9) or {}
     for handle in R.handles(msg["content"]) & set(room.get("bots", {})):
-        threading.Thread(target=reply_bot, args=(h.app, rid, handle, room["bots"][handle]), daemon=True).start()
+        bot = room["bots"][handle]
+        # 4. 外部 AI 花的是接它進來那個人的錢：只有本人 @ 它，或本人允許全群用，才回
+        if bot.get("owner") != h.user["name"] and not bot.get("shared"):
+            continue
+        threading.Thread(target=reply_bot, args=(h.app, rid, handle, bot, h.user["name"]), daemon=True).start()
     h.json(msg)
 
 
@@ -88,17 +95,28 @@ def set_bot(h, b):
     if not key:
         return h.err("你還沒設定這家的金鑰")
     handle = ai_api.P.PROVIDERS[prov]["handle"]
-    _call(h, h.app.rooms.set_bot, str(b.get("id", "")), h.user["name"], handle, {"provider": prov, "model": model, "owner": h.user["name"], "name": ai_api.P.PROVIDERS[prov]["name"]})
+    _call(h, h.app.rooms.set_bot, str(b.get("id", "")), h.user["name"], handle,
+          {"provider": prov, "model": model, "owner": h.user["name"], "name": ai_api.P.PROVIDERS[prov]["name"], "shared": bool(b.get("shared"))})
 
 
 def remove_bot(h, b):
     _call(h, h.app.rooms.set_bot, str(b.get("id", "")), h.user["name"], str(b.get("handle", "")), None)
 
 
-def reply_bot(app, rid, handle, bot):
-    """外部 AI 回話：只給它群組的對話文字（providers 會擋掉其他東西），用群主的金鑰。"""
+def reply_bot(app, rid, handle, bot, by):
+    """外部 AI 回話：只給它群組的對話文字（providers 會擋掉其他東西），用接它進來那個人的金鑰。"""
+    owner = app.users.public(bot["owner"])
+    if not owner or owner["status"] != "active" or not app.guard.chat_start(by):   # 18. 停用的人，金鑰也停
+        return
+    try:
+        _reply_bot(app, rid, handle, bot)
+    finally:
+        app.guard.chat_end(by)
+
+
+def _reply_bot(app, rid, handle, bot):
     room, lines = app.rooms.context(rid)
-    if not room:
+    if not room or room.get("busy"):
         return
     seq = app.rooms.start_reply(rid, handle)
     key, model = ai_api.key_for(app, bot["owner"], bot["provider"])
@@ -116,10 +134,19 @@ def reply_bot(app, rid, handle, bot):
         app.rooms.update_reply(rid, seq, text.strip(), done=True, error=str(e))
 
 
-def reply(app, rid):
+def reply(app, rid, by):
     """背景叫模型回一則，邊生成邊寫回群組檔，大家輪詢就看得到字慢慢出來。"""
+    if not app.guard.chat_start(by):
+        return
+    try:
+        _reply(app, rid)
+    finally:
+        app.guard.chat_end(by)
+
+
+def _reply(app, rid):
     room, lines = app.rooms.context(rid)
-    if not room:
+    if not room or room.get("busy"):
         return
     seq = app.rooms.start_reply(rid)
     if not seq:

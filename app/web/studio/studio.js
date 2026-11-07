@@ -525,8 +525,6 @@ function fillMsg(d, m, live) {
 }
 $("#msgs").addEventListener("click", e => {
   if (e.target.closest("[data-copy]")) copyText($("pre", e.target.closest(".code")).textContent);
-  const h = e.target.closest("[data-hint]");
-  if (h) { const ta = $("#input"); ta.value = h.dataset.hint.replace(/\\n/g, "\n"); autosize(ta); ta.focus(); }
 });
 
 // ── 送出 ──

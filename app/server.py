@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import agreement  # noqa: E402
+import guard  # noqa: E402
 import ai_api  # noqa: E402
 import jobs  # noqa: E402
 import ollama_api  # noqa: E402
@@ -59,6 +60,7 @@ class App:
         self.users = users.UserStore(self.data_dir)
         self.rooms = rooms.RoomStore(self.data_dir)
         self.usage = usage.Usage(self.data_dir)
+        self.guard = guard.Guard()
         self.version = VERSION
         self.session_stores = {}
         self.store_lock = threading.Lock()
@@ -106,6 +108,7 @@ class App:
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "AIServerKit/" + VERSION
+    timeout = 30            # 慢速送標頭／內容的連線 30 秒就斷；串流時 stream_start 會放寬
     app = None  # type: App
 
     # ── 小工具 ──
@@ -137,13 +140,22 @@ class Handler(BaseHTTPRequestHandler):
         self.json({"error": msg}, code)
 
     def body(self):
-        n = int(self.headers.get("Content-Length") or 0)
-        if n > MAX_JSON:
+        if self.headers.get("Transfer-Encoding"):
+            raise ValueError("不支援 chunked")
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            raise ValueError("Content-Length 不對")
+        if n < 0 or n > min(MAX_JSON, self.app.guard.body_max(self.route()[0])):
             raise ValueError("內容太大")
         raw = self.rfile.read(n) if n else b"{}"
-        return json.loads(raw or b"{}")
+        obj = json.loads(raw or b"{}")
+        if not isinstance(obj, dict):
+            raise ValueError("要是 JSON 物件")
+        return obj
 
     def stream_start(self):
+        self.connection.settimeout(900)
         self._headers(200, "application/x-ndjson; charset=utf-8", None, {"X-Accel-Buffering": "no"})
 
     def send_line(self, obj):
@@ -181,19 +193,22 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # 不讓單一請求把伺服器弄掛
             log_error("GET %s: %r" % (path, e))
             try:
-                self.err(str(e), 500)
+                self.err("伺服器出錯，已記錄", 500)
             except OSError:
                 pass
 
     def do_POST(self):
         path, q = self.route()
         try:
-            if path == "/api/login":
-                return users_api.login(self)
-            if path == "/api/apply":
-                return users_api.apply(self)
+            if path in ("/api/login", "/api/apply"):
+                if not self.app.guard.allow("ip:" + self.client_address[0], path):
+                    return self.err("太頻繁了，等一分鐘再試", 429)
+                return users_api.login(self) if path == "/api/login" else users_api.apply(self)
             if not self.authed(path):
                 return
+            if not self.app.guard.allow(self.user["name"], path):
+                self.close_connection = True
+                return self.err("太頻繁了，等一分鐘再試", 429)
             fn = POST_ROUTES.get(path)
             if not fn:
                 self.close_connection = True
@@ -210,7 +225,7 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             log_error("POST %s: %r" % (path, e))
             try:
-                self.err(str(e), 500)
+                self.err("伺服器出錯，已記錄", 500)
             except OSError:
                 pass
 
@@ -288,6 +303,8 @@ class Handler(BaseHTTPRequestHandler):
         mem = sysinfo.memory() or {}
         sh = self.app.share
         optin = self.app.share_opted_in()
+        if self.user.get("role") != "admin":
+            loaded = {}
         out = {"up": up, "installed": installed, "catalog": self.app.catalog,
                "hw": {"vram": sum(c["mem_total"] for c in cards), "gpus": len(cards), "ram": mem.get("total")},
                "share": {"configured": self.app.share_configured(), "optin": optin,
@@ -442,15 +459,32 @@ class Handler(BaseHTTPRequestHandler):
 
     # ── 對話（直接轉給 Ollama，一邊生一邊傳） ──
     def chat(self, b):
+        if not self.app.guard.chat_start(self.user["name"]):
+            return self.err("你已經有對話在生成中，等它結束再送", 429)
+        try:
+            self._chat(b)
+        finally:
+            self.app.guard.chat_end(self.user["name"])
+
+    def _chat(self, b):
         name = str(b.get("model", ""))
         if ai_api.ext_model(name):
             return self.chat_external(name, b.get("messages") or [])
         if not NAME_RE.match(name):
             return self.err("請先選模型")
         payload = {"model": name, "messages": b.get("messages") or [], "stream": True}
-        for k in ("think", "options", "keep_alive", "format"):
-            if b.get(k) is not None:
-                payload[k] = b[k]
+        if b.get("think") is not None:
+            payload["think"] = b["think"] if isinstance(b["think"], (bool, str)) else bool(b["think"])
+        opts = b.get("options") if isinstance(b.get("options"), dict) else {}
+        clean = {}
+        for k, hi in (("temperature", 2.0), ("top_p", 1.0), ("top_k", 200), ("seed", 2 ** 31), ("num_ctx", 32768), ("num_predict", 8192), ("repeat_penalty", 3.0)):
+            v = opts.get(k)
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                clean[k] = max(0, min(hi, v))
+        if clean:
+            payload["options"] = clean
+        if b.get("format") == "json":
+            payload["format"] = "json"
         resp, gen = self.app.ollama.stream("/api/chat", payload, timeout=900)
         self.stream_start()
         try:
@@ -469,6 +503,8 @@ class Handler(BaseHTTPRequestHandler):
         key, _ = ai_api.key_for(self.app, self.user["name"], provider)
         if not key:
             return self.err("你還沒在「自訂 → 我的 AI」設定 %s 的金鑰" % ai_api.P.PROVIDERS[provider]["name"])
+        if not isinstance(messages, list) or not all(isinstance(m, dict) for m in messages):
+            return self.err("messages 格式不對")
         self.stream_start()
         usage_row = {"prompt": 0, "completion": 0}
         try:

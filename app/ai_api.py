@@ -49,6 +49,11 @@ def set_ai(h, b):
     if not cur.get("key"):
         return h.err("請填金鑰")
     cur["model"] = str(b.get("model", "")).strip()[:100] or P.PROVIDERS[prov]["example"]
+    if not P.MODEL_RE.match(cur["model"]):
+        return h.err("模型名稱只能用英數、. _ : / -")
+    if len(cur["key"]) > 512 or any(c.isspace() for c in cur["key"]):
+        cur.pop("key", None)
+        return h.err("金鑰格式不對")
     h.app.users.flush()
     h.json({"ai": public(mine)})
 
