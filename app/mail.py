@@ -35,14 +35,8 @@ class Mailer:
         with self.lock:
             self.cfg = {"host": host or "smtp.gmail.com", "port": int(port or 587), "user": user, "sender": sender or "Kiki Cloude", "require": bool(require),
                         "password": password or self.cfg.get("password", "")}
-            tmp = self.path + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(self.cfg, f, ensure_ascii=False, indent=1)
-            os.replace(tmp, self.path)
-            try:
-                os.chmod(self.path, 0o600)
-            except OSError:
-                pass
+            from users import safe_write
+            safe_write(self.path, json.dumps(self.cfg, ensure_ascii=False, indent=1), secret=True)
 
     # ── 寄信 ──
     def send(self, to, subject, text):

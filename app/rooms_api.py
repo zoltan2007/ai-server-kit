@@ -109,8 +109,8 @@ def remove_bot(h, b):
 def reply_bot(app, rid, handle, bot, by):
     """外部 AI 回話：只給它群組的對話文字（providers 會擋掉其他東西），用接它進來那個人的金鑰。"""
     owner = app.users.public(bot["owner"])
-    if not owner or owner["status"] != "active" or not app.guard.chat_start(by):   # 18. 停用的人，金鑰也停
-        return
+    if not owner or owner["status"] != "active" or app.usage.over_quota(bot["owner"], owner.get("quota")) or not app.guard.chat_start(by):
+        return   # 停用、或金鑰主人超過用量上限，就不花他的錢
     try:
         _reply_bot(app, rid, handle, bot)
     finally:
@@ -119,37 +119,41 @@ def reply_bot(app, rid, handle, bot, by):
 
 def _reply_bot(app, rid, handle, bot):
     room, lines = app.rooms.context(rid)
-    if not room or room.get("busy"):
+    if not room:
         return
     seq = app.rooms.start_reply(rid, handle)
+    if not seq:
+        return
     key, model = ai_api.key_for(app, bot["owner"], bot["provider"])
     system = R.SYSTEM.replace("你是 Kiki", "你是 %s（代號 @%s）" % (bot.get("name", handle), handle)).replace("你自己的發言標為「Kiki」", "你自己的發言標為「%s」" % handle)
-    text = ""
+    text, last_write = "", 0.0
     try:
         for chunk in ai_api.P.stream(bot["provider"], key, model, [{"role": "user", "content": "\n".join(lines) + "\n%s：" % handle}], system):
             if isinstance(chunk, tuple):
                 app.usage.add(bot["owner"], "ext:%s:%s" % (bot["provider"], model), chunk[1]["prompt"], chunk[1]["completion"], kind="room", provider=bot["provider"])
             else:
                 text += chunk
-                app.rooms.update_reply(rid, seq, text)
+                if time.time() - last_write > 0.5:      # 每半秒寫一次檔就夠了，不要每個字都重寫整個群組
+                    app.rooms.update_reply(rid, seq, text)
+                    last_write = time.time()
         app.rooms.update_reply(rid, seq, text.strip(), done=True)
     except Exception as e:
         app.rooms.update_reply(rid, seq, text.strip(), done=True, error=str(e))
 
 
 def reply(app, rid, by):
-    """背景叫模型回一則，邊生成邊寫回群組檔，大家輪詢就看得到字慢慢出來。"""
+    """背景叫模型回一則，邊生成邊寫回群組檔，大家輪詢就看得到字慢慢出來。token 算在 @ 的那個人頭上。"""
     if not app.guard.chat_start(by):
         return
     try:
-        _reply(app, rid)
+        _reply(app, rid, by)
     finally:
         app.guard.chat_end(by)
 
 
-def _reply(app, rid):
+def _reply(app, rid, by="kiki"):
     room, lines = app.rooms.context(rid)
-    if not room or room.get("busy"):
+    if not room:
         return
     seq = app.rooms.start_reply(rid)
     if not seq:
@@ -164,17 +168,20 @@ def _reply(app, rid):
     try:
         resp, gen = app.ollama.stream("/api/chat", payload, timeout=900)
         try:
+            prompt_n = eval_n = 0
             for obj in gen:
                 if obj.get("error"):
                     raise RuntimeError(obj["error"])
                 text += (obj.get("message") or {}).get("content", "")
+                if obj.get("done"):
+                    prompt_n, eval_n = obj.get("prompt_eval_count") or 0, obj.get("eval_count") or 0
                 if time.time() - last_write > 0.5:
                     app.rooms.update_reply(rid, seq, text)
                     last_write = time.time()
         finally:
             resp.close()
         app.rooms.update_reply(rid, seq, text.strip(), done=True)
-        app.usage.add(room["owner"], model, 0, 0, kind="room")
+        app.usage.add(by, model, prompt_n, eval_n, kind="room")
     except Exception as e:  # 模型掛了也要把訊息收尾，不然前端會一直等
         app.rooms.update_reply(rid, seq, text.strip(), done=True, error=str(e))
 

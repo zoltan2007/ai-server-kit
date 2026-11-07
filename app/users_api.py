@@ -25,7 +25,7 @@ def allowed(user, path):
 
 
 def login(h):
-    ip = h.client_address[0]
+    ip = h.client_ip()
     if h.app.locked(ip):
         return h.err("錯太多次，10 分鐘後再試", 429)
     try:
@@ -62,7 +62,7 @@ GMAIL_RE = re.compile(r"^[a-z0-9][a-z0-9.+_-]{0,63}@gmail\.com$")
 
 def apply(h):
     """申請帳號（不用登入）：綁 Gmail → 寄驗證碼 → 輸入驗證碼 → 等管理員核准。管理員沒設定寄信時可以關掉驗證。"""
-    ip = h.client_address[0]
+    ip = h.client_ip()
     if h.app.locked(ip):
         return h.err("請稍後再試", 429)
     try:
@@ -104,7 +104,7 @@ def apply_verify(h):
         return h.err("沒有待驗證的申請")
     err = h.app.mailer.check(name, b.get("code", ""))
     if err:
-        h.app.failed(h.client_address[0])
+        h.app.failed(h.client_ip())
         return h.err(err)
     h.app.users.set_verified(name)
     h.json({"ok": True, "status": "pending"})
@@ -188,16 +188,20 @@ def approve(h, b):
     _change(h, b, "active")
 
 
+def delete_account(app, name):
+    """刪帳號唯一的入口：帳號、憑證、他建的群組、群組成員資格、對話資料夾一起清。"""
+    app.users.delete(name)
+    app.rooms.purge_user(name)
+    import shutil
+    shutil.rmtree(os.path.join(app.data_dir, "sessions", name), ignore_errors=True)
+    app.session_stores.pop(name, None)
+
+
 def reject(h, b):
     try:
-        name = _target(h, b)
-        h.app.users.delete(name)
+        delete_account(h.app, _target(h, b))
     except ValueError as e:
         return h.err(str(e))
-    h.app.rooms.purge_user(name)
-    import shutil
-    shutil.rmtree(os.path.join(h.app.data_dir, "sessions", name), ignore_errors=True)
-    h.app.session_stores.pop(name, None)
     h.json({"ok": True})
 
 

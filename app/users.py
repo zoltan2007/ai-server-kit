@@ -34,19 +34,26 @@ class UserStore:
     def _load(path):
         try:
             with open(path, encoding="utf-8") as f:
-                return json.load(f)
+                obj = json.load(f)
+                return obj if isinstance(obj, dict) else {}
+        except FileNotFoundError:
+            pass
         except (OSError, ValueError):
-            return {}
+            # 檔案壞了（例如同步到一半）：留著證據、改用 .bak，絕對不要用空的蓋掉
+            try:
+                os.replace(path, path + ".corrupt-%d" % int(time.time()))
+            except OSError:
+                pass
+            try:
+                with open(path + ".bak", encoding="utf-8") as f:
+                    obj = json.load(f)
+                    return obj if isinstance(obj, dict) else {}
+            except (OSError, ValueError):
+                pass
+        return {}
 
     def _save(self, path, obj):
-        tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(obj, f, ensure_ascii=False, indent=1)
-        os.replace(tmp, path)
-        try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
+        safe_write(path, json.dumps(obj, ensure_ascii=False, indent=1), secret=True, backup=True)
 
     # ── 帳號 ──
     @staticmethod
@@ -179,10 +186,42 @@ class UserStore:
             now = time.time()
             self.tokens = {t: v for t, v in self.tokens.items() if v["exp"] > now}
             self.tokens[tok] = {"user": name, "exp": now + TOKEN_DAYS * 86400}
-            self.users[name]["last_login"] = now
+            u = self.users.get(name)
+            if not u:
+                raise ValueError("帳號不存在")
             self._save(self.tok_path, self.tokens)
-            self._save(self.path, self.users)
+            if now - (u.get("last_login") or 0) > 3600:     # 最後登入時間一小時記一次就好，不用每次都重寫 users.json
+                u["last_login"] = now
+                self._save(self.path, self.users)
+            else:
+                u["last_login"] = now
         return tok
+
+    def set_ai(self, name, provider, key=None, model=None):
+        """外部 AI 的金鑰與模型，在鎖裡改，不然存檔時可能撞到。回傳這個人的 ai 設定。"""
+        with self.lock:
+            u = self.users.get(name)
+            if not u:
+                raise ValueError("沒有這個帳號")
+            ai = u.setdefault("ai", {})
+            cur = ai.setdefault(provider, {})
+            if key:
+                cur["key"] = key
+            if model is not None:
+                cur["model"] = model
+            if not cur.get("key"):
+                ai.pop(provider, None)
+                self._save(self.path, self.users)
+                raise ValueError("請填金鑰")
+            self._save(self.path, self.users)
+            return dict(ai)
+
+    def remove_ai(self, name, provider):
+        with self.lock:
+            u = self.users.get(name)
+            if u and (u.get("ai") or {}).pop(provider, None) is not None:
+                self._save(self.path, self.users)
+            return dict((u or {}).get("ai") or {})
 
     def who(self, tok):
         v = self.tokens.get(tok or "")
@@ -199,3 +238,19 @@ class UserStore:
     def _drop_tokens(self, name):
         self.tokens = {t: v for t, v in self.tokens.items() if v["user"] != name}
         self._save(self.tok_path, self.tokens)
+
+
+def safe_write(path, text, secret=False, backup=False):
+    """先寫 .tmp 再換名：機密檔用 0600 建檔、寫完 fsync，斷電不會留下空檔；backup=True 先把舊檔留成 .bak。"""
+    tmp = path + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600 if secret else 0o644)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
+    if backup and os.path.exists(path):
+        try:
+            os.replace(path, path + ".bak")
+        except OSError:
+            pass
+    os.replace(tmp, path)

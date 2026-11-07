@@ -176,6 +176,15 @@ class Handler(BaseHTTPRequestHandler):
         self.err("請先登入" if not self.user else "這個功能只有管理員能用", 401 if not self.user else 403)
         return False
 
+    def client_ip(self):
+        """被 nginx 之類的反向代理擋在前面時，client_address 都是 127.0.0.1；只有來源是本機才信 X-Forwarded-For。"""
+        ip = self.client_address[0]
+        if ip in ("127.0.0.1", "::1") and self.app.cfg.get("trust_proxy", True):
+            fwd = self.headers.get("X-Forwarded-For", "")
+            if fwd:
+                return fwd.split(",")[0].strip()[:64] or ip
+        return ip
+
     def route(self):
         u = urllib.parse.urlsplit(self.path)
         return u.path, {k: v[0] for k, v in urllib.parse.parse_qs(u.query).items()}
@@ -205,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
         path, q = self.route()
         try:
             if path in ("/api/login", "/api/apply", "/api/apply/verify", "/api/apply/resend"):
-                if not self.app.guard.allow("ip:" + self.client_address[0], path):
+                if not self.app.guard.allow("ip:" + self.client_ip(), path):
                     return self.err("太頻繁了，等一分鐘再試", 429)
                 fn = {"/api/login": users_api.login, "/api/apply": users_api.apply, "/api/apply/verify": users_api.apply_verify,
                       "/api/apply/resend": users_api.apply_resend}[path]

@@ -6,6 +6,8 @@ import secrets
 import threading
 import time
 
+from users import safe_write
+
 ID_RE = re.compile(r"^[a-f0-9]{12}$")
 MENTION_RE = re.compile(r"(^|[\s,，。！？!?(（])@(kiki( cloude)?|ai|小機)\b", re.I)
 HANDLE_RE = re.compile(r"(^|[\s,，。！？!?(（])@([a-z][a-z0-9_-]{1,20})", re.I)
@@ -29,6 +31,30 @@ class RoomStore:
         self.dir = os.path.join(data_dir, "rooms")
         self.lock = threading.RLock()
         os.makedirs(self.dir, exist_ok=True)
+        self.index = {}      # rid → {"mtime", "members", "owner", "summary"}；列清單不用每次解析整個檔
+        self._recover()
+
+    def _recover(self):
+        """重開後：busy 旗標清掉、沒收尾的 AI 回覆標成失敗，不然那個群組永遠不再回話。"""
+        for fn in os.listdir(self.dir):
+            if not fn.endswith(".json"):
+                continue
+            room = self._read(fn[:-5])
+            if not room:
+                continue
+            dirty = False
+            if room.get("busy"):
+                room["busy"] = False
+                dirty = True
+            for m in room.get("messages") or []:
+                if m.get("role") == "assistant" and not m.get("done"):
+                    m["done"] = True
+                    m["error"] = m.get("error") or "伺服器重啟，這則沒說完"
+                    dirty = True
+            if dirty:
+                self._write(room)
+            else:
+                self._touch_index(room)
 
     def _path(self, rid):
         if not ID_RE.match(rid or ""):
@@ -44,10 +70,12 @@ class RoomStore:
 
     def _write(self, room):
         room["updated"] = time.time()
-        tmp = self._path(room["id"]) + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(room, f, ensure_ascii=False)
-        os.replace(tmp, self._path(room["id"]))
+        safe_write(self._path(room["id"]), json.dumps(room, ensure_ascii=False))
+        self._touch_index(room)
+
+    def _touch_index(self, room):
+        self.index[room["id"]] = {"members": list(room["members"]), "owner": room["owner"],
+                                  "summary": {k: room.get(k, v) for k, v in (("title", ""), ("model", ""), ("updated", 0), ("seq", 0), ("bots", {}))}}
 
     @staticmethod
     def summary(room, me):
@@ -58,12 +86,10 @@ class RoomStore:
     def list_for(self, user):
         out = []
         with self.lock:
-            for name in os.listdir(self.dir):
-                if not name.endswith(".json"):
-                    continue
-                room = self._read(name[:-5])
-                if room and user in room["members"]:
-                    out.append(self.summary(room, user))
+            for rid, ix in self.index.items():
+                if user in ix["members"]:
+                    s = dict(ix["summary"], id=rid, owner=ix["owner"], members=list(ix["members"]), mine=ix["owner"] == user)
+                    out.append(s)
         out.sort(key=lambda r: -r["updated"])
         return out
 
@@ -115,6 +141,7 @@ class RoomStore:
                 raise ValueError("只有建立群組的人能移除別人")
             if name == room["owner"]:
                 os.remove(self._path(rid))
+                self.index.pop(rid, None)
                 return None
             if name not in room["members"]:
                 raise ValueError("這個人不在群組裡")
@@ -134,6 +161,7 @@ class RoomStore:
                     continue
                 if room["owner"] == name:
                     os.remove(self._path(room["id"]))
+                    self.index.pop(room["id"], None)
                 elif name in room["members"]:
                     room["members"].remove(name)
                     self._write(room)
@@ -194,12 +222,16 @@ class RoomStore:
             return room, lines
 
     def start_reply(self, rid, who="kiki"):
+        """在鎖裡檢查並設定 busy，兩個人同時 @ 只會有一個回；卡住超過 15 分鐘就當作沒在忙。"""
         with self.lock:
             room = self._read(rid)
             if not room:
                 return None
+            if room.get("busy") and time.time() - (room.get("busy_since") or 0) < 900:
+                return None
             msg = self._append(room, "assistant", who, "")
             room["busy"] = True
+            room["busy_since"] = time.time()
             self._write(room)
             return msg["seq"]
 

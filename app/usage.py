@@ -9,21 +9,50 @@ class Usage:
     def __init__(self, data_dir):
         self.path = os.path.join(data_dir, "usage.jsonl")
         self.lock = threading.Lock()
+        self.tot = {}          # user → {"day": (date, n), "week": (week_start, n), "total": n}；開機掃一次，之後只累加
+        for r in self.rows():
+            self._accumulate(r)
+
+    def _accumulate(self, r):
+        d = dt.datetime.fromisoformat(r["ts"]).date()
+        n = r["prompt"] + r["completion"]
+        t = self.tot.setdefault(r["user"], {"day": (d, 0), "week": (d - dt.timedelta(days=d.weekday()), 0), "total": 0})
+        t["total"] += n
+        if t["day"][0] == d:
+            t["day"] = (d, t["day"][1] + n)
+        elif d > t["day"][0]:
+            t["day"] = (d, n)
+        ws = d - dt.timedelta(days=d.weekday())
+        if t["week"][0] == ws:
+            t["week"] = (ws, t["week"][1] + n)
+        elif ws > t["week"][0]:
+            t["week"] = (ws, n)
 
     def add(self, user, model, prompt, completion, kind="chat", provider="ollama"):
         row = {"ts": dt.datetime.now().isoformat(timespec="seconds"), "user": user, "model": model, "provider": provider,
                "kind": kind, "prompt": int(prompt or 0), "completion": int(completion or 0)}
         with self.lock:
+            lead = ""
+            try:   # 上次斷電寫到一半沒換行的話，先補一個，不然兩筆會黏在一起
+                if os.path.getsize(self.path) and open(self.path, "rb").read()[-1:] != b"\n":
+                    lead = "\n"
+            except OSError:
+                pass
             with open(self.path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+                f.write(lead + json.dumps(row, ensure_ascii=False) + "\n")
+            self._accumulate(row)
 
     def rows(self):
         try:
             with open(self.path, encoding="utf-8") as f:
                 for line in f:
                     try:
-                        yield json.loads(line)
-                    except ValueError:
+                        r = json.loads(line)
+                        if isinstance(r, dict) and isinstance(r.get("user"), str) and isinstance(r.get("ts"), str):
+                            r["prompt"] = int(r.get("prompt") or 0); r["completion"] = int(r.get("completion") or 0)
+                            dt.datetime.fromisoformat(r["ts"])
+                            yield r
+                    except (ValueError, TypeError):
                         continue
         except FileNotFoundError:
             return
@@ -82,21 +111,15 @@ class Usage:
         return out
 
     def totals(self, user):
-        """今天、這週（週一起）和從頭到現在的 token 總量。"""
+        """今天、這週（週一起）和從頭到現在的 token 總量（記憶體累計，不掃檔）。"""
         today = dt.date.today()
         week_start = today - dt.timedelta(days=today.weekday())
-        day = week = total = 0
-        for r in self.rows():
-            if r["user"] != user:
-                continue
-            n = r["prompt"] + r["completion"]
-            total += n
-            d = dt.datetime.fromisoformat(r["ts"]).date()
-            if d >= week_start:
-                week += n
-            if d == today:
-                day += n
-        return {"day": day, "week": week, "total": total}
+        with self.lock:
+            t = self.tot.get(user)
+            if not t:
+                return {"day": 0, "week": 0, "total": 0}
+            return {"day": t["day"][1] if t["day"][0] == today else 0,
+                    "week": t["week"][1] if t["week"][0] == week_start else 0, "total": t["total"]}
 
     def over_quota(self, user, quota):
         """超過管理員設的上限就回一句說明，沒超過回 None。"""

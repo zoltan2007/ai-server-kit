@@ -38,34 +38,25 @@ def set_ai(h, b):
     prov = str(b.get("provider", ""))
     if prov not in P.PROVIDERS:
         return h.err("不支援的服務")
+    if h.user.get("master"):
+        return h.err("主登入碼沒有個人設定，請用管理員帳號登入")
+    key = str(b.get("key", "")).strip()
+    if key and (len(key) > 512 or any(c.isspace() for c in key)):
+        return h.err("金鑰格式不對")
+    model = str(b.get("model", "")).strip()[:100] or P.PROVIDERS[prov]["example"]
+    if not P.MODEL_RE.match(model):
+        return h.err("模型名稱只能用英數、. _ : / -")
     try:
-        mine = _mine(h)
+        ai = h.app.users.set_ai(h.user["name"], prov, key or None, model)
     except ValueError as e:
         return h.err(str(e))
-    cur = mine.setdefault(prov, {})
-    key = str(b.get("key", "")).strip()
-    if key:
-        cur["key"] = key
-    if not cur.get("key"):
-        return h.err("請填金鑰")
-    cur["model"] = str(b.get("model", "")).strip()[:100] or P.PROVIDERS[prov]["example"]
-    if not P.MODEL_RE.match(cur["model"]):
-        return h.err("模型名稱只能用英數、. _ : / -")
-    if len(cur["key"]) > 512 or any(c.isspace() for c in cur["key"]):
-        cur.pop("key", None)
-        return h.err("金鑰格式不對")
-    h.app.users.flush()
-    h.json({"ai": public(mine)})
+    h.json({"ai": public(ai)})
 
 
 def remove_ai(h, b):
-    try:
-        mine = _mine(h)
-    except ValueError as e:
-        return h.err(str(e))
-    mine.pop(str(b.get("provider", "")), None)
-    h.app.users.flush()
-    h.json({"ai": public(mine)})
+    if h.user.get("master"):
+        return h.err("主登入碼沒有個人設定，請用管理員帳號登入")
+    h.json({"ai": public(h.app.users.remove_ai(h.user["name"], str(b.get("provider", ""))))})
 
 
 def test_ai(h, b):
