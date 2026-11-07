@@ -24,6 +24,8 @@ sys.path.insert(0, HERE)
 import agreement  # noqa: E402
 import jobs  # noqa: E402
 import ollama_api  # noqa: E402
+import rooms  # noqa: E402
+import rooms_api  # noqa: E402
 import sessions  # noqa: E402
 import users  # noqa: E402
 import users_api  # noqa: E402
@@ -53,6 +55,7 @@ class App:
         self.data_dir = cfg.get("data_dir") or os.path.join(os.path.expanduser("~"), ".ai-server-kit")
         self.imports_dir = cfg.get("imports_dir") or os.path.join(self.data_dir, "imports")
         self.users = users.UserStore(self.data_dir)
+        self.rooms = rooms.RoomStore(self.data_dir)
         self.version = VERSION
         self.session_stores = {}
         self.store_lock = threading.Lock()
@@ -540,7 +543,7 @@ GET_ROUTES = {
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
     "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
-    **users_api.GET,
+    **users_api.GET, **rooms_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,
@@ -551,7 +554,7 @@ POST_ROUTES = {
     "/api/jobs/clear": Handler.job_clear, "/api/jobs/kill": Handler.job_kill,
     "/api/term/run": Handler.term_run, "/api/term/input": Handler.term_input,
     "/api/sessions/save": Handler.session_save, "/api/sessions/delete": Handler.session_delete,
-    **users_api.POST,
+    **users_api.POST, **rooms_api.POST,
 }
 
 _log_path = None

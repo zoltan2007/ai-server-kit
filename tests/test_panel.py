@@ -185,6 +185,42 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/users/reject", {"user": "amy"}, token=boss)[0], 200)
         self.assertEqual(self.req("/api/users/reject", {"user": "boss"})[0], 200)
 
+    def test_rooms(self):
+        self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
+        self.req("/api/users/approve", {"user": "bob"})
+        bob = self.req("/api/login", {"user": "bob", "password": "bobpassword1"}, token="")[1]["token"]
+        code, room = self.req("/api/rooms/create", {"title": "研究室"})
+        self.assertEqual((code, room["owner"], room["model"]), (200, "admin", "qwen3.5:4b"), room)
+        rid = room["id"]
+        self.assertEqual(self.req("/api/rooms/get?id=" + rid, token=bob)[0], 404)   # 還沒被邀
+        self.assertEqual(self.req("/api/rooms/invite", {"id": rid, "user": "nobody"})[0], 400)
+        self.assertEqual(self.req("/api/rooms/invite", {"id": rid, "user": "bob"})[0], 200)
+        self.assertEqual(self.req("/api/rooms/invite", {"id": rid, "user": "bob"}, token=bob)[0], 400)   # 不是群主
+        self.assertIn("研究室", [r["title"] for r in self.req("/api/rooms", token=bob)[1]["rooms"]])
+        self.assertEqual(self.req("/api/rooms/people")[1]["people"], ["bob"])   # 主登入碼不是帳號，所以 bob 看到的是空的
+        code, m = self.req("/api/rooms/post", {"id": rid, "content": "大家好"}, token=bob)
+        self.assertEqual((code, m["user"]), (200, "bob"))
+        code, r = self.req("/api/rooms/get?id=%s&since=0" % rid)
+        self.assertEqual([x["role"] for x in r["messages"]], ["system", "user"])
+        # 沒 @ 不回；@kiki 才回
+        self.req("/api/rooms/post", {"id": rid, "content": "@kiki 你覺得呢？"})
+        for _ in range(60):
+            r = self.req("/api/rooms/get?id=%s&since=0" % rid, token=bob)[1]
+            ai = [x for x in r["messages"] if x["role"] == "assistant"]
+            if ai and ai[-1].get("done"):
+                break
+            time.sleep(0.2)
+        self.assertEqual(len(ai), 1)
+        self.assertIn("假模型", ai[0]["content"])
+        self.assertEqual(ai[0]["user"], "kiki")
+        since = r["messages"][-1]["seq"]
+        self.assertEqual(self.req("/api/rooms/get?id=%s&since=%d" % (rid, since))[1]["messages"], [])
+        self.assertEqual(self.req("/api/rooms/remove", {"id": rid}, token=bob)[0], 200)   # bob 自己離開
+        self.assertEqual(self.req("/api/rooms/get?id=" + rid, token=bob)[0], 404)
+        self.assertEqual(self.req("/api/rooms/remove", {"id": rid})[0], 200)              # 群主離開＝刪群
+        self.assertEqual(self.req("/api/rooms/get?id=" + rid)[0], 404)
+        self.req("/api/users/reject", {"user": "bob"})
+
     def test_auth(self):
         self.assertEqual(self.req("/api/ping", token="")[0], 200)
         self.assertEqual(self.req("/api/status", token="")[0], 401)

@@ -107,9 +107,11 @@
       <input class="title" id="title" placeholder="新對話" maxlength="120">
       <button class="chip" id="model-chip" title="切換模型"><span id="model-name">選模型</span>
         <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-      <button class="icon-btn" id="pin-btn" title="釘選" aria-label="釘選">
+      <button class="icon-btn room-only" id="members-btn" title="成員" aria-label="成員">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-5-5.9"/></svg></button>
+      <button class="icon-btn chat-only" id="pin-btn" title="釘選" aria-label="釘選">
         <svg viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3z"/></svg></button>
-      <button class="icon-btn" id="del-btn" title="刪除對話" aria-label="刪除對話">
+      <button class="icon-btn chat-only" id="del-btn" title="刪除對話" aria-label="刪除對話">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
       <button class="icon-btn" id="right-open" title="主機狀態" aria-label="主機狀態">
         <svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></button>
@@ -137,9 +139,9 @@
         <button class="icon-btn" type="button" id="attach-btn" title="附圖" hidden>
           <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg></button>
         <input id="attach-input" type="file" accept="image/*" multiple hidden>
-        <label class="toggle" id="think-wrap"><input type="checkbox" id="think" checked><span>思考</span></label>
-        <label class="toggle"><input type="checkbox" id="with-status"><span>帶主機狀態</span></label>
-        <span class="caps muted" id="caps"></span>
+        <label class="toggle chat-only" id="think-wrap"><input type="checkbox" id="think" checked><span>思考</span></label>
+        <label class="toggle chat-only"><input type="checkbox" id="with-status"><span>帶主機狀態</span></label>
+        <span class="caps muted chat-only" id="caps"></span><span class="caps muted room-only">打 @Kiki 她才會回</span>
         <span class="grow"></span>
         <button class="send" type="submit" id="send" title="送出" aria-label="送出"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
         <button class="send stop" type="button" id="stop" title="停止" aria-label="停止" hidden><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
@@ -163,6 +165,16 @@
   </div>
 </div>
 
+<!-- 群組成員 -->
+<div class="modal" id="members-modal" hidden>
+  <div class="modal-card">
+    <div class="side-head"><b>群組成員</b><button class="icon-btn" id="members-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="users" id="members-list"></div>
+    <div class="invite-row" id="invite-row"><select id="invite-sel"></select><button class="btn sm primary" id="invite-btn">邀請</button></div>
+    <div class="foot-btns" style="margin-top:12px"><button class="btn sm" id="room-rename">改名</button><button class="btn sm danger" id="room-leave">離開群組</button></div>
+  </div>
+</div>
+
 <!-- 帳號管理 -->
 <div class="modal" id="users-modal" hidden>
   <div class="modal-card">
@@ -180,5 +192,6 @@
 
 <div class="toast" id="toast" hidden></div>
 <script src="studio.js"></script>
+<script src="rooms.js"></script>
 </body>
 </html>

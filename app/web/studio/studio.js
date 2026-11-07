@@ -236,6 +236,7 @@ $("#model-chip").addEventListener("click", e => {
 $("#model-list").addEventListener("click", e => {
   const b = e.target.closest("[data-model]");
   if (!b) return;
+  if (!S.cur) { $("#model-pop").hidden = true; return; }
   S.cur.model = b.dataset.model; ls.set("model", b.dataset.model); $("#model-pop").hidden = true;
   renderModelChip(); queueSave();
 });
@@ -257,12 +258,14 @@ $("#hist-back").addEventListener("click", () => goHist(-1));
 $("#hist-fwd").addEventListener("click", () => goHist(1));
 
 function newSession(extra = {}) {
+  if (typeof leaveRoomView === "function") leaveRoomView();
   S.cur = Object.assign({ id: "", title: "", model: ls.get("model", "") || S.models[0] || "", pinned: false, group: "", parent: "",
     messages: [], settings: { think: true, status: false } }, extra);
   renderCur(); renderList();
   $("#input").focus();
 }
 async function openSession(id, track = true) {
+  if (typeof leaveRoomView === "function") leaveRoomView();
   try { S.cur = await api("/api/sessions/get?id=" + id); }
   catch (err) { toast(err.message, true); return; }
   S.cur.settings = S.cur.settings || {};
@@ -309,6 +312,7 @@ function renderList() {
     if (on) h += `<div class="tree">${renderTree(list, mine)}</div>`;
   }
   h += renderTree(list, roots.filter(s => !s.group));
+  if (typeof renderRooms === "function") h = renderRooms() + h;
   $("#sess-list").innerHTML = h || `<div class="muted small" style="padding:12px">還沒有對話</div>`;
 }
 $("#search-btn").addEventListener("click", () => { const b = $("#search"); b.hidden = !b.hidden; if (!b.hidden) b.focus(); else { b.value = ""; renderList(); } });
@@ -385,14 +389,16 @@ $("#settings-btn").addEventListener("click", e => {
   p.hidden = !p.hidden; p.style.top = r.bottom + 4 + "px"; p.style.left = r.left + 8 + "px";
 });
 $("#pw-btn").addEventListener("click", () => { $("#settings-pop").hidden = true; $("#users-modal").hidden = false; $("#pw-details").open = true; $("#users-list").innerHTML = ""; if (S.me?.role === "admin") renderUsers().catch(() => {}); });
-$("#pin-btn").addEventListener("click", () => { if (!S.cur.id) return; S.cur.pinned = !S.cur.pinned; renderCur(); queueSave(0); });
+$("#pin-btn").addEventListener("click", () => { if (!S.cur || !S.cur.id) return; S.cur.pinned = !S.cur.pinned; renderCur(); queueSave(0); });
 $("#del-btn").addEventListener("click", async () => {
+  if (!S.cur) return;
   if (!S.cur.id) { newSession(); return; }
   if (!confirm("刪除這個對話？")) return;
   await deleteSession(S.cur.id);
 });
-$("#title").addEventListener("change", () => { S.cur.title = $("#title").value.trim(); queueSave(0); });
+$("#title").addEventListener("change", () => { if (!S.cur) return; S.cur.title = $("#title").value.trim(); queueSave(0); });
 ["#think", "#with-status"].forEach(s => $(s).addEventListener("change", () => {
+  if (!S.cur) return;
   S.cur.settings = { think: $("#think").checked, status: $("#with-status").checked }; queueSave();
 }));
 
@@ -572,7 +578,7 @@ $("#composer").addEventListener("submit", e => {
   if (!text || S.busy) return;
   if (text.startsWith("/") && runSlash(text)) { ta.value = ""; autosize(ta); return; }
   ta.value = ""; autosize(ta); $("#slash").hidden = true;
-  sendChat(text);
+  if (typeof RM !== "undefined" && RM.cur) roomSend(text); else sendChat(text);
 });
 $("#input").addEventListener("keydown", e => {
   const menu = $("#slash");
@@ -631,7 +637,7 @@ $("#attach-list").addEventListener("click", e => { const b = e.target.closest("[
 async function boot() {
   $("#login").hidden = true; $("#app").hidden = false;
   try { await loadMe(); } catch (err) { showLogin(err.message); return; }
-  await Promise.all([pollStatus(), loadModels(), loadList()]);
+  await Promise.all([pollStatus(), loadModels(), loadList(), typeof loadRooms === "function" ? loadRooms() : null]);
   const last = ls.get("last", "");
   if (last && S.sessions.some(s => s.id === last)) await openSession(last); else newSession();
   if (!S.cur) newSession();
