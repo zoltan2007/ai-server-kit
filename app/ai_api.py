@@ -85,5 +85,14 @@ def key_for(app, user, provider):
     return cfg.get("key"), cfg.get("model")
 
 
-GET = {"/api/ai": list_ai}
+def my_usage(h, q):
+    """自己最近七天每小時的 token 用量。"""
+    try:
+        days = max(1, min(31, int(q.get("days", 7) or 7)))
+    except ValueError:
+        days = 7
+    h.json({"days": h.app.usage.hourly(h.user["name"], days)})
+
+
+GET = {"/api/ai": list_ai, "/api/usage/me": my_usage}
 POST = {"/api/ai/set": set_ai, "/api/ai/remove": remove_ai, "/api/ai/test": test_ai}

@@ -241,6 +241,13 @@ class PanelTest(unittest.TestCase):
         finally:
             providers._open = real
 
+    def test_usage_heatmap(self):
+        self.stream("/api/chat", {"model": "qwen3.5:4b", "messages": [{"role": "user", "content": "hi"}]})
+        code, r = self.req("/api/usage/me?days=7")
+        self.assertEqual((code, len(r["days"]), r["days"][-1]["label"]), (200, 7, "今天"))
+        self.assertEqual(sum(r["days"][-1]["cells"]), 54)   # 假模型 12 + 42
+        self.assertEqual(r["days"][-1]["calls"], 1)
+
     def test_rooms(self):
         self.req("/api/apply", {"user": "bob", "password": "bobpassword1"}, token="")
         self.req("/api/users/approve", {"user": "bob"})

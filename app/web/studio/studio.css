@@ -275,3 +275,20 @@ body.in-room .chat-only { display: none !important; }
 .myai input { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; outline: none; color: var(--text); }
 .ok-tag { margin-left: auto; font-size: 12px; color: var(--ok); }
 #model-list .ext { color: var(--accent); }
+
+/* 七天 token 熱力圖 */
+.heat { margin: 28px auto 0; max-width: 700px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.heat-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 10px; }
+.legend { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); }
+.legend i, .heat-cells i { display: block; width: 100%; aspect-ratio: 1; border-radius: 4px; background: var(--surface-2); }
+.legend i { width: 12px; height: 12px; }
+.heat-row { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: center; margin: 4px 0; }
+.heat-lab { display: grid; line-height: 1.25; font-size: 12px; color: var(--muted); }
+.heat-lab b { color: var(--text); font-size: 13px; }
+.heat-cells { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
+.heat-cells i { cursor: default; transition: transform .08s; }
+.heat-cells i:hover { transform: scale(1.25); outline: 1px solid var(--text); }
+.c1 { background: #1f4d2e !important; } .c2 { background: #2a7a3f !important; } .c3 { background: #33a04e !important; } .c4 { background: #3fc45f !important; } .c5 { background: #5ae07a !important; }
+.heat-axis { display: grid; grid-template-columns: repeat(8, 1fr); font-size: 11px; color: var(--muted); }
+.heat-tip { position: fixed; z-index: 50; transform: translate(-50%, -100%); background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; font-size: 12px; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+@media (max-width: 480px) { .heat-row { grid-template-columns: 54px 1fr; } .heat-cells { gap: 2px; } .heat-cells i { border-radius: 2px; } }

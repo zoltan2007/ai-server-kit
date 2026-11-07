@@ -269,6 +269,7 @@ function newSession(extra = {}) {
   S.cur = Object.assign({ id: "", title: "", model: ls.get("model", "") || S.models[0] || "", pinned: false, group: "", parent: "",
     messages: [], settings: { think: true, status: false } }, extra);
   renderCur(); renderList();
+  if (typeof loadHeat === "function") loadHeat();
   $("#input").focus();
 }
 async function openSession(id, track = true) {

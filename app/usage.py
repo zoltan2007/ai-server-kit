@@ -60,3 +60,24 @@ class Usage:
                     for k in c:
                         total[b][k] += c[k]
         return {"period": period, "buckets": buckets, "users": per, "total": total}
+
+    def hourly(self, user, days=7):
+        """最近 days 天、每小時的 token（給熱力圖）。回傳由舊到新的天，每天 24 格。"""
+        today = dt.date.today()
+        start = today - dt.timedelta(days=days - 1)
+        grid = {start + dt.timedelta(days=i): [0] * 24 for i in range(days)}
+        calls = {d: 0 for d in grid}
+        for r in self.rows():
+            if r["user"] != user:
+                continue
+            t = dt.datetime.fromisoformat(r["ts"])
+            if t.date() in grid:
+                grid[t.date()][t.hour] += r["prompt"] + r["completion"]
+                calls[t.date()] += 1
+        wk = "一二三四五六日"
+        out = []
+        for d in sorted(grid):
+            label = "今天" if d == today else "昨天" if d == today - dt.timedelta(days=1) else "週" + wk[d.weekday()]
+            out.append({"date": d.isoformat(), "label": label, "cells": grid[d], "total": sum(grid[d]), "calls": calls[d]})
+        return out
+
