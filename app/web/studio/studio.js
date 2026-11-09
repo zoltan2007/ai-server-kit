@@ -405,7 +405,7 @@ async function forkSession(id) {
   const src = await api("/api/sessions/get?id=" + id).catch(err => { toast(err.message, true); });
   if (!src) return;
   newSession({ title: (src.title || "對話") + "（分支）", model: src.model, group: src.group || "", parent: id,
-    messages: src.messages || [], settings: src.settings || {} });
+    messages: src.messages || [], settings: src.settings || {}, partner: src.partner || null, instructions: src.instructions || "" });
   open["s:" + id] = true; ls.set("open", open);
   await saveNow(); renderList(); toast("已分支出新對話");
 }
@@ -417,7 +417,7 @@ async function deleteSession(id) {
 }
 async function saveSession(c) {
   const r = await api("/api/sessions/save", { body: { id: c.id, title: c.title, model: c.model, pinned: c.pinned, group: c.group, parent: c.parent,
-    partner: c.partner || null, settings: c.settings, messages: c.messages } });
+    partner: c.partner || null, instructions: c.instructions || "", settings: c.settings, messages: c.messages } });
   const i = S.sessions.findIndex(s => s.id === r.id);
   const row = { id: r.id, title: r.title, model: r.model, updated: r.updated, pinned: r.pinned, group: r.group, parent: r.parent, count: r.messages.length };
   if (i >= 0) S.sessions[i] = row; else S.sessions.unshift(row);
@@ -451,7 +451,7 @@ function queueSave(delay = 800) {
 }
 async function saveNow(conv) {
   const c = conv || S.cur;
-  if (!c || !c.messages.length && !c.title) return;
+  if (!c || !c.messages.length && !c.title && !c.instructions) return;
   if (c._saving) { c._again = true; return c._saving; }   // 同一個對話一次只存一份，第一次存回 id 前不會重複建檔
   c._saving = (async () => { try { await saveOne(c); } finally { c._saving = null; if (c._again) { c._again = false; queueSave(300); } } })();
   return c._saving;

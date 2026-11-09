@@ -51,9 +51,11 @@ def session_md(s, user):
     asked = ["- " + body(m).split("\n")[0][:120] for m in msgs if (m.get("by") or m.get("role")) in ("user",)]
     turns = ["### %d. %s\n\n%s\n" % (i + 1, speaker(m, p), body(m)) for i, m in enumerate(msgs)]
     when = dt.datetime.fromtimestamp(s.get("updated") or 0).strftime("%Y-%m-%d %H:%M") if s.get("updated") else "—"
+    inst = str(s.get("instructions") or "").strip()
     return ("# %s\n\n> 這是 Kiki Cloude 匯出的專案記憶檔，給另一個 AI 接手用。讀完後請以這裡的事實與決定為準，再回答使用者。\n\n"
-            "- 最後更新：%s\n- 成員：%s\n- 訊息數：%d\n%s\n## 使用者在這個專案裡提出的事\n\n%s\n\n## 完整對話\n\n%s"
+            "- 最後更新：%s\n- 成員：%s\n- 訊息數：%d\n%s\n%s## 使用者在這個專案裡提出的事\n\n%s\n\n## 完整對話\n\n%s"
             % (title, when, "、".join(members), len(msgs), ("- 群組：%s\n" % s["group"]) if s.get("group") else "",
+               ("## 專案指示（使用者要求每次都遵守）\n\n%s\n\n" % inst) if inst else "",
                "\n".join(asked) or "（沒有）", "\n".join(turns)))
 
 

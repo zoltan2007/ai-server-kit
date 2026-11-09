@@ -141,6 +141,10 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.req("/api/sessions/get?id=zzz")[0], 404)
         self.assertEqual(self.req("/api/sessions/save", {"id": "../x", "messages": []})[0], 400)
         self.assertEqual(self.req("/api/sessions/save", {"messages": "不是清單"})[0], 400)
+        # 專案指示：存得進去、讀得回來，超過上限會截掉
+        code, r = self.req("/api/sessions/save", {"id": sid, "title": "改名", "instructions": "先講結論" + "x" * 5000, "messages": []})
+        self.assertEqual((code, len(r["instructions"])), (200, 4000), r)
+        self.assertTrue(self.req("/api/sessions/get?id=" + sid)[1]["instructions"].startswith("先講結論"))
         code, r = self.req("/api/sessions/delete", {"id": sid})
         self.assertTrue(r["ok"])
         self.assertEqual(self.req("/api/sessions/get?id=" + sid)[0], 404)
@@ -306,7 +310,7 @@ class PanelTest(unittest.TestCase):
         import zipfile
         self.req("/api/users/setup", {"user": "exp", "password": "exppassword1"})
         tok = self.req("/api/login", {"user": "exp", "password": "exppassword1"}, token="")[1]["token"]
-        self.req("/api/sessions/save", {"title": "台股/筆記?", "model": "qwen3.5:4b", "group": "研究",
+        self.req("/api/sessions/save", {"title": "台股/筆記?", "model": "qwen3.5:4b", "group": "研究", "instructions": "一律先講結論",
                                         "messages": [{"role": "user", "content": "你好"}, {"role": "assistant", "by": "kiki", "content": "<think>想</think>嗨"}]}, token=tok)
         self.req("/api/sessions/save", {"title": "第二個", "model": "qwen3.5:4b", "messages": [{"role": "user", "content": "再來"}]}, token=tok)
         rid = self.req("/api/rooms/create", {"title": "小隊"}, token=tok)[1]["id"]
@@ -324,6 +328,8 @@ class PanelTest(unittest.TestCase):
         self.assertIn("index.md", names)
         md = z.read("專案/研究/台股_筆記_.記憶檔.md").decode("utf-8")
         self.assertIn("### 2. Kiki", md); self.assertIn("嗨", md); self.assertNotIn("<think>", md)
+        self.assertIn("## 專案指示", md); self.assertIn("一律先講結論", md)
+        self.assertNotIn("## 專案指示", z.read("專案/第二個.記憶檔.md").decode("utf-8"))
         self.assertIn("群組第一句", z.read("群組/小隊.txt").decode("utf-8"))
         self.assertEqual(self.req("/api/export/all", token="")[0], 401)
         self.req("/api/users/reject", {"user": "exp"})

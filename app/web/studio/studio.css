@@ -522,3 +522,6 @@ kbd { display: inline-block; min-width: 24px; text-align: center; font: 12px var
   .party .pav + .pav { margin-left: -9px; }
   .comp-bar { flex-wrap: wrap; row-gap: 6px; }
 }
+#pp-inst { width: 100%; padding: 10px 12px; resize: vertical; min-height: 96px; outline: none; line-height: 1.5; font-size: 14px; }
+.right-body { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
+.right-body .foot-btns { flex-wrap: wrap; }

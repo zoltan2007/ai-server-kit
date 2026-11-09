@@ -40,13 +40,31 @@ function renderProjectPane() {
       <div class="kv"><span>群組</span><span>${esc(c.group || "—")}</span></div>
       <div class="kv"><span>訊息</span><span>${c.messages.length} 則</span></div>
       <div class="kv"><span>最後更新</span><span>${fmt(c.updated)}</span></div></div>
+    <div class="stat"><h4>專案指示</h4>
+      <textarea id="pp-inst" rows="5" maxlength="4000" aria-label="專案指示" placeholder="例如：一律用繁體中文、先講結論再講細節；這個專案在整理台股筆記…">${esc(c.instructions || "")}</textarea>
+      <div class="edit-btns" style="margin-top:8px"><span class="muted small" id="pp-inst-n">${(c.instructions || "").length} / 4000</span><span class="grow"></span><button class="btn sm primary" id="pp-inst-save">儲存</button></div>
+      <p class="muted small" style="margin:8px 0 0">每次問 Kiki 都會附上這段。你自己接的雲端 AI 收不到。</p></div>
     <div class="stat"><h4>匯出（存在你的裝置）</h4>
       <div class="foot-btns"><button class="btn sm" data-exp="txt">純文字對話</button><button class="btn sm" data-exp="md">AI 記憶檔（Markdown）</button></div>
       <div class="foot-btns" style="margin-top:8px"><button class="btn sm primary" id="exp-all">匯出我的全部專案與群組（zip）</button></div>
       <p class="muted small" style="margin:8px 0 0">記憶檔整理成別的 AI 讀得懂的格式：標題、成員、每一輪的重點、完整對話。</p></div>`;
 }
+function saveInstructions(say) {
+  const ta = $("#pp-inst");
+  if (!ta || !S.cur) return;
+  const v = ta.value.trim().slice(0, 4000);
+  if (v === (S.cur.instructions || "")) { if (say) toast("專案指示已儲存"); return; }
+  S.cur.instructions = v; queueSave(0);
+  toast(v ? "專案指示已儲存，下一則開始生效" : "已清掉專案指示");
+}
+$("#project-pane").addEventListener("input", e => { if (e.target.id === "pp-inst") $("#pp-inst-n").textContent = `${e.target.value.length} / 4000`; });
+$("#project-pane").addEventListener("change", e => { if (e.target.id === "pp-inst") saveInstructions(false); });
+function openInstructions() { openRight(true); showRTab("project"); $("#pp-inst")?.focus(); }
+const _renderCurPane = renderCur;
+renderCur = function () { _renderCurPane(); if (!$("#project-pane").hidden) renderProjectPane(); };
 $("#project-pane").addEventListener("click", async e => {
   if (e.target.closest("#pp-members")) { $("#members-btn").click(); return; }
+  if (e.target.closest("#pp-inst-save")) { saveInstructions(true); return; }
   if (e.target.closest("#exp-all")) {
     const btn = e.target.closest("#exp-all"); btn.disabled = true;
     try {
@@ -75,6 +93,7 @@ function exportSession(fmt) {
     const turns = c.messages.map((m, i) => `### ${i + 1}. ${who(m)}\n\n${body(m)}\n`).join("\n");
     text = `# ${c.title}\n\n> 這是 Kiki Cloude 匯出的專案記憶檔，給另一個 AI 接手用。讀完後請先以這裡的事實與決定為準，再回答使用者。\n\n` +
       `- 匯出日期：${stamp}\n- 成員：${members.join("、")}\n- 訊息數：${c.messages.length}\n${c.group ? `- 群組：${c.group}\n` : ""}\n` +
+      (c.instructions ? `## 專案指示（使用者要求每次都遵守）\n\n${c.instructions}\n\n` : "") +
       `## 使用者在這個專案裡提出的事\n\n${c.messages.filter(m => (m.by || m.role) === "user" || m.role === "user").map(m => "- " + (m.content || "").split("\n")[0].slice(0, 120)).join("\n")}\n\n## 完整對話\n\n${turns}`;
     name = `${c.title || "對話"}_記憶檔_${stamp}.md`;
   }

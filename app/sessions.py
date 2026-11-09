@@ -12,6 +12,7 @@ ID_RE = re.compile(r"^[a-f0-9]{12}$")
 MAX_BYTES = 8 * 1024 * 1024      # 一個對話最多 8 MB（含圖片）
 MAX_COUNT = 500
 MAX_TOTAL = 300 * 1024 * 1024     # 一個帳號所有對話加起來最多 300 MB
+MAX_INSTRUCTIONS = 4000           # 專案指示（每次都會附給 Kiki）的字數上限
 
 
 class SessionStore:
@@ -83,6 +84,7 @@ class SessionStore:
                 "pinned": bool(s.get("pinned")), "settings": s.get("settings") or {},
                 "group": str(s.get("group") or "")[:60], "parent": str(s.get("parent") or "")[:12],
                 "partner": s.get("partner") if isinstance(s.get("partner"), dict) else None,
+                "instructions": str(s.get("instructions") or "")[:MAX_INSTRUCTIONS],
                 "messages": s.get("messages") or [], "updated": time.time()}
         if not isinstance(body["messages"], list):
             raise ValueError("messages 要是清單")

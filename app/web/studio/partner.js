@@ -42,12 +42,18 @@ document.addEventListener("click", e => { if (!e.target.closest("#partner-pop, #
 // ── 給兩種 AI 看的對話內容 ──
 function speaker(m) { return m.by || (m.role === "assistant" ? "kiki" : "user"); }
 function nameOf(by) { const p = partner(); return by === "user" ? (S.me?.name || "使用者") : by === "kiki" ? "Kiki" : (p && by === p.handle ? p.name : by); }
-function contextFor(who, upto) {
-  // who 自己說過的話當 assistant，其他人的話當 user 並標名字；Kiki 另外可帶主機狀態
-  const msgs = [];
-  if (who === "kiki" && $("#with-status").checked && statusForAI()) msgs.push({ role: "system", content: statusForAI() });
+function contextFor(who, upto, conv = S.cur) {
+  // who 自己說過的話當 assistant，其他人的話當 user 並標名字。
+  // 專案指示、主機狀態只給 Kiki（本機）；雲端夥伴只拿到對話文字（伺服器端 providers._clean 也會把 system 丟掉）。
+  const msgs = [], sys = [];
   const p = partner();
-  if (who === "kiki" && p) msgs.push({ role: "system", content: `這個專案有三位成員：使用者「${S.me?.name}」、你（Kiki）、使用者自己的 AI 夥伴「${p.name}」（代號 @${p.handle}）。夥伴的話會標「${p.name}：」；它可能對你下指令或和你討論，照常回應，必要時用 @${p.handle} 回它。` });
+  if (who === "kiki") {
+    const inst = (conv?.instructions || "").trim();
+    if (inst) sys.push("使用者為這個專案設定的固定指示，每次回答都要遵守：\n" + inst);
+    if (p) sys.push(`這個專案有三位成員：使用者「${S.me?.name}」、你（Kiki）、使用者自己的 AI 夥伴「${p.name}」（代號 @${p.handle}）。夥伴的話會標「${p.name}：」；它可能對你下指令或和你討論，照常回應，必要時用 @${p.handle} 回它。`);
+    if ($("#with-status").checked && statusForAI()) sys.push(statusForAI());
+    if (sys.length) msgs.push({ role: "system", content: sys.join("\n\n") });
+  }
   for (const m of upto) {
     const by = speaker(m);
     const text = by === "user" ? m.content : splitThink(m).content;
@@ -71,7 +77,7 @@ async function askAI(who) {
   const ai = { role: "assistant", by: who, content: "", thinking: "" };
   conv.messages.push(ai);
   const el = msgEl(ai, true); $("#msgs").appendChild(el); scrollMsgs(true);
-  const body = { model, messages: contextFor(who, conv.messages.slice(0, -1)) };
+  const body = { model, messages: contextFor(who, conv.messages.slice(0, -1), conv) };
   if (who === "kiki") {
     const caps = S.caps[model]?.capabilities || [];
     if (caps.includes("thinking")) body.think = /^gpt-oss/.test(model) ? (S.think === "off" ? "low" : S.think === "high" ? "high" : "medium") : S.think !== "off";

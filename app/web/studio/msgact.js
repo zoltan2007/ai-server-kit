@@ -190,4 +190,5 @@ SLASH.push(
   { k: "/搜尋", d: "在這個對話裡找字", run: openFind },
   { k: "/重來", d: "重新生成最後一則回答", run: () => { const els = $$("#msgs .msg.ai"), el = els[els.length - 1], m = el && MSG.get(el); if (m) regenerate(el, m); } },
   { k: "/快捷鍵", d: "看鍵盤快捷鍵", run: openKeys },
+  { k: "/指示", d: "設定這個專案固定給 Kiki 的指示", run: () => openInstructions() },
 );
