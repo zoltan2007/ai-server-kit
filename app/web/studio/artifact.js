@@ -18,6 +18,11 @@ function artKind(a) {
 }
 const artMeta = a => [a.lang && !ART_PROSE.has(a.lang.toLowerCase()) ? a.lang : "", a.code.split("\n").length + " 行", a.note].filter(Boolean).join(" · ");
 const fileLang = name => (name.includes(".") ? name.split(".").pop().toLowerCase() : "text");
+// 附件 → 成品。存回來的對話是外部資料，檔名和內容先轉成字串
+function fileArt(f) {
+  const name = String(f.name || "檔案"), pdf = f.type === "pdf";
+  return { title: name, name: pdf ? name + ".txt" : name, lang: pdf ? "text" : fileLang(name), code: String(f.text || ""), note: pdf ? "從 PDF 抽出來的文字" : "你附的檔案" };
+}
 
 // 這個對話裡所有能開的東西：AI 寫的程式碼（三行以上）、使用者附的檔案
 function collectArts() {
@@ -25,7 +30,7 @@ function collectArts() {
   if (!c) return out;
   c.messages.forEach(m => {
     if (m.role === "user") {
-      for (const f of m.files || []) out.push({ title: f.name, name: f.type === "pdf" ? f.name + ".txt" : f.name, lang: f.type === "pdf" ? "text" : fileLang(f.name), code: f.text, note: f.type === "pdf" ? "從 PDF 抽出來的文字" : "你附的檔案" });
+      for (const f of m.files || []) out.push(fileArt(f));
       return;
     }
     const L = splitThink(m).content.split("\n"), who = nameOf(m.by || "kiki");

@@ -3,7 +3,8 @@
 // 處理最常見的情況：FlateDecode 壓縮、物件串流、ToUnicode 對照表、標準西文編碼、表單 XObject。
 // 抽不出來的：掃描檔（整頁是圖）、加密檔、沒有 ToUnicode 的雙位元組字型。
 
-const PDF_LIMIT = { stream: 24 * 1024 * 1024, total: 96 * 1024 * 1024, pages: 500 };
+// codes：單一字型對照表的筆數上限；ms：整份最多讀多久（防特製的壞檔把分頁卡死）
+const PDF_LIMIT = { stream: 24 * 1024 * 1024, total: 96 * 1024 * 1024, pages: 500, codes: 200000, cmap: 2 * 1024 * 1024, forms: 2000, ms: 20000 };
 const PDF_IDENT = [1, 0, 0, 1, 0, 0];
 const pdfIsWs = c => c === 32 || c === 10 || c === 13 || c === 9 || c === 12 || c === 0;
 const pdfIsDict = v => !!v && typeof v === "object" && !Array.isArray(v) && v.r === undefined && v.s === undefined && v.n === undefined && v.op === undefined;
@@ -63,7 +64,7 @@ function pdfTok(s, i) {
   if (c === "/") return { t: "n", v: s.slice(i + 1, j).replace(/#([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))), e: j };
   if (j === i) return { t: "?", e: i + 1 };
   const w = s.slice(i, j);
-  return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(w) ? { t: "num", v: parseFloat(w), e: j } : { t: "w", v: w, e: j };
+  return w.length <= 40 && /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(w) ? { t: "num", v: parseFloat(w), e: j } : { t: "w", v: w, e: j };
 }
 // 一個完整的值：字典 {…}、陣列、名稱 {n}、字串 {s}、參照 {r}、數字、運算子 {op}。回傳 [值, 結束位置]
 function pdfVal(s, i, depth = 0) {
@@ -95,7 +96,7 @@ function pdfVal(s, i, depth = 0) {
 
 // ── 物件與資料流 ──
 function pdfScan(s) {
-  const objs = new Map(), re = /(\d+)\s+(\d+)\s+obj\b/g;
+  const objs = new Map(), re = /(\d{1,10})\s{1,64}(\d{1,5})\s{1,64}obj\b/g;      // 長度都有上限：一長串數字或空白不會讓比對變成平方時間
   let m;
   while ((m = re.exec(s))) {
     const [val, end] = pdfVal(s, re.lastIndex);
@@ -183,8 +184,18 @@ function pdfPages(pdf) {
 }
 
 // ── 字型：字碼 → Unicode ──
+function* pdfSections(t, open, close) {      // 「beginX … endX」中間的內容。用 indexOf 找：只有開頭沒有結尾的壞檔不會變成平方時間
+  for (let a = t.indexOf(open); a >= 0;) {
+    const b = t.indexOf(close, a + open.length);
+    if (b < 0) return;
+    yield t.slice(a + open.length, b);
+    a = t.indexOf(open, b + close.length);
+  }
+}
 function pdfCMap(t, bytes) {
   const map = new Map();
+  let left = PDF_LIMIT.codes;                // 最多寫這麼多筆；同一段範圍重複很多次也算在內
+  t = t.slice(0, PDF_LIMIT.cmap);
   const cs = /begincodespacerange\s*<([0-9A-Fa-f]+)>/.exec(t);
   if (cs) bytes = Math.max(1, Math.min(4, cs[1].length >> 1));
   const u16 = hex => {
@@ -194,21 +205,25 @@ function pdfCMap(t, bytes) {
     for (let i = 0; i < hex.length; i += 4) out += String.fromCharCode(parseInt(hex.substr(i, 4), 16));
     return out;
   };
-  for (const sec of t.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
-    for (const m of sec[1].matchAll(/<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]*)>/g)) map.set(parseInt(m[1].replace(/\s/g, ""), 16), u16(m[2]));
+  for (const sec of pdfSections(t, "beginbfchar", "endbfchar")) {
+    for (const m of sec.matchAll(/<([0-9A-Fa-f\s]{1,64})>\s*<([0-9A-Fa-f\s]{0,2048})>/g)) {
+      if (left-- <= 0) return { map, bytes };
+      map.set(parseInt(m[1].replace(/\s/g, ""), 16), u16(m[2]));
+    }
   }
-  for (const sec of t.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
-    for (const m of sec[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(\[[^\]]*\]|<[0-9A-Fa-f\s]*>)/g)) {
+  for (const sec of pdfSections(t, "beginbfrange", "endbfrange")) {
+    for (const m of sec.matchAll(/<([0-9A-Fa-f]{1,16})>\s*<([0-9A-Fa-f]{1,16})>\s*(\[[^\]]{0,4096}\]|<[0-9A-Fa-f\s]{0,2048}>)/g)) {
       const lo = parseInt(m[1], 16), hi = Math.min(parseInt(m[2], 16), lo + 65535);
       if (m[3][0] === "[") {
         const arr = [...m[3].matchAll(/<([0-9A-Fa-f\s]*)>/g)].map(x => u16(x[1]));
-        for (let c = lo; c <= hi && c - lo < arr.length; c++) map.set(c, arr[c - lo]);
+        for (let c = lo; c <= hi && c - lo < arr.length && left-- > 0; c++) map.set(c, arr[c - lo]);
       } else {
         const base = u16(m[3].slice(1, -1));
         if (!base) continue;
         const head = base.slice(0, -1), last = base.charCodeAt(base.length - 1);
-        for (let c = lo; c <= hi; c++) map.set(c, head + String.fromCharCode((last + c - lo) & 0xffff));
+        for (let c = lo; c <= hi && left-- > 0; c++) map.set(c, head + String.fromCharCode((last + c - lo) & 0xffff));
       }
+      if (left <= 0) return { map, bytes };
     }
   }
   return { map, bytes };
@@ -233,18 +248,19 @@ async function pdfFonts(pdf, res) {
 }
 function pdfWidths(pdf, f, info) {    // 字寬（千分之一字高），用來判斷兩段字中間是不是真的有空格
   const wm = new Map(), num = v => (typeof v === "number" ? v : 0);
+  let left = PDF_LIMIT.codes;                // 寫入筆數上限，重複的範圍也算
   if (f.Subtype?.n === "Type0") {
     const df = pdfD(pdf, (pdfD(pdf, f.DescendantFonts) || [])[0]) || {}, W = pdfD(pdf, df.W);
     info.dw = typeof pdfD(pdf, df.DW) === "number" ? pdfD(pdf, df.DW) : 1000;
-    for (let k = 0; Array.isArray(W) && k + 1 < W.length;) {
+    for (let k = 0; Array.isArray(W) && k + 1 < W.length && left > 0;) {
       const c = num(W[k]), nx = pdfD(pdf, W[k + 1]);
-      if (Array.isArray(nx)) { nx.forEach((w, j) => wm.set(c + j, num(w))); k += 2; }
-      else { for (let q = c; q <= num(nx) && q - c < 65536; q++) wm.set(q, num(W[k + 2])); k += 3; }
+      if (Array.isArray(nx)) { for (let j = 0; j < nx.length && left-- > 0; j++) wm.set(c + j, num(nx[j])); k += 2; }
+      else { for (let q = c; q <= num(nx) && left-- > 0; q++) wm.set(q, num(W[k + 2])); k += 3; }
     }
   } else {
     const ws = pdfD(pdf, f.Widths), first = num(pdfD(pdf, f.FirstChar));
     info.dw = 500;
-    if (Array.isArray(ws)) ws.forEach((w, j) => wm.set(first + j, num(pdfD(pdf, w))));
+    for (let j = 0; Array.isArray(ws) && j < ws.length && left-- > 0; j++) wm.set(first + j, num(pdfD(pdf, ws[j])));
   }
   info.wm = wm;
 }
@@ -289,6 +305,7 @@ async function pdfContent(pdf, s, res, st, ctm, depth) {
   };
   const move = (x, y) => { tlm = pdfMul([1, 0, 0, 1, x, y], tlm); moved = true; tx = 0; };
   while (i < s.length && st.len < st.max) {
+    if (++st.ops % 4096 === 0 && performance.now() > st.deadline) throw new RangeError("這個 PDF 太複雜，讀不完");   // 例如表單互相呼叫的壞檔
     const t = pdfTok(s, i);
     if (!t) break;
     if (t.t === "[" || t.t === "<<") { const [v, e] = pdfVal(s, i); stack.push(v); i = e; continue; }
@@ -329,7 +346,7 @@ async function pdfContent(pdf, s, res, st, ctm, depth) {
       case "Do": {
         const xo = pdfD(pdf, pdfD(pdf, res)?.XObject), ref = pdfIsDict(xo) ? xo[a[n - 1]?.n] : null;
         const o = ref && ref.r !== undefined ? pdf.objs.get(ref.r) : null;
-        if (o && pdfIsDict(o.v) && o.v.Subtype?.n === "Form" && depth < 4) {
+        if (o && pdfIsDict(o.v) && o.v.Subtype?.n === "Form" && depth < 4 && ++st.forms <= PDF_LIMIT.forms) {   // 表單展開有總次數上限：互相呼叫的壞檔不會展開成天文數字
           const d = await pdfStream(pdf, o), mx = pdfD(pdf, o.v.Matrix);
           if (d) await pdfContent(pdf, pdfBin(d), o.v.Resources !== undefined ? o.v.Resources : res, st, Array.isArray(mx) && mx.length === 6 ? pdfMul(mx.map(Number), ctm) : ctm, depth + 1);
           moved = true;
@@ -348,10 +365,11 @@ async function pdfText(buf, maxChars = 120000) {
   if (/\/Encrypt\s*(\d+\s+\d+\s+R|<<)/.test(s)) throw new Error("加密的 PDF 讀不了，先解除密碼再附");
   const pdf = { bytes, objs: pdfScan(s), budget: { left: PDF_LIMIT.total }, fonts: new Map() };
   await pdfExpand(pdf);
-  const pages = pdfPages(pdf), st = { out: [], len: 0, max: maxChars, x: 0, y: null, lost: 0 };
+  const pages = pdfPages(pdf), st = { out: [], len: 0, max: maxChars, x: 0, y: null, lost: 0, ops: 0, forms: 0, deadline: performance.now() + PDF_LIMIT.ms };
   let read = 0;
   for (const pg of pages) {
     if (st.len >= st.max) break;
+    if (performance.now() > st.deadline) throw new RangeError("這個 PDF 太複雜，讀不完");
     read++;
     if (pages.length > 1) st.out.push(`${read > 1 ? "\n\n" : ""}【第 ${read} 頁】\n`);
     st.y = null;

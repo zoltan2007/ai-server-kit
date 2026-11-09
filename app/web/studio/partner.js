@@ -50,9 +50,10 @@ function nameOf(by) { const p = partner(); return by === "user" ? (S.me?.name ||
 function contextFor(who, upto, conv = S.cur) {
   // who 自己說過的話當 assistant，其他人的話當 user 並標名字。
   // 專案指示、主機狀態只給 Kiki（本機）；雲端夥伴只拿到對話文字（伺服器端 providers._clean 也會把 system 丟掉）。
+  // 舊對話的主模型可能是 ext:（雲端）：那就算是「Kiki」的位置，也一律照雲端的規矩，只給對話文字。
   const msgs = [], sys = [];
-  const p = partner();
-  if (who === "kiki") {
+  const p = partner(), local = who === "kiki" && !String(conv?.model || "").startsWith("ext:");
+  if (local) {
     const inst = (conv?.instructions || "").trim();
     if (inst) sys.push("使用者為這個專案設定的固定指示，每次回答都要遵守：\n" + inst);
     if (p) sys.push(`這個專案有三位成員：使用者「${S.me?.name}」、你（Kiki）、使用者自己的 AI 夥伴「${p.name}」（代號 @${p.handle}）。夥伴的話會標「${p.name}：」；它可能對你下指令或和你討論，照常回應，必要時用 @${p.handle} 回它。`);
@@ -60,13 +61,13 @@ function contextFor(who, upto, conv = S.cur) {
     if (sys.length) msgs.push({ role: "system", content: sys.join("\n\n") });
   }
   // 圖片很占資源：只跟「最近一則有圖的訊息」一起送，除非使用者把那則的圖固定住（m.keep）
-  const kiki = who === "kiki", lastImg = kiki ? upto.reduce((a, m, i) => (m.images?.length ? i : a), -1) : -1;
+  const lastImg = local ? upto.reduce((a, m, i) => (m.images?.length ? i : a), -1) : -1;
   upto.forEach((m, i) => {
     const by = speaker(m);
     let text = (by === "user" ? m.content : splitThink(m).content) || "";
-    if (m.files?.length) text = filesText(m.files, kiki || !!conv?.settings?.partnerFiles) + (text ? "\n\n" + text : "");
-    const withImg = kiki && !!m.images?.length && (i === lastImg || !!m.keep);
-    if (kiki && m.images?.length && !withImg) text += `${text ? "\n" : ""}（這則原本附了 ${m.images.length} 張圖片，之後有更新的圖所以沒有重送；需要再看的話請使用者重新附上或把它固定）`;
+    if (m.files?.length) text = filesText(m.files, local || !!conv?.settings?.partnerFiles) + (text ? "\n\n" + text : "");
+    const withImg = local && !!m.images?.length && (i === lastImg || !!m.keep);
+    if (local && m.images?.length && !withImg) text += `${text ? "\n" : ""}（這則原本附了 ${m.images.length} 張圖片，之後有更新的圖所以沒有重送；需要再看的話請使用者重新附上或把它固定）`;
     if (!text && !withImg) return;
     if (by === who) { msgs.push({ role: "assistant", content: text }); return; }
     const x = { role: "user", content: by === "user" ? text : `${nameOf(by)}：${text}` };

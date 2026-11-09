@@ -8,7 +8,8 @@ const FILE_ICON = '<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/
 const PIN_ICON = '<svg viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3z"/></svg>';
 const canSee = () => (S.caps[S.cur?.model]?.capabilities || []).includes("vision");
 const fmtChars = n => (n >= 10000 ? (n / 10000).toFixed(1) + " 萬字" : n.toLocaleString() + " 字");
-const fileMeta = f => `${f.type === "pdf" ? `PDF · ${f.pages} 頁 · ` : ""}${fmtChars(f.text.length)}${f.cut ? " · 只附前段" : ""}`;
+// 存回來的對話是外部資料：頁數、字數一律轉成數字再放進畫面
+const fileMeta = f => `${f.type === "pdf" ? `PDF · ${Math.trunc(+f.pages) || 0} 頁 · ` : ""}${fmtChars(String(f.text || "").length)}${f.cut ? " · 只附前段" : ""}`;
 const dataUrl = f => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result)); fr.onerror = () => no(new Error("讀不了這個檔案")); fr.readAsDataURL(f); });
 
 // ── 讀檔 ──
@@ -134,13 +135,13 @@ $("#msgs").addEventListener("click", e => {
   if (!m) return;
   if (k) { m.keep = !m.keep; k.outerHTML = keepBtn(m); queueSave(0); toast(m.keep ? "已固定：之後每一輪都會帶上這些圖" : "取消固定：有新圖時這些就不再送"); return; }
   const doc = m.files[+f.dataset.file];
-  if (doc && typeof openArt === "function") openArt({ title: doc.name, name: doc.type === "pdf" ? doc.name + ".txt" : doc.name, lang: doc.type === "pdf" ? "text" : fileLang(doc.name), code: doc.text, note: doc.type === "pdf" ? "從 PDF 抽出來的文字" : "你附的檔案" });
+  if (doc && typeof openArt === "function") openArt(fileArt(doc));
 });
 
 // ── 給模型看的附件文字 ──
 function filesText(files, full) {
   return files.map(f => (full
-    ? `〈附件：${f.name}${f.pages ? `（PDF，共 ${f.pages} 頁）` : ""}${f.cut ? "（內容太長，只有前段）" : ""}〉\n${f.text}\n〈附件結束：${f.name}〉`
+    ? `〈附件：${f.name}${Math.trunc(+f.pages) ? `（PDF，共 ${Math.trunc(+f.pages)} 頁）` : ""}${f.cut ? "（內容太長，只有前段）" : ""}〉\n${f.text}\n〈附件結束：${f.name}〉`
     : `〈附件：${f.name}（使用者沒有開放內容給你）〉`)).join("\n\n");
 }
 // 粗估 token 數（中文一個字約一個 token、英數約 3.6 個字元一個；不同模型會差到三四成），只用來決定要不要把 num_ctx 調大

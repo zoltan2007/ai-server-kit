@@ -507,7 +507,7 @@ class Handler(BaseHTTPRequestHandler):
                 clean[k] = max(0, min(hi, v))
         fixed = self.app.cfg.get("num_ctx")      # 管理員固定 context 長度：每次都一樣，Ollama 就不會為了換長度重新載入模型
         if isinstance(fixed, int) and not isinstance(fixed, bool) and fixed > 0:
-            clean["num_ctx"] = fixed
+            clean["num_ctx"] = min(fixed, 262144)
         if clean:
             payload["options"] = clean
         if b.get("format") == "json":

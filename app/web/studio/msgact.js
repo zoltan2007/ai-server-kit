@@ -69,7 +69,7 @@ function startEdit(el, m) {
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const text = ta.value.trim(), conv = S.cur;
-    if (!text || S.busy || !conv) return;
+    if ((!text && !m.files?.length && !m.images?.length) || S.busy || !conv) return;      // 只有附件的訊息可以不打字就重送
     const i = conv.messages.indexOf(m);
     if (i < 0) { cancel(); return; }
     const later = conv.messages.length - i - 1;

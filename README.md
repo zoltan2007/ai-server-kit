@@ -78,6 +78,20 @@ Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入�
 
 👉 **Full guide, deployment and usage:** **https://zoltan2007.github.io/ai-server-kit/**
 
+## Kiki Cloude (`/studio/`)
+
+A multi-user chat workspace on top of the panel, laid out like a desktop AI coding app: project list with groups and branches on the left, the conversation in the middle, a side pane on the right. The interface is in Traditional Chinese.
+
+- **Accounts**: people apply on the login page (optionally verified by a code mailed to their Gmail address), an admin approves them, and each account gets its own projects. Admins can set daily or weekly token limits and see usage on a dashboard. The install-time login code remains the master admin.
+- **Projects**: streaming replies with thinking, Markdown, branching, pinning, per-project instructions that are sent to the local model on every turn, export as text, an AI-readable memory file, or a zip of everything.
+- **Message actions**: copy, regenerate the last answer, edit and resend one of your own messages, find within the conversation, keyboard shortcuts (`Ctrl+/` lists them).
+- **Attachments**: images (for vision models; downscaled to 1568 px), text and code files (UTF-8 or Big5), and PDFs. **PDF text is extracted in the browser; the original file never reaches the host.** Scanned or encrypted PDFs yield no text. Only the newest batch of images is re-sent each turn unless you pin a message's images.
+- **Artifact pane**: open code blocks, whole answers and attachments on the right to copy, download or preview. HTML, SVG and Markdown previews **never run JavaScript and load nothing from outside** (HTML sits in a fully sandboxed frame).
+- **Your own cloud AI as a third participant**: connect a Claude, OpenAI, Gemini or Grok API key and add it to a project next to the local model. It only ever receives conversation text: never host status, project instructions or images, and attachment contents only if you switch that on for the project. Keys stay on the host.
+- **Rooms**: invite other accounts into a shared room; the AI answers only when mentioned.
+
+Long documents need a long context: Ollama reads about 4096 tokens by default and silently drops the rest. The page asks for a larger context when a conversation is long (8192, 16384 or 32768, from a rough estimate); to pin one value for every request and avoid model reloads, set `"num_ctx": 32768` in `config.json`. Larger contexts use more VRAM.
+
 ## Security & privacy
 
 - **Local only by default** (`127.0.0.1`). `-Lan` opens it to your LAN — unencrypted, so for home/office networks only. To reach it from outside, use a VPN such as Tailscale; never expose the port to the open internet.

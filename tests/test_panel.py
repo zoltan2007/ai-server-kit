@@ -623,6 +623,9 @@ class PanelTest(unittest.TestCase):
             self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 24576)
             self.stream("/api/chat", ask)
             self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 24576)
+            cfg["num_ctx"] = 10 ** 9          # 設定打錯也不會要 Ollama 配一個天文數字
+            self.stream("/api/chat", ask)
+            self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 262144)
         finally:
             del cfg["num_ctx"]
 

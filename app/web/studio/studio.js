@@ -458,7 +458,7 @@ async function saveNow(conv) {
 async function saveOne(c) {
   if (!c.title) c.title = (c.messages.find(m => m.role === "user" && m.content)?.content || c.messages.find(m => m.files?.length)?.files[0].name || "").slice(0, 40).replace(/\n.*/s, "") || "新對話";
   const body = Object.assign({}, c, { _saving: undefined, _again: undefined,
-    messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images, files: m.files, keep: m.keep })) });
+    messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, stopped: m.stopped, images: m.images, files: m.files, keep: m.keep })) });
   try {
     const r = await saveSession(body);
     c.id = r.id; c.updated = r.updated;
