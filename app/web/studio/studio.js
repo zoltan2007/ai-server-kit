@@ -70,12 +70,23 @@ function showLogin(msg) {
   $("#app").hidden = true; $("#login").hidden = false;
   showCard("login-form"); $("#login-err").textContent = msg || "";
   setTimeout(() => $(gate.mode === "token" ? "#login-token" : "#login-user").focus(), 50);
+  firstRun();
+}
+async function firstRun() {
+  // 剛裝好、還沒有管理員帳號：沒有人能核准申請，只能用登入碼進來建帳號，所以直接切到登入碼
+  try {
+    const r = await (await fetch("/api/ping")).json();
+    if (!r.setup || gate.mode === "token" || $("#login").hidden) return;
+    setMode("token");
+    $("#login-tip").textContent = "第一次使用：輸入安裝時顯示的登入碼，接著建立管理員帳號。";
+    $("#login-token").focus();
+  } catch { /* 連不到主機：照原本的畫面 */ }
 }
 function showCard(id) { for (const f of $$("#login form")) f.hidden = f.id !== id; }
 function setMode(mode) {
   gate.mode = mode;
   $("#login-user-fields").hidden = mode === "token"; $("#login-token").hidden = mode !== "token";
-  $("#to-token").textContent = mode === "token" ? "用帳號密碼" : "用管理員登入碼";
+  $("#to-apply").hidden = $("#to-forgot").hidden = mode === "token"; $("#to-user").hidden = mode !== "token";
   $("#login-tip").textContent = mode === "token" ? "安裝時顯示的登入碼；忘記的話在主機上執行「顯示登入碼」。" : "用你的帳號登入；還沒有帳號可以向管理員申請。";
 }
 async function post(path, body) {
@@ -84,7 +95,11 @@ async function post(path, body) {
   if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
   return j;
 }
-$("#to-token").addEventListener("click", () => { setMode(gate.mode === "token" ? "user" : "token"); $("#login-err").textContent = ""; });
+// 管理員登入碼平常用不到，收在「忘記密碼」裡；還沒有管理員帳號時（剛裝好）登入頁直接要登入碼
+$("#to-forgot").addEventListener("click", () => { showCard("forgot-form"); $("#forgot-back").focus(); });
+$("#forgot-back").addEventListener("click", () => showLogin());
+$("#to-token").addEventListener("click", () => { setMode("token"); showLogin(); });
+$("#to-user").addEventListener("click", () => { setMode("user"); $("#login-err").textContent = ""; $("#login-user").focus(); });
 $("#to-apply").addEventListener("click", () => { showCard("apply-form"); $("#apply-user").focus(); });
 $("#to-login").addEventListener("click", () => showLogin());
 $("#login-form").addEventListener("submit", async e => {

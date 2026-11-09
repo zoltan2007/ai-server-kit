@@ -196,7 +196,8 @@ class Handler(BaseHTTPRequestHandler):
             if not path.startswith("/api/"):
                 return self.static(path)
             if path == "/api/ping":
-                return self.json({"ok": True})
+                # setup：還沒有任何管理員帳號（剛裝好），登入頁要直接請人輸入安裝時的登入碼
+                return self.json({"ok": True, "setup": not self.app.users.has_admin()})
             if not self.authed(path):
                 return
             fn = GET_ROUTES.get(path)

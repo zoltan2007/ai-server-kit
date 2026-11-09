@@ -24,8 +24,17 @@
     <p class="err" id="login-err"></p>
     <div class="links">
       <button type="button" class="link" id="to-apply">申請帳號</button>
-      <button type="button" class="link" id="to-token">用管理員登入碼</button>
+      <button type="button" class="link" id="to-forgot">忘記密碼</button>
+      <button type="button" class="link" id="to-user" hidden>用帳號密碼登入</button>
     </div>
+  </form>
+
+  <form class="card" id="forgot-form" hidden>
+    <div class="logo">K</div>
+    <h1>忘記密碼</h1>
+    <p class="muted">請聯絡這台主機的管理員，請他在「成員」裡幫你重設密碼，再用新密碼登入。</p>
+    <div class="links"><button type="button" class="link" id="forgot-back">回登入</button></div>
+    <div class="links admin-alt"><button type="button" class="link" id="to-token">我是管理員：用安裝時的登入碼登入</button></div>
   </form>
 
   <form class="card" id="apply-form" hidden>

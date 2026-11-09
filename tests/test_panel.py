@@ -484,6 +484,13 @@ class PanelTest(unittest.TestCase):
 
     def test_auth(self):
         self.assertEqual(self.req("/api/ping", token="")[0], 200)
+        # ping 只透露「還沒有管理員帳號」這一件事（登入頁用來決定要不要直接請人輸入登入碼）
+        users = server.Handler.app.users
+        self.assertEqual(self.req("/api/ping", token="")[1], {"ok": True, "setup": not users.has_admin()})
+        self.req("/api/users/setup", {"user": "pingadmin", "password": "pingadmin-pass1"})
+        self.assertFalse(self.req("/api/ping", token="")[1]["setup"])
+        self.req("/api/users/reject", {"user": "pingadmin"})
+        self.assertEqual(self.req("/api/ping", token="")[1]["setup"], not users.has_admin())
         self.assertEqual(self.req("/api/status", token="")[0], 401)
         self.assertEqual(self.req("/api/status", token="wrong-token-xxxxxxx")[0], 401)
         self.assertEqual(self.req("/api/term/run", {"cmd": "echo hi"}, token="")[0], 401)

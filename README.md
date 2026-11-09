@@ -82,7 +82,7 @@ Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入�
 
 A multi-user chat workspace on top of the panel, laid out like a desktop AI coding app: project list with groups and branches on the left, the conversation in the middle, a side pane on the right. The interface is in Traditional Chinese.
 
-- **Accounts**: people apply on the login page (optionally verified by a code mailed to their Gmail address), an admin approves them, and each account gets its own projects. Admins can set daily or weekly token limits and see usage on a dashboard. The install-time login code remains the master admin.
+- **Accounts**: people apply on the login page (optionally verified by a code mailed to their Gmail address), an admin approves them, and each account gets its own projects. Admins can set daily or weekly token limits and see usage on a dashboard. The install-time login code remains the master admin: the login page asks for it directly until an admin account exists, and after that it sits behind "忘記密碼" (forgot password).
 - **Projects**: streaming replies with thinking, Markdown, branching, pinning, per-project instructions that are sent to the local model on every turn, export as text, an AI-readable memory file, or a zip of everything.
 - **Message actions**: copy, regenerate the last answer, edit and resend one of your own messages, find within the conversation, keyboard shortcuts (`Ctrl+/` lists them).
 - **Attachments**: images (for vision models; downscaled to 1568 px), text and code files (UTF-8 or Big5), and PDFs. **PDF text is extracted in the browser; the original file never reaches the host.** Scanned or encrypted PDFs yield no text. Only the newest batch of images is re-sent each turn unless you pin a message's images.

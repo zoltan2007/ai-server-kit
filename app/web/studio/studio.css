@@ -565,3 +565,6 @@ button.fchip:active { box-shadow: var(--inset-sm); }
 #partner-pop button:hover { box-shadow: var(--raise-sm); }
 #partner-pop button.on { box-shadow: var(--inset-sm); }
 #partner-pop button .muted { font-size: 12px; }
+.admin-alt { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.admin-alt .link { font-size: 12px; }
+.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
