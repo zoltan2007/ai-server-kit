@@ -110,11 +110,14 @@ async function askAI(who) {
 // ── 誰該接話 ──
 const mentionsKiki = t => /(^|[\s,，。！？!?(（])@(kiki|小機|ai)\b/i.test(t);
 const mentionsPartner = t => { const p = partner(); return !!p && new RegExp(`(^|[\\s,，。！？!?(（])@${p.handle}\\b`, "i").test(t); };
-async function sendChat(text) {
+async function sendChat(text, carry) {
   if (!S.cur.model) { toast("先選一個模型", true); return; }
   const user = { role: "user", by: "user", content: text };
-  if (S.attach.length) user.images = S.attach.map(a => a.b64);
-  S.attach = []; renderAttach();
+  if (carry) { for (const k of ["images", "files", "keep"]) if (carry[k]) user[k] = carry[k]; }   // 編輯重送：沿用原本那則的附件
+  else {
+    if (S.attach.length) user.images = S.attach.map(a => a.b64);
+    S.attach = []; renderAttach();
+  }
   const conv = S.cur;
   conv.messages.push(user);
   $("#empty").hidden = true;

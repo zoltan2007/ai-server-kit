@@ -662,11 +662,15 @@ def log_error(msg):
             pass
 
 
+class PanelServer(ThreadingHTTPServer):
+    # Windows 的 SO_REUSEADDR 會讓第二個程式「成功」綁到同一個埠（連線跑到哪個不一定）；關掉它，重複開才會報錯
+    allow_reuse_address = os.name != "nt"
+    daemon_threads = True
+
+
 def make_server(cfg):
     Handler.app = App(cfg)
-    srv = ThreadingHTTPServer((cfg.get("host", "127.0.0.1"), int(cfg.get("port", 8780))), Handler)
-    srv.daemon_threads = True
-    return srv
+    return PanelServer((cfg.get("host", "127.0.0.1"), int(cfg.get("port", 8780))), Handler)
 
 
 def main():

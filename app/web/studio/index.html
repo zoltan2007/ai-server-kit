@@ -111,6 +111,7 @@
     <div class="pop-head">自訂</div>
     <button class="btn sm" id="theme-btn">切換深／淺色</button>
     <button class="btn sm" id="myai-btn">我的 AI</button>
+    <button class="btn sm" id="keys-btn">快捷鍵</button>
     <button class="btn sm" id="pw-btn">改我的密碼</button>
     <button class="btn sm" id="mail-btn" hidden>寄信設定（Gmail 驗證）</button>
     <button class="btn sm" id="logout-btn">登出</button>
@@ -125,6 +126,8 @@
       <span class="party chat-only" id="party">你、Kiki</span>
       <button class="icon-btn room-only" id="members-btn" title="成員" aria-label="成員">
         <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-5-5.9"/></svg></button>
+      <button class="icon-btn" id="find-btn" title="在這個對話裡找" aria-label="在這個對話裡找">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
       <button class="icon-btn chat-only" id="pin-btn" title="釘選" aria-label="釘選">
         <svg viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3z"/></svg></button>
       <button class="icon-btn chat-only" id="del-btn" title="刪除對話" aria-label="刪除對話">
@@ -133,6 +136,13 @@
         <svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></button>
     </header>
 
+    <div class="findbar" id="findbar" role="search" hidden>
+      <input id="find-input" type="search" placeholder="在這個對話裡找…" aria-label="在這個對話裡找">
+      <span class="muted small" id="find-count" aria-live="polite"></span>
+      <button class="icon-btn" type="button" id="find-prev" title="上一筆（Enter）" aria-label="上一筆"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="icon-btn" type="button" id="find-next" title="下一筆（Shift+Enter）" aria-label="下一筆"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="icon-btn" type="button" id="find-close" title="關閉（Esc）" aria-label="關閉搜尋"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
     <div class="dash" id="dash" hidden></div>
     <div class="msgs" id="msgs" aria-live="polite">
       <div class="empty" id="empty">
@@ -241,6 +251,14 @@
   </div>
 </div>
 
+<!-- 快捷鍵 -->
+<div class="modal" id="keys-modal" hidden>
+  <div class="modal-card">
+    <div class="side-head"><b>快捷鍵</b><button class="icon-btn" id="keys-close" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="keys" id="keys-list"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script src="studio.js"></script>
 <script src="rooms.js"></script>
@@ -249,5 +267,6 @@
 <script src="heat.js"></script>
 <script src="ui2.js"></script>
 <script src="admin.js"></script>
+<script src="msgact.js"></script>
 </body>
 </html>

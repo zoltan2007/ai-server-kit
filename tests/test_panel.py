@@ -118,6 +118,11 @@ class PanelTest(unittest.TestCase):
             code, _ = self.req(bad, token="")
             self.assertEqual(code, 404, bad)
 
+    def test_port_in_use(self):
+        # 同一個埠再開一個面板要直接報錯（Windows 預設會讓第二個「成功」綁上去，連線跑到哪個不一定）
+        with self.assertRaises(OSError):
+            server.PanelServer(("127.0.0.1", self.srv.server_address[1]), server.Handler).server_close()
+
     def test_sessions(self):
         self.assertEqual(self.req("/api/sessions", token="")[0], 401)
         code, r = self.req("/api/sessions/save", {"title": "第一個", "model": "qwen3.5:4b",
