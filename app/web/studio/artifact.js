@@ -51,7 +51,7 @@ function renderArt() {
     return;
   }
   const a = ART.cur, kind = artKind(a), view = kind && ART.view === "preview" ? "preview" : "code";
-  const seg = kind ? `<div class="seg" role="tablist"><button data-art-do="code" class="${view === "code" ? "on" : ""}">原始碼</button><button data-art-do="preview" class="${view === "preview" ? "on" : ""}">預覽</button></div>` : "";
+  const seg = kind ? `<div class="seg"><button data-art-do="code" class="${view === "code" ? "on" : ""}">原始碼</button><button data-art-do="preview" class="${view === "preview" ? "on" : ""}">預覽</button></div>` : "";
   box.innerHTML = `<div class="art-head"><button class="icon-btn" data-art-do="back" title="回清單" aria-label="回清單">${ART_ICON.back}</button>
       <div class="art-title"><b>${esc(a.title)}</b><span class="muted small">${esc(artMeta(a))}</span></div></div>
     <div class="art-bar">${seg}<span class="grow"></span><button class="btn sm" data-art-do="copy">複製</button><button class="btn sm primary" data-art-do="save">下載</button></div>

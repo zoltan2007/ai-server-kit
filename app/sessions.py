@@ -21,6 +21,14 @@ class SessionStore:
         self.lock = threading.Lock()
         os.makedirs(self.dir, exist_ok=True)
         self.meta = {}       # sid → (mtime, size, 清單用的摘要)；檔案沒變就不重新解析
+        self.indexed = False  # 索引建過了沒（建過之後所有寫入都會同步更新它）
+
+    def stats(self):
+        """（專案數, 訊息數）。直接讀記憶體裡的索引，不碰硬碟；只有第一次會掃資料夾。儀表板總覽用。"""
+        if not self.indexed:
+            self.list()
+        with self.lock:
+            return len(self.meta), sum(m[2]["count"] for m in self.meta.values())
 
     def _path(self, sid):
         if not ID_RE.match(sid or ""):
@@ -63,6 +71,7 @@ class SessionStore:
             for sid in list(self.meta):
                 if sid not in seen:
                     del self.meta[sid]
+            self.indexed = True
         out.sort(key=lambda s: (not s["pinned"], -s["updated"]))
         return out
 
@@ -91,7 +100,7 @@ class SessionStore:
         data = json.dumps(body, ensure_ascii=False)
         if len(data.encode("utf-8")) > MAX_BYTES:
             raise ValueError("這個對話太大了（超過 8 MB），請開新的對話")
-        if not self.meta:
+        if not self.indexed:
             self.list()      # 第一次先建索引
         with self.lock:
             if sid not in self.meta and len(self.meta) >= MAX_COUNT:

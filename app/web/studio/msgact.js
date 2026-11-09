@@ -18,13 +18,13 @@ fillMsg = function (d, m, live) {
   MSG.set(d, m);
   if (live || inRoom()) return;
   const acts = document.createElement("div");
-  acts.className = "acts";
+  acts.className = "macts";
   acts.innerHTML = m.role === "user" ? actBtn("copy", "複製") + actBtn("edit", "編輯後重送")
     : actBtn("copy", "複製") + actBtn("regen", "重新生成") + (typeof openDoc === "function" ? actBtn("doc", "在右側開成文件") : "");
   (m.role === "user" ? d : d.querySelector(".body")).appendChild(acts);
 };
 $("#msgs").addEventListener("click", e => {
-  const b = e.target.closest(".acts [data-a]");
+  const b = e.target.closest(".macts [data-a]");
   if (!b) return;
   const el = b.closest(".msg"), m = MSG.get(el);
   if (!m) return;
@@ -49,7 +49,7 @@ async function regenerate(el, m) {
 function startEdit(el, m) {
   if (S.busy) { toast("等這則回完再編輯"); return; }
   if (el.querySelector(".edit")) return;
-  const bubble = el.querySelector(".bubble"), acts = el.querySelector(".acts");
+  const bubble = el.querySelector(".bubble"), acts = el.querySelector(".macts");
   const form = document.createElement("form");
   form.className = "edit";
   form.innerHTML = `<textarea rows="1" aria-label="編輯訊息"></textarea>
@@ -95,7 +95,7 @@ function runFind(raw) {
   clearMarks();
   const q = raw.trim().toLowerCase();
   if (!q) { $("#find-count").textContent = ""; return; }
-  const skip = ".acts, .edit, .code-bar, .who, .stats, .time, .name";
+  const skip = ".macts, .edit, .code-bar, .who, .stats, .time, .name";
   const w = document.createTreeWalker($("#msgs"), NodeFilter.SHOW_TEXT, {
     acceptNode: n => (n.parentElement.closest(".msg") && !n.parentElement.closest(skip) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
   const nodes = [];

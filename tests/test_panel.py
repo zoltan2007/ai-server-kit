@@ -356,6 +356,20 @@ class PanelTest(unittest.TestCase):
         ov = self.req("/api/admin/overview")[1]
         me = next(u for u in ov["users"] if u["name"] == "dashu")
         self.assertEqual((me["projects"], me["messages"]), (1, 1)); self.assertGreater(me["tokens"], 0)
+        # 總覽讀的是對話索引：存檔、刪除之後數字要跟著變，而且不會再去掃資料夾
+        sid2 = self.req("/api/sessions/save", {"title": "第二個", "messages": [{"role": "user", "content": "a"}, {"role": "assistant", "content": "b"}]}, token=tok)[1]["id"]
+        store = server.Handler.app.sessions_for({"name": "dashu"})
+        scans = []
+        real_list, store.list = store.list, lambda: scans.append(1) or real_list()
+        try:
+            me = next(u for u in self.req("/api/admin/overview")[1]["users"] if u["name"] == "dashu")
+            self.assertEqual((me["projects"], me["messages"]), (2, 3))
+            self.req("/api/sessions/delete", {"id": sid2}, token=tok)
+            me = next(u for u in self.req("/api/admin/overview")[1]["users"] if u["name"] == "dashu")
+            self.assertEqual((me["projects"], me["messages"]), (1, 1))
+        finally:
+            store.list = real_list
+        self.assertEqual(scans, [])
         for p in ("day", "week", "month", "year"):
             us = self.req("/api/admin/usage?period=%s" % p)[1]
             self.assertIn("dashu", us["users"]); self.assertTrue(us["buckets"])

@@ -124,12 +124,12 @@ fillMsg = function (d, m, live) {
     d.insertBefore(box, bubble);
   }
   if (bubble && !m.content && !m.images?.length) bubble.hidden = true;
-  if (m.images?.length) d.querySelector(".acts")?.insertAdjacentHTML("afterbegin", keepBtn(m));
+  if (m.images?.length) d.querySelector(".macts")?.insertAdjacentHTML("afterbegin", keepBtn(m));
 };
 const keepLabel = m => (m.keep ? "已固定：就算之後附了新圖，這些圖每一輪也會一起送給 Kiki（點一下取消）" : "Kiki 每一輪只會看到最近附的那批圖；點一下固定，讓這些圖一直留著");
 const keepBtn = m => `<button type="button" data-a="keep" class="${m.keep ? "on" : ""}" title="${keepLabel(m)}" aria-label="${keepLabel(m)}" aria-pressed="${!!m.keep}">${PIN_ICON}</button>`;
 $("#msgs").addEventListener("click", e => {
-  const k = e.target.closest('.acts [data-a="keep"]'), f = e.target.closest(".fchips [data-file]");
+  const k = e.target.closest('.macts [data-a="keep"]'), f = e.target.closest(".fchips [data-file]");
   const m = MSG.get((k || f)?.closest(".msg"));
   if (!m) return;
   if (k) { m.keep = !m.keep; k.outerHTML = keepBtn(m); queueSave(0); toast(m.keep ? "已固定：之後每一輪都會帶上這些圖" : "取消固定：有新圖時這些就不再送"); return; }

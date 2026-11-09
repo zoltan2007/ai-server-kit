@@ -20,9 +20,10 @@ def overview(h, q):
     rows = []
     for n in names:
         u = h.app.users.public(n) or {"name": n, "role": "admin" if n == "admin" else "?", "status": "master" if n == "admin" else "deleted", "last_login": None}
-        sess = _store(h.app, n).list() if NAME_RE.match(n) or n == "admin" else []
+        # 專案數、訊息數讀對話索引（記憶體），不再每次把每個人的資料夾掃一遍
+        projects, messages = _store(h.app, n).stats() if NAME_RE.match(n) or n == "admin" else (0, 0)
         rows.append({"name": n, "role": u["role"], "status": u["status"], "last_login": u.get("last_login"),
-                     "projects": len(sess), "messages": sum(s["count"] for s in sess),
+                     "projects": projects, "messages": messages,
                      "tokens": tokens.get(n, {}).get("tokens", 0), "calls": tokens.get(n, {}).get("calls", 0)})
     rooms = sum(1 for f in os.listdir(h.app.rooms.dir) if f.endswith(".json"))
     h.json({"users": rows, "rooms": rooms})
