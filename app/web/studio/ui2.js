@@ -103,25 +103,6 @@ function exportSession(fmt) {
   toast("已下載：" + a.download);
 }
 
-// ── 拖拉檔案進輸入框 ──
-const comp = $("#composer");
-["dragenter", "dragover"].forEach(ev => comp.addEventListener(ev, e => { e.preventDefault(); comp.classList.add("drop"); }));
-["dragleave", "drop"].forEach(ev => comp.addEventListener(ev, () => comp.classList.remove("drop")));
-comp.addEventListener("drop", async e => {
-  e.preventDefault();
-  for (const f of [...e.dataTransfer.files].slice(0, 8)) {
-    if (f.type.startsWith("image/")) {
-      if ($("#attach-btn").hidden) { toast("這個模型不能看圖", true); continue; }
-      const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
-      S.attach.push({ b64: String(url).split(",")[1], url }); renderAttach();
-    } else if (f.size <= 64 * 1024) {
-      const t = await f.text();
-      const ta = $("#input");
-      ta.value = (ta.value ? ta.value + "\n\n" : "") + `檔案 ${f.name}：\n\`\`\`\n${t}\n\`\`\`\n`; autosize(ta);
-    } else toast(`${f.name} 太大（最多 64 KB）`, true);
-  }
-});
-
 // ── 標題旁的成員頭像 ──
 function renderParty() {
   const p = partner(), el = $("#party");

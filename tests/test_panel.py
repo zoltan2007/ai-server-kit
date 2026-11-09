@@ -108,7 +108,12 @@ class PanelTest(unittest.TestCase):
             self.assertEqual(code, 404, bad)
 
     def test_studio_static(self):
-        for p in ("/studio/", "/studio/index.html", "/studio/studio.js", "/studio/studio.css"):
+        import re
+        with urllib.request.urlopen(self.base + "/studio/", timeout=10) as r:
+            page = r.read().decode()
+        scripts = re.findall(r'<script src="([\w.-]+)"', page)      # 頁面引用的每一支程式都要真的存在
+        self.assertIn("studio.js", scripts)
+        for p in ["/studio/", "/studio/index.html", "/studio/studio.css"] + ["/studio/" + s for s in scripts]:
             with urllib.request.urlopen(self.base + p, timeout=10) as r:
                 self.assertEqual(r.status, 200, p)
         with urllib.request.urlopen(self.base + "/studio/", timeout=10) as r:
@@ -312,7 +317,10 @@ class PanelTest(unittest.TestCase):
         tok = self.req("/api/login", {"user": "exp", "password": "exppassword1"}, token="")[1]["token"]
         self.req("/api/sessions/save", {"title": "台股/筆記?", "model": "qwen3.5:4b", "group": "研究", "instructions": "一律先講結論",
                                         "messages": [{"role": "user", "content": "你好"}, {"role": "assistant", "by": "kiki", "content": "<think>想</think>嗨"}]}, token=tok)
-        self.req("/api/sessions/save", {"title": "第二個", "model": "qwen3.5:4b", "messages": [{"role": "user", "content": "再來"}]}, token=tok)
+        # 附件只是對話裡的資料：檔名再怪也不會變成路徑
+        evil = {"name": "../../evil\\x.txt", "type": "text", "size": 5, "text": "附件裡的字"}
+        self.req("/api/sessions/save", {"title": "第二個", "model": "qwen3.5:4b",
+                                        "messages": [{"role": "user", "content": "再來", "files": [evil]}]}, token=tok)
         rid = self.req("/api/rooms/create", {"title": "小隊"}, token=tok)[1]["id"]
         self.req("/api/rooms/post", {"id": rid, "content": "群組第一句"}, token=tok)
         code, resp = self.req("/api/export/all", token=tok, raw=True)
@@ -330,6 +338,9 @@ class PanelTest(unittest.TestCase):
         self.assertIn("### 2. Kiki", md); self.assertIn("嗨", md); self.assertNotIn("<think>", md)
         self.assertIn("## 專案指示", md); self.assertIn("一律先講結論", md)
         self.assertNotIn("## 專案指示", z.read("專案/第二個.記憶檔.md").decode("utf-8"))
+        self.assertFalse([n for n in names if ".." in n or "evil" in n or n.startswith("/")], names)
+        self.assertIn("〔附件：.._.._evil_x.txt〕", z.read("專案/第二個.txt").decode("utf-8"))
+        self.assertIn("附件裡的字", "".join(z.read(n).decode("utf-8") for n in names if n.startswith("原始JSON/")))
         self.assertIn("群組第一句", z.read("群組/小隊.txt").decode("utf-8"))
         self.assertEqual(self.req("/api/export/all", token="")[0], 401)
         self.req("/api/users/reject", {"user": "exp"})
@@ -580,6 +591,26 @@ class PanelTest(unittest.TestCase):
         code, r = self.req("/api/chat", {"model": "nope:1b", "messages": [{"role": "user", "content": "x"}]})
         self.assertEqual(code, 502)
         self.assertIn("not found", r["error"])
+
+    def test_chat_context_length(self):
+        # 附了長文件時前端會要求較大的 num_ctx：上限 32768；管理員在 config 固定 num_ctx 時一律用那個值
+        ask = {"model": "qwen3.5:4b", "messages": [{"role": "system", "content": "專案指示"}, {"role": "user", "content": "〈附件：a.txt〉\n內容"}]}
+        self.stream("/api/chat", dict(ask, options={"num_ctx": 16384}))
+        self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 16384)
+        self.assertEqual(fake_ollama.S.last_chat["messages"][0]["role"], "system")
+        self.stream("/api/chat", dict(ask, options={"num_ctx": 9999999, "mmap": False, "num_gpu": 0}))
+        self.assertEqual(fake_ollama.S.last_chat["options"], {"num_ctx": 32768})      # 沒列在白名單的選項不會傳下去
+        self.stream("/api/chat", ask)
+        self.assertNotIn("options", fake_ollama.S.last_chat)
+        cfg = server.Handler.app.cfg
+        cfg["num_ctx"] = 24576
+        try:
+            self.stream("/api/chat", dict(ask, options={"num_ctx": 8192}))
+            self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 24576)
+            self.stream("/api/chat", ask)
+            self.assertEqual(fake_ollama.S.last_chat["options"]["num_ctx"], 24576)
+        finally:
+            del cfg["num_ctx"]
 
     # ── 終端機 ──
     def test_term_echo_and_utf8(self):

@@ -159,9 +159,10 @@
       <div class="attach-list" id="attach-list"></div>
       <textarea id="input" rows="1" placeholder="問點什麼…"></textarea>
       <div class="comp-bar">
-        <button class="icon-btn" type="button" id="attach-btn" title="附圖" hidden>
-          <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg></button>
-        <input id="attach-input" type="file" accept="image/*" multiple hidden>
+        <button class="icon-btn chat-only" type="button" id="attach-btn" title="附加檔案：圖片、文字檔、PDF（也可以直接拖進來或貼上）" aria-label="附加檔案">
+          <svg viewBox="0 0 24 24"><path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg></button>
+        <input id="attach-input" type="file" multiple hidden
+          accept="image/*,application/pdf,text/*,.md,.csv,.tsv,.json,.log,.py,.js,.ts,.jsx,.tsx,.html,.css,.xml,.yaml,.yml,.ini,.toml,.sh,.ps1,.bat,.sql,.java,.c,.cpp,.h,.cs,.go,.rs,.php,.rb,.swift,.kt">
         <button class="chip chat-only" type="button" id="model-chip" title="Kiki 用的模型"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg><span id="model-name">選模型</span>
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
         <button class="chip chat-only" type="button" id="think-chip" title="思考強度（點一下切換）"><span>思考 高</span></button>
@@ -180,12 +181,13 @@
   <!-- 右欄：主機狀態 -->
   <aside class="right" id="right">
     <div class="side-head rtabs">
-      <button data-rt="host" class="on">主機</button><button data-rt="project">專案</button><button data-rt="usage">用量</button><button data-rt="members" id="rt-members" hidden>申請</button>
+      <button data-rt="host" class="on">主機</button><button data-rt="project">專案</button><button data-rt="art">成品</button><button data-rt="usage">用量</button><button data-rt="members" id="rt-members" hidden>申請</button>
       <span class="grow"></span>
       <button class="icon-btn" id="right-close" title="收起" aria-label="收起"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <div class="right-body rpane" id="status" data-rt="host"></div>
     <div class="right-body rpane" id="project-pane" data-rt="project" hidden></div>
+    <div class="right-body rpane" id="art-pane" data-rt="art" hidden></div>
     <div class="right-body rpane" data-rt="usage" hidden><div class="heat side" id="heat-side" hidden></div></div>
     <div class="right-body rpane" data-rt="members" hidden><div class="users" id="users-side"></div></div>
   </aside>
@@ -268,5 +270,8 @@
 <script src="ui2.js"></script>
 <script src="admin.js"></script>
 <script src="msgact.js"></script>
+<script src="pdftext.js"></script>
+<script src="files.js"></script>
+<script src="artifact.js"></script>
 </body>
 </html>

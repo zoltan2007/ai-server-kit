@@ -30,6 +30,10 @@ def body(m):
     if m.get("role") == "assistant" and text.startswith("<think>"):
         end = text.find("</think>")
         text = text[end + 8:].lstrip() if end >= 0 else ""
+    files = [f for f in (m.get("files") or []) if isinstance(f, dict)]
+    if files:      # 附件：匯出檔只列檔名，抽出來的文字留在「原始JSON」
+        names = "、".join(BAD.sub("_", str(f.get("name") or "檔案"))[:80] for f in files)
+        text = "〔附件：%s〕\n%s" % (names, text)
     return text
 
 

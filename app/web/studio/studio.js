@@ -253,10 +253,9 @@ function renderModelChip() {
 }
 async function updateCaps() {
   const name = S.cur?.model;
-  if (!name) { $("#caps").textContent = ""; $("#attach-btn").hidden = true; return; }
+  if (!name) { $("#caps").textContent = ""; return; }
   if (!S.caps[name]) { try { S.caps[name] = await api("/api/models/show?name=" + encodeURIComponent(name)); } catch { S.caps[name] = { capabilities: [] }; } }
   const caps = S.caps[name].capabilities || [];
-  $("#attach-btn").hidden = !caps.includes("vision");
   $("#think").disabled = !caps.includes("thinking");
   const zh = { completion: "對話", vision: "看圖", tools: "工具", thinking: "思考", embedding: "嵌入", insert: "補全" };
   $("#caps").textContent = caps.map(c => zh[c] || c).join("、");
@@ -442,7 +441,7 @@ $("#del-btn").addEventListener("click", async () => {
 $("#title").addEventListener("change", () => { if (!S.cur) return; S.cur.title = $("#title").value.trim(); queueSave(0); });
 ["#think", "#with-status"].forEach(s => $(s).addEventListener("change", () => {
   if (!S.cur) return;
-  S.cur.settings = { think: $("#think").checked, status: $("#with-status").checked }; queueSave();
+  S.cur.settings = Object.assign({}, S.cur.settings, { think: $("#think").checked, status: $("#with-status").checked }); queueSave();
 }));
 
 function queueSave(delay = 800) {
@@ -457,7 +456,7 @@ async function saveNow(conv) {
   return c._saving;
 }
 async function saveOne(c) {
-  if (!c.title) c.title = (c.messages.find(m => m.role === "user")?.content || "").slice(0, 40).replace(/\n.*/s, "") || "新對話";
+  if (!c.title) c.title = (c.messages.find(m => m.role === "user" && m.content)?.content || c.messages.find(m => m.files?.length)?.files[0].name || "").slice(0, 40).replace(/\n.*/s, "") || "新對話";
   const body = Object.assign({}, c, { _saving: undefined, _again: undefined,
     messages: c.messages.map(m => ({ role: m.role, by: m.by, content: m.content, thinking: m.thinking, stats: m.stats, error: m.error, images: m.images, files: m.files, keep: m.keep })) });
   try {
@@ -507,7 +506,7 @@ function inline(s) {
     : esc(p).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")).join("");
 }
 function codeBlock(code, lang) {
-  return `<div class="code"><div class="code-bar"><span>${esc(lang || "程式碼")}</span><button type="button" class="btn sm" data-copy>複製</button></div><pre><code>${esc(code)}</code></pre></div>`;
+  return `<div class="code"><div class="code-bar"><span>${esc(lang || "程式碼")}</span><span class="bar-btns"><button type="button" class="btn sm" data-art title="在右側窗格打開">開啟</button><button type="button" class="btn sm" data-copy>複製</button></span></div><pre><code>${esc(code)}</code></pre></div>`;
 }
 function md(src) {
   const L = src.split("\n"), out = [];
@@ -594,65 +593,10 @@ $("#msgs").addEventListener("click", e => {
 });
 
 // ── 送出 ──
-async function sendChatLegacy(text) {
-  const model = S.cur.model;
-  if (!model) { toast("先選一個模型", true); return; }
-  const user = { role: "user", content: text };
-  if (S.attach.length) user.images = S.attach.map(a => a.b64);
-  S.attach = []; renderAttach();
-  const ai = { role: "assistant", content: "", thinking: "" };
-  S.cur.messages.push(user, ai);
-  $("#empty").hidden = true;
-  const box = $("#msgs");
-  box.appendChild(msgEl(user));
-  const el = msgEl(ai, true);
-  box.appendChild(el);
-  scrollMsgs(true);
-
-  const msgs = $("#with-status").checked && statusForAI() ? [{ role: "system", content: statusForAI() }] : [];
-  for (const m of S.cur.messages.slice(0, -1)) {
-    const x = { role: m.role, content: m.role === "assistant" ? splitThink(m).content : m.content };
-    if (m.images) x.images = m.images;
-    msgs.push(x);
-  }
-  const body = { model, messages: msgs };
-  const caps = S.caps[model]?.capabilities || [];
-  if (caps.includes("thinking")) {
-    const on = $("#think").checked;
-    body.think = /^gpt-oss/.test(model) ? (on ? "medium" : "low") : on;
-  }
-  S.busy = true; S.ctrl = new AbortController();
-  $("#send").hidden = true; $("#stop").hidden = false;
-  let raf = 0, live = true;
-  let lastPaint = 0;
-  const paint = () => { if (!raf) raf = later(() => { raf = 0; if (live && performance.now() - lastPaint > 120) { lastPaint = performance.now(); const follow = nearBottom(); paintLive(el, ai); if (follow) scrollMsgs(true); } }); };
-  try {
-    const r = await api("/api/chat", { body, raw: true, signal: S.ctrl.signal });
-    for await (const ev of lines(r)) {
-      if (ev.error) { ai.error = ev.error; break; }
-      const m = ev.message || {};
-      if (m.thinking) ai.thinking += m.thinking;
-      if (m.content) ai.content += m.content;
-      if (ev.done && ev.eval_count) {
-        const tps = ev.eval_duration ? ev.eval_count / ev.eval_duration * 1e9 : 0;
-        const first = ((ev.load_duration || 0) + (ev.prompt_eval_duration || 0)) / 1e9;
-        ai.stats = `${model} · ${tps.toFixed(1)} tokens/秒 · ${ev.eval_count} tokens · 開始回答前等了 ${first.toFixed(1)} 秒`;
-      }
-      paint();
-    }
-  } catch (err) {
-    if (err.name === "AbortError") ai.stopped = true; else ai.error = err.message;
-  } finally {
-    live = false; S.busy = false; S.ctrl = null;
-    $("#send").hidden = false; $("#stop").hidden = true;
-    fillMsg(el, ai, false); scrollMsgs();
-    queueSave(0);
-  }
-}
 $("#composer").addEventListener("submit", e => {
   e.preventDefault();
   const ta = $("#input"), text = ta.value.trim();
-  if (!text || S.busy) return;
+  if ((!text && !S.attach.length) || S.busy) return;
   if (text.startsWith("/") && runSlash(text)) { ta.value = ""; autosize(ta); return; }
   ta.value = ""; autosize(ta); $("#slash").hidden = true;
   if (typeof RM !== "undefined" && RM.cur) roomSend(text); else sendChat(text);
@@ -698,20 +642,6 @@ function runSlash(text) {
   if (!S.cur && !["/新", "/面板", "/模型"].includes(c.k)) { toast("這個指令要在專案裡用"); $("#slash").hidden = true; return true; }
   $("#slash").hidden = true; c.run(); return true;
 }
-
-// ── 附圖 ──
-$("#attach-btn").addEventListener("click", () => $("#attach-input").click());
-$("#attach-input").addEventListener("change", async e => {
-  for (const f of [...e.target.files].slice(0, 8)) {
-    const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
-    S.attach.push({ b64: String(url).split(",")[1], url });
-  }
-  e.target.value = ""; renderAttach();
-});
-function renderAttach() {
-  $("#attach-list").innerHTML = S.attach.map((a, i) => `<span><img src="${a.url}" alt=""><button type="button" data-rm="${i}">×</button></span>`).join("");
-}
-$("#attach-list").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) { S.attach.splice(+b.dataset.rm, 1); renderAttach(); } });
 
 // ── 啟動 ──
 async function boot() {

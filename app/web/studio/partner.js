@@ -18,7 +18,7 @@ function renderPartnerChip() {
   pop.innerHTML = `<div class="pop-head">我的 AI 夥伴 <span class="muted small">加入後這個專案有三個人：你、Kiki、它</span></div>` +
     (mine.length ? mine.map(a => `<button data-partner="${a.provider}" class="${p?.provider === a.provider ? "on" : ""}"><span>${esc(a.name)}</span><span class="muted">${esc(a.model)} · @${esc(a.handle)}</span></button>`).join("")
       : `<div class="muted small" style="padding:8px">先到「自訂 → 我的 AI」填金鑰</div>`) +
-    (p ? `<button data-partner="" class="danger">把 ${esc(p.name)} 移出這個專案</button>` : "");
+    (p ? `<label class="toggle" title="預設只告訴夥伴附了哪些檔案，不給內容"><input type="checkbox" id="partner-files" ${S.cur?.settings?.partnerFiles ? "checked" : ""}><span>讓 ${esc(p.name)} 也讀附件的文字</span></label><button data-partner="" class="danger">把 ${esc(p.name)} 移出這個專案</button>` : "");
   $("#party").textContent = p ? `你、Kiki、${p.name}` : "你、Kiki";
   $("#discuss-btn").hidden = !p || !S.cur?.messages?.some(m => (m.by || (m.role === "assistant" ? "kiki" : "user")) === "kiki");
 }
@@ -27,6 +27,11 @@ $("#partner-chip").addEventListener("click", e => {
   const pop = $("#partner-pop"), r = e.currentTarget.getBoundingClientRect();
   renderPartnerChip(); pop.hidden = !pop.hidden;
   pop.style.left = Math.max(8, Math.min(r.left, innerWidth - 370)) + "px"; pop.style.top = Math.max(8, r.top - 8) + "px"; pop.style.transform = "translateY(-100%)";
+});
+$("#partner-pop").addEventListener("change", e => {
+  if (e.target.id !== "partner-files" || !S.cur) return;
+  S.cur.settings = Object.assign({}, S.cur.settings, { partnerFiles: e.target.checked }); queueSave(0);
+  toast(e.target.checked ? "之後夥伴會收到附件的文字（會送到它的雲端服務）" : "夥伴只會知道附了哪些檔案，看不到內容");
 });
 $("#partner-pop").addEventListener("click", e => {
   const b = e.target.closest("[data-partner]");
@@ -54,17 +59,20 @@ function contextFor(who, upto, conv = S.cur) {
     if ($("#with-status").checked && statusForAI()) sys.push(statusForAI());
     if (sys.length) msgs.push({ role: "system", content: sys.join("\n\n") });
   }
-  for (const m of upto) {
+  // 圖片很占資源：只跟「最近一則有圖的訊息」一起送，除非使用者把那則的圖固定住（m.keep）
+  const kiki = who === "kiki", lastImg = kiki ? upto.reduce((a, m, i) => (m.images?.length ? i : a), -1) : -1;
+  upto.forEach((m, i) => {
     const by = speaker(m);
-    const text = by === "user" ? m.content : splitThink(m).content;
-    if (!text && !m.images) continue;
-    if (by === who) msgs.push({ role: "assistant", content: text });
-    else {
-      const x = { role: "user", content: by === "user" ? text : `${nameOf(by)}：${text}` };
-      if (m.images && who === "kiki") x.images = m.images;
-      msgs.push(x);
-    }
-  }
+    let text = (by === "user" ? m.content : splitThink(m).content) || "";
+    if (m.files?.length) text = filesText(m.files, kiki || !!conv?.settings?.partnerFiles) + (text ? "\n\n" + text : "");
+    const withImg = kiki && !!m.images?.length && (i === lastImg || !!m.keep);
+    if (kiki && m.images?.length && !withImg) text += `${text ? "\n" : ""}（這則原本附了 ${m.images.length} 張圖片，之後有更新的圖所以沒有重送；需要再看的話請使用者重新附上或把它固定）`;
+    if (!text && !withImg) return;
+    if (by === who) { msgs.push({ role: "assistant", content: text }); return; }
+    const x = { role: "user", content: by === "user" ? text : `${nameOf(by)}：${text}` };
+    if (withImg) x.images = m.images;
+    msgs.push(x);
+  });
   return msgs;
 }
 
@@ -81,6 +89,8 @@ async function askAI(who) {
   if (who === "kiki") {
     const caps = S.caps[model]?.capabilities || [];
     if (caps.includes("thinking")) body.think = /^gpt-oss/.test(model) ? (S.think === "off" ? "low" : S.think === "high" ? "high" : "medium") : S.think !== "off";
+    const ctx = ctxOptions(model, body.messages);      // 內容長（例如附了文件）就把模型一次能讀的長度調大
+    if (ctx) { body.options = { num_ctx: ctx.num_ctx }; if (ctx.over) toast("內容很長，超過模型一次能讀的長度，前面的部分可能會被略過", true); }
   }
   S.busy = true; S.ctrl = new AbortController();
   $("#send").hidden = true; $("#stop").hidden = false;
@@ -121,8 +131,7 @@ async function sendChat(text, carry) {
   const user = { role: "user", by: "user", content: text };
   if (carry) { for (const k of ["images", "files", "keep"]) if (carry[k]) user[k] = carry[k]; }   // 編輯重送：沿用原本那則的附件
   else {
-    if (S.attach.length) user.images = S.attach.map(a => a.b64);
-    S.attach = []; renderAttach();
+    Object.assign(user, takeAttach());
   }
   const conv = S.cur;
   conv.messages.push(user);

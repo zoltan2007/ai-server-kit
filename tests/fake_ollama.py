@@ -161,6 +161,7 @@ class H(BaseHTTPRequestHandler):
             with S.lock:
                 S.loaded[name] = True
             last = (b.get("messages") or [{}])[-1].get("content", "")
+            S.last_chat = b          # 測試用：看面板實際送了什麼給 Ollama
 
             def gen():
                 if b.get("think"):
