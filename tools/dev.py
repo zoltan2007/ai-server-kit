@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(ROOT, "app"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 
 import fake_ollama  # noqa: E402
+import hub  # noqa: E402
 import providers  # noqa: E402
 import server  # noqa: E402
 
@@ -32,6 +33,39 @@ def fake_cloud(url, headers, body):
 
 providers._open = fake_cloud
 
+
+class _FakeResp:
+    def __init__(self, data, status=200):
+        import io
+        self.buf, self.status = io.BytesIO(data), status
+
+    def read(self, n=-1):
+        import time as _time
+        _time.sleep(0.15)          # 慢一點，才看得到進度條
+        return self.buf.read(min(n, 256 * 1024) if n and n > 0 else -1)
+
+    def close(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        pass
+
+
+def fake_hf(req, timeout=None):
+    """預覽用的假 ComfyUI 與假 Hugging Face：不連網，下載回一段假資料（約 4 MB）。"""
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    if url.endswith("/system_stats"):
+        return _FakeResp(b'{"system": {"comfyui_version": "0.0.0-preview"}}')
+    if url.startswith("https://huggingface.co/"):
+        return _FakeResp(b"\0" * (4 * 1024 * 1024))
+    raise OSError("預覽不連網：%s" % url)
+
+
+hub._urlopen = fake_hf
+
 DEV_TOKEN = "dev-preview-token-2026"
 
 if __name__ == "__main__":
@@ -45,7 +79,12 @@ if __name__ == "__main__":
     # 預覽時設一個假的「製作人收模型」端點，好看到使用協議的分享同意選項
     cfg = {"host": "127.0.0.1", "port": port, "token": DEV_TOKEN, "terminal": True,
            "ollama": ol_url, "data_dir": data,
-           "share": {"url": ol_url + "/sink", "label": "製作人（預覽）"}}
+           "share": {"url": ol_url + "/sink", "label": "製作人（預覽）"},
+           "comfyui": {"dir": os.path.join(data, "comfyui"), "url": "http://127.0.0.1:8188"}}
+    # 假的 ComfyUI 資料夾：有 main.py 就算「已安裝」
+    os.makedirs(cfg["comfyui"]["dir"], exist_ok=True)
+    with open(os.path.join(cfg["comfyui"]["dir"], "main.py"), "w", encoding="utf-8") as f:
+        f.write("# 預覽用的假 ComfyUI\n")
     srv = server.make_server(cfg)
     print("預覽：http://127.0.0.1:%d/" % port, flush=True)
     try:

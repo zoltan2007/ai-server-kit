@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# 解除安裝 AI 主機面板（Linux）。預設保留 Ollama 和模型。
-#   sudo bash uninstall.sh [--remove-ollama] [--prefix /opt/ai-server-kit] [--yes]
+# 解除安裝 AI 主機面板（Linux）。預設保留 Ollama 和模型；ComfyUI 的模型檔搬到 <安裝位置>-comfyui-models 保留。
+#   sudo bash uninstall.sh [--remove-ollama] [--remove-comfyui-models] [--prefix /opt/ai-server-kit] [--yes]
 set -euo pipefail
 PREFIX=/opt/ai-server-kit
 REMOVE_OLLAMA=0
+REMOVE_COMFY_MODELS=0
 YES=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --remove-ollama) REMOVE_OLLAMA=1; shift ;;
+    --remove-comfyui-models) REMOVE_COMFY_MODELS=1; shift ;;
     --prefix) PREFIX="$2"; shift 2 ;;
     --yes|-y) YES=1; shift ;;
     *) echo "不認得的選項：$1"; exit 1 ;;
@@ -25,6 +27,14 @@ PORT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("port
 if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "$PORT/tcp"; then ufw delete allow "$PORT/tcp" >/dev/null || true; fi
 if command -v firewall-cmd >/dev/null && firewall-cmd --state >/dev/null 2>&1; then
   firewall-cmd --permanent --remove-port="$PORT/tcp" >/dev/null 2>&1 && firewall-cmd --reload >/dev/null || true
+fi
+systemctl disable --now comfyui 2>/dev/null || true
+rm -f /etc/systemd/system/comfyui.service
+systemctl daemon-reload 2>/dev/null || true
+# ComfyUI 的模型檔動輒幾十 GB：預設搬出來保留，重裝時放回 comfyui/models 就能用
+if [ -d "$PREFIX/comfyui/models" ] && [ "$REMOVE_COMFY_MODELS" = 0 ]; then
+  KEEP="$PREFIX-comfyui-models"
+  rm -rf "$KEEP" && mv "$PREFIX/comfyui/models" "$KEEP" && echo "ComfyUI 的模型檔留在 $KEEP（不要的話自己刪）"
 fi
 rm -rf "$PREFIX"
 echo "已移除面板"

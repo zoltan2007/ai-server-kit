@@ -73,6 +73,8 @@ sudo bash install.sh
 
 選項跟 Windows 對應：`--ollama-version`、`--model`、`--lan`、`--models-dir`、`--port`、`--no-terminal`、`--user`、`--yes`、`--list-versions`。
 
+**ComfyUI（生圖、影片、配音）**：Linux 安裝檔加 `--comfyui` 會一起裝 [ComfyUI](https://github.com/comfyanonymous/ComfyUI)（git 下載、獨立的 Python 虛擬環境、CUDA 12.8 版 PyTorch，約多 6–8 GB），做成 systemd 服務 `comfyui`，**只聽 127.0.0.1:8188**。`--comfyui-gpu 2` 讓它只用第 2 張顯示卡（例如把語言模型留給另外兩張），`--comfyui-ref <標籤>` 指定版本。解除安裝時 ComfyUI 的模型檔會搬到 `/opt/ai-server-kit-comfyui-models` 保留，重裝會放回去。Windows 版的安裝檔還不會裝 ComfyUI；自己裝好後在 `config.json` 加 `"comfyui": {"dir": "ComfyUI 資料夾"}` 就能用模型庫下載。
+
 忘記登入碼？Windows：開始功能表 → AI 主機面板 → 顯示登入碼。Linux：`sudo /opt/ai-server-kit/show-token.sh`。
 
 👉 **完整介紹、部署與使用教學：** **https://zoltan2007.github.io/ai-server-kit/**
@@ -94,6 +96,12 @@ sudo bash install.sh
 - **成品窗格**：回答裡的程式碼按「開啟」、整則回答按文件圖示、附件按小卡，都會開在右欄「成品」分頁，可以複製、下載。HTML、SVG、Markdown 可以預覽；**預覽不會執行任何 JavaScript，也不會載入外部資源**（HTML 放在鎖住的 sandbox 裡）。
 
 **讓 Kiki 讀得完長文件**：Ollama 預設一次只讀大約 4096 個 token，超過的部分會被丟掉。內容長的時候頁面會自動要求較大的長度（8192／16384／32768，粗估）；想固定一個值（避免 Ollama 為了換長度重新載入模型），在 `config.json` 加 `"num_ctx": 32768`。長度越大越吃顯示記憶體。
+
+**模型庫**：左側「模型」打開。分成語言模型、程式碼、生成圖片、影片生成、配音、語音辨識、嵌入，每張卡有模型名稱、發行公司、檔案大小、跑起來大約要的顯存、適不適合這台。每一類有兩種排行：
+- **適合本機**：照這台讀到的顯示卡與記憶體算（也可以切到「AI 主機」看組好之後的樣子）。放得進一張顯卡的最前面，再來是要分到好幾張卡、要借記憶體（很慢）、放不下；同一級裡分數高的在前。顯存需求是粗估。
+- **能力分數**：每一類只用同一個公開排行的分數，頁面上寫著來源與日期；查不到分數的排在後面。
+
+語言、程式碼、嵌入模型用 Ollama 下載（跟面板的下載同一套）；生圖、影片、配音、語音辨識的檔案下載到 ComfyUI 的 `models/` 資料夾，要先裝 ComfyUI。下載與刪除只有管理員能按，下載位址和存檔位置只從內建清單（`app/hub.json`）來。有些模型（例如部分配音、語音辨識）還要 ComfyUI 擴充節點，卡片上會寫，面板不會自動裝。
 
 ## 安全與隱私
 

@@ -1,0 +1,2585 @@
+{
+ "updated": "2026-11-25",
+ "note": "每個數字都有來源；顯存需求是粗估。用 tools/build_hub.py 從研究結果重建。",
+ "vendors": {
+  "qwen": {
+   "name": "阿里巴巴 Qwen",
+   "color": "#615CED"
+  },
+  "alibaba": {
+   "name": "阿里巴巴通義",
+   "color": "#FF6A00"
+  },
+  "google": {
+   "name": "Google",
+   "color": "#4285F4"
+  },
+  "openai": {
+   "name": "OpenAI",
+   "color": "#10A37F"
+  },
+  "nvidia": {
+   "name": "輝達 NVIDIA",
+   "color": "#76B900"
+  },
+  "thinkingmachines": {
+   "name": "Thinking Machines",
+   "color": "#676767"
+  },
+  "deepseek": {
+   "name": "DeepSeek 深度求索",
+   "color": "#4D6BFE"
+  },
+  "zai": {
+   "name": "智譜 Z.ai",
+   "color": "#1C7FF8"
+  },
+  "bfl": {
+   "name": "Black Forest Labs",
+   "color": "#272727"
+  },
+  "hidream": {
+   "name": "HiDream 智象",
+   "color": "#1D8EFF"
+  },
+  "minimax": {
+   "name": "MiniMax",
+   "color": "#EB3568"
+  },
+  "lightricks": {
+   "name": "Lightricks",
+   "color": "#7A3CFF"
+  },
+  "tencent": {
+   "name": "騰訊混元",
+   "color": "#0052D9"
+  },
+  "hexgrad": {
+   "name": "hexgrad（社群）",
+   "color": "#8A8A8A"
+  },
+  "microsoft": {
+   "name": "微軟 Microsoft",
+   "color": "#0078D4"
+  },
+  "bilibili": {
+   "name": "bilibili Index",
+   "color": "#FB7299"
+  },
+  "breezeblue": {
+   "name": "BreezeBlue",
+   "color": "#2E8BC0"
+  },
+  "fishaudio": {
+   "name": "Fish Audio",
+   "color": "#1E1E1E"
+  },
+  "mistral": {
+   "name": "Mistral AI",
+   "color": "#FA520F"
+  },
+  "nomic": {
+   "name": "Nomic AI",
+   "color": "#3B3B3B"
+  },
+  "baai": {
+   "name": "智源 BAAI",
+   "color": "#1E5BB8"
+  }
+ },
+ "sources": {
+  "aa-ii": {
+   "name": "Artificial Analysis Intelligence Index v5.0.2",
+   "url": "https://artificialanalysis.ai/leaderboards/models",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  },
+  "aa-tb21": {
+   "name": "Artificial Analysis Terminal-Bench 2.1（AA 實測，%）",
+   "url": "https://artificialanalysis.ai/evaluations/terminalbench-2-1",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  },
+  "aa-t2i": {
+   "name": "Artificial Analysis Text to Image Arena（ELO）",
+   "url": "https://artificialanalysis.ai/image/leaderboard/text-to-image",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  },
+  "aa-t2v": {
+   "name": "Artificial Analysis Text to Video Arena（ELO）",
+   "url": "https://artificialanalysis.ai/video/leaderboard/text-to-video",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  },
+  "aa-tts": {
+   "name": "Artificial Analysis Speech Arena（ELO）",
+   "url": "https://artificialanalysis.ai/text-to-speech/leaderboard",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  },
+  "open-asr": {
+   "name": "Hugging Face Open ASR Leaderboard v1.16.2（英文平均 WER %）",
+   "url": "https://huggingface.co/spaces/hf-audio/open_asr_leaderboard",
+   "date": "2026-11-20",
+   "lower_is_better": true
+  },
+  "mteb-ml": {
+   "name": "MTEB(Multilingual, v2) Mean (Task)",
+   "url": "https://huggingface.co/spaces/mteb/leaderboard",
+   "date": "2026-11-25",
+   "lower_is_better": false
+  }
+ },
+ "categories": [
+  {
+   "id": "llm",
+   "name": "語言模型",
+   "runtime": "ollama",
+   "score_src": "aa-ii"
+  },
+  {
+   "id": "code",
+   "name": "程式碼",
+   "runtime": "ollama",
+   "score_src": "aa-tb21"
+  },
+  {
+   "id": "image",
+   "name": "生成圖片",
+   "runtime": "comfy",
+   "score_src": "aa-t2i"
+  },
+  {
+   "id": "video",
+   "name": "影片生成",
+   "runtime": "comfy",
+   "score_src": "aa-t2v"
+  },
+  {
+   "id": "tts",
+   "name": "配音",
+   "runtime": "comfy",
+   "score_src": "aa-tts"
+  },
+  {
+   "id": "asr",
+   "name": "語音辨識",
+   "runtime": "comfy",
+   "score_src": "open-asr"
+  },
+  {
+   "id": "embed",
+   "name": "嵌入",
+   "runtime": "ollama",
+   "score_src": "mteb-ml"
+  }
+ ],
+ "models": [
+  {
+   "id": "gemma4-e4b",
+   "cat": [
+    "llm"
+   ],
+   "name": "Gemma 4 E4B",
+   "vendor": "google",
+   "license": "Apache-2.0",
+   "released": "2026-03",
+   "desc": "手機級小模型，會看圖聽聲音，入門最省顯存",
+   "url": "https://ollama.com/library/gemma4",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 6.6,
+     "run_gb": 8.4,
+     "source": {
+      "kind": "ollama",
+      "name": "gemma4:e4b-it-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 9.0,
+     "run_gb": 10.9,
+     "source": {
+      "kind": "ollama",
+      "name": "gemma4:e4b-it-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 4.8,
+     "src": "aa-ii",
+     "note": "Reasoning"
+    }
+   }
+  },
+  {
+   "id": "qwen3.5-9b",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "Qwen3.5 9B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-02",
+   "desc": "中文好的小模型，單張卡就跑得很順",
+   "url": "https://ollama.com/library/qwen3.5",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 6.6,
+     "run_gb": 8.4,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.5:9b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 10.4,
+     "run_gb": 12.3,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.5:9b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "code": {
+     "value": 29.2,
+     "src": "aa-tb21",
+     "note": "Reasoning"
+    }
+   }
+  },
+  {
+   "id": "gpt-oss-20b",
+   "cat": [
+    "code"
+   ],
+   "name": "gpt-oss 20B",
+   "vendor": "openai",
+   "license": "Apache-2.0",
+   "released": "2025-08",
+   "desc": "OpenAI 開放權重小模型，推理與工具呼叫穩",
+   "url": "https://ollama.com/library/gpt-oss",
+   "variants": [
+    {
+     "label": "MXFP4",
+     "file_gb": 13.8,
+     "run_gb": 15.5,
+     "source": {
+      "kind": "ollama",
+      "name": "gpt-oss:20b"
+     }
+    }
+   ],
+   "score": {
+    "code": {
+     "value": 13.9,
+     "src": "aa-tb21",
+     "note": "High"
+    }
+   }
+  },
+  {
+   "id": "inkling-2-mini",
+   "cat": [
+    "llm"
+   ],
+   "name": "Inkling 2 Mini",
+   "vendor": "thinkingmachines",
+   "license": "Apache-2.0",
+   "released": "2026-11",
+   "desc": "26B MoE 只啟用 5B，同級最聰明之一",
+   "url": "https://ollama.com/library/inkling-2-mini",
+   "variants": [
+    {
+     "label": "IQ4_NL",
+     "file_gb": 18.3,
+     "run_gb": 20.7,
+     "source": {
+      "kind": "ollama",
+      "name": "inkling-2-mini:26b-a5b-iq4_NL"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 20.1,
+     "src": "aa-ii"
+    }
+   }
+  },
+  {
+   "id": "qwen3.8-27b",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "Qwen3.8 27B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-08",
+   "desc": "中文最強的單卡級模型，寫程式也很強",
+   "url": "https://ollama.com/library/qwen3.8",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 17.7,
+     "run_gb": 19.9,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.8:27b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 30.0,
+     "run_gb": 32.1,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.8:27b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 20.1,
+     "src": "aa-ii",
+     "note": "Xhigh"
+    },
+    "code": {
+     "value": 79.8,
+     "src": "aa-tb21",
+     "note": "Xhigh"
+    }
+   }
+  },
+  {
+   "id": "qwen3.6-35b-a3b",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "Qwen3.6 35B-A3B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-04",
+   "desc": "MoE 只啟用 3B，速度快、中文好",
+   "url": "https://ollama.com/library/qwen3.6",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 23.9,
+     "run_gb": 25.7,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.6:35b-a3b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 38.7,
+     "run_gb": 40.5,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.6:35b-a3b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "code": {
+     "value": 44.9,
+     "src": "aa-tb21",
+     "note": "Reasoning"
+    }
+   }
+  },
+  {
+   "id": "gemma4-31b",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "Gemma 4 31B",
+   "vendor": "google",
+   "license": "Apache-2.0",
+   "released": "2026-03",
+   "desc": "Google 最大的密集模型，看圖與多語都穩",
+   "url": "https://ollama.com/library/gemma4",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 20.4,
+     "run_gb": 23.1,
+     "source": {
+      "kind": "ollama",
+      "name": "gemma4:31b-it-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 33.8,
+     "run_gb": 36.6,
+     "source": {
+      "kind": "ollama",
+      "name": "gemma4:31b-it-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 4.4,
+     "src": "aa-ii",
+     "note": "Reasoning"
+    },
+    "code": {
+     "value": 43.4,
+     "src": "aa-tb21",
+     "note": "Reasoning"
+    }
+   }
+  },
+  {
+   "id": "qwen3-coder-next",
+   "cat": [
+    "code"
+   ],
+   "name": "Qwen3-Coder-Next",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-01",
+   "desc": "80B MoE 程式專用，長程式碼與代理工作",
+   "url": "https://ollama.com/library/qwen3-coder-next",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 51.7,
+     "run_gb": 53.5,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-coder-next:q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 84.8,
+     "run_gb": 86.6,
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-coder-next:q8_0"
+     }
+    }
+   ],
+   "score": {
+    "code": {
+     "value": 38.2,
+     "src": "aa-tb21"
+    }
+   }
+  },
+  {
+   "id": "gpt-oss-120b",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "gpt-oss 120B",
+   "vendor": "openai",
+   "license": "Apache-2.0",
+   "released": "2025-08",
+   "desc": "OpenAI 大型開放權重，推理與工具呼叫",
+   "url": "https://ollama.com/library/gpt-oss",
+   "variants": [
+    {
+     "label": "MXFP4",
+     "file_gb": 65.4,
+     "run_gb": 67.2,
+     "source": {
+      "kind": "ollama",
+      "name": "gpt-oss:120b"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 3.8,
+     "src": "aa-ii",
+     "note": "High"
+    },
+    "code": {
+     "value": 26.2,
+     "src": "aa-tb21",
+     "note": "High"
+    }
+   }
+  },
+  {
+   "id": "nemotron-3.5-super",
+   "cat": [
+    "llm"
+   ],
+   "name": "Nemotron 3.5 Super 120B-A12B",
+   "vendor": "nvidia",
+   "license": "OpenMDW-1.1",
+   "released": "2026-10",
+   "desc": "輝達混合架構，長文件與看圖推理",
+   "url": "https://ollama.com/library/nemotron-3.5-super",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 90.2,
+     "run_gb": 91.8,
+     "source": {
+      "kind": "ollama",
+      "name": "nemotron-3.5-super:120b-a12b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 133.3,
+     "run_gb": 135.0,
+     "source": {
+      "kind": "ollama",
+      "name": "nemotron-3.5-super:120b-a12b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 13.6,
+     "src": "aa-ii",
+     "note": "Super VL"
+    }
+   }
+  },
+  {
+   "id": "qwen3.8-flash-next",
+   "cat": [
+    "llm",
+    "code"
+   ],
+   "name": "Qwen3.8-Flash-Next",
+   "vendor": "qwen",
+   "license": "Qwen Community 1.0",
+   "released": "2026-08",
+   "desc": "125B 只啟用 6B，Qwen4 預覽架構，中文強",
+   "url": "https://ollama.com/library/qwen3.8-flash-next",
+   "variants": [
+    {
+     "label": "UD-IQ3_XXS（unsloth）",
+     "file_gb": 83.6,
+     "run_gb": 85.4,
+     "run_note": "MoE 可把專家層放系統記憶體（llama.cpp --n-cpu-moe），顯存不夠也能跑但會變慢",
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/unsloth/Qwen3.8-Flash-Next-GGUF:UD-IQ3_XXS"
+     },
+     "warn": "這個 GGUF 分成好幾個檔案，Ollama 不一定拉得下來（未實測），拉不下來就改用 llama.cpp"
+    },
+    {
+     "label": "Q4_K_M",
+     "file_gb": 120.1,
+     "run_gb": 121.8,
+     "run_note": "MoE 可把專家層放系統記憶體（llama.cpp --n-cpu-moe），顯存不夠也能跑但會變慢",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3.8-flash-next:125b-a6b-q4_K_M"
+     }
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 28.5,
+     "src": "aa-ii"
+    },
+    "code": {
+     "value": 86.1,
+     "src": "aa-tb21"
+    }
+   }
+  },
+  {
+   "id": "deepseek-v4.1-flash",
+   "cat": [
+    "llm"
+   ],
+   "name": "DeepSeek V4.1 Flash",
+   "vendor": "deepseek",
+   "license": "MIT",
+   "released": "2026-10",
+   "desc": "開放權重第三強，中文頂尖，家用機放不下",
+   "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "variants": [
+    {
+     "label": "UD-IQ1_S（unsloth）",
+     "file_gb": 233.0,
+     "run_gb": 235.2,
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/unsloth/DeepSeek-V4.1-Flash-1017-GGUF:UD-IQ1_S"
+     },
+     "warn": "這個 GGUF 分成好幾個檔案，Ollama 不一定拉得下來（未實測），拉不下來就改用 llama.cpp"
+    },
+    {
+     "label": "UD-Q4_K_XL（unsloth）",
+     "file_gb": 500.7,
+     "run_gb": 503.0,
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/unsloth/DeepSeek-V4.1-Flash-1017-GGUF:UD-Q4_K_XL"
+     },
+     "warn": "這個 GGUF 分成好幾個檔案，Ollama 不一定拉得下來（未實測），拉不下來就改用 llama.cpp"
+    }
+   ],
+   "score": {
+    "llm": {
+     "value": 32.4,
+     "src": "aa-ii",
+     "note": "Max"
+    }
+   }
+  },
+  {
+   "id": "glm-5.3",
+   "cat": [
+    "code"
+   ],
+   "name": "GLM-5.3",
+   "vendor": "zai",
+   "license": "GLM-5.3 License",
+   "released": "2026-08",
+   "desc": "智譜旗艦程式模型，開放權重寫程式頂尖",
+   "url": "https://huggingface.co/zai-org/GLM-5.3",
+   "variants": [
+    {
+     "label": "UD-IQ2_M（unsloth）",
+     "file_gb": 238.6,
+     "run_gb": 240.9,
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/unsloth/GLM-5.3-GGUF:UD-IQ2_M"
+     },
+     "warn": "這個 GGUF 分成好幾個檔案，Ollama 不一定拉得下來（未實測），拉不下來就改用 llama.cpp"
+    },
+    {
+     "label": "UD-Q4_K_XL（unsloth）",
+     "file_gb": 467.3,
+     "run_gb": 469.6,
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/unsloth/GLM-5.3-GGUF:UD-Q4_K_XL"
+     },
+     "warn": "這個 GGUF 分成好幾個檔案，Ollama 不一定拉得下來（未實測），拉不下來就改用 llama.cpp"
+    }
+   ],
+   "score": {
+    "code": {
+     "value": 83.9,
+     "src": "aa-tb21",
+     "note": "Max"
+    }
+   }
+  },
+  {
+   "id": "flux2-klein-4b",
+   "cat": [
+    "image"
+   ],
+   "name": "FLUX.2 [klein] 4B",
+   "vendor": "bfl",
+   "license": "Apache-2.0",
+   "released": "2026-01",
+   "desc": "小而快，生圖改圖都行，可商用",
+   "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-4B",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 16.1,
+     "run_gb": 13.0,
+     "run_note": "官方模型卡：約 13 GB 顯存（RTX 3090／4070 以上）",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Flux-2-Klein-4B",
+        "path": "split_files/diffusion_models/flux-2-klein-4b.safetensors",
+        "folder": "diffusion_models",
+        "gb": 7.75
+       },
+       {
+        "repo": "Comfy-Org/Flux-2-Klein-4B",
+        "path": "split_files/text_encoders/qwen_3_4b.safetensors",
+        "folder": "text_encoders",
+        "gb": 8.04
+       },
+       {
+        "repo": "Comfy-Org/Flux-2-Klein-4B",
+        "path": "split_files/vae/flux2-vae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 839.7,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "z-image-turbo",
+   "cat": [
+    "image"
+   ],
+   "name": "Z-Image Turbo",
+   "vendor": "alibaba",
+   "license": "Apache-2.0",
+   "released": "2025-12",
+   "desc": "8 步出圖，寫實照片強，中英文字都能畫",
+   "url": "https://huggingface.co/Tongyi-MAI/Z-Image-Turbo",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 20.7,
+     "run_gb": 16.0,
+     "run_note": "官方模型卡：16 GB 消費級顯卡可跑",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/diffusion_models/z_image_turbo_bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 12.31
+       },
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/text_encoders/qwen_3_4b.safetensors",
+        "folder": "text_encoders",
+        "gb": 8.04
+       },
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/vae/ae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ]
+     }
+    },
+    {
+     "label": "int8",
+     "file_gb": 12.2,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/diffusion_models/z_image_turbo_int8_convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 6.2
+       },
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors",
+        "folder": "text_encoders",
+        "gb": 5.63
+       },
+       {
+        "repo": "Comfy-Org/Z-Image-Turbo",
+        "path": "split_files/vae/ae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 937.0,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "hidream-o1-image",
+   "cat": [
+    "image"
+   ],
+   "name": "HiDream-O1-Image",
+   "vendor": "hidream",
+   "license": "MIT",
+   "released": "2026-05",
+   "desc": "MIT 授權，畫質細緻、指令遵循好",
+   "url": "https://huggingface.co/HiDream-ai/HiDream-O1-Image",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 25.4,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/HiDream-O1-Image",
+        "path": "checkpoints/hidream_o1_image_bf16.safetensors",
+        "folder": "checkpoints",
+        "gb": 16.37
+       },
+       {
+        "repo": "Comfy-Org/gemma-4",
+        "path": "text_encoders/gemma4_e4b_it_fp8_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 9.06
+       }
+      ]
+     }
+    },
+    {
+     "label": "fp8",
+     "file_gb": 17.1,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/HiDream-O1-Image",
+        "path": "checkpoints/hidream_o1_image_fp8_scaled.safetensors",
+        "folder": "checkpoints",
+        "gb": 8.07
+       },
+       {
+        "repo": "Comfy-Org/gemma-4",
+        "path": "text_encoders/gemma4_e4b_it_fp8_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 9.06
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 978.3,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "flux3-image-klein",
+   "cat": [
+    "image"
+   ],
+   "name": "FLUX 3 Image Klein",
+   "vendor": "bfl",
+   "license": "FLUX Kommunity License",
+   "released": "2026-10",
+   "desc": "FLUX 3 小型版，品質接近大模型",
+   "url": "https://huggingface.co/black-forest-labs/flux-3-image-klein",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 20.3,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "diffusion_models/flux3-image-klein-bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 11.1
+       },
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "text_encoders/qwen3vl_4b_bf16.safetensors",
+        "folder": "text_encoders",
+        "gb": 8.88
+       },
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "vae/flux2-vae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ],
+      "gated": true
+     }
+    },
+    {
+     "label": "int8",
+     "file_gb": 11.0,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "diffusion_models/flux3-image-klein-int8-convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 5.83
+       },
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "text_encoders/qwen3vl_4b_int8_convrot.safetensors",
+        "folder": "text_encoders",
+        "gb": 4.86
+       },
+       {
+        "repo": "black-forest-labs/flux-3-image-klein-comfy",
+        "path": "vae/flux2-vae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ],
+      "gated": true
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 1040.2,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "qwen-image-2.1",
+   "cat": [
+    "image"
+   ],
+   "name": "Qwen-Image 2.1",
+   "vendor": "qwen",
+   "license": "Qwen Research License",
+   "released": "2026-09",
+   "desc": "開放權重第二名，中文字排版最強",
+   "url": "https://huggingface.co/Qwen/Qwen-Image-2.1",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 32.4,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "diffusion_models/qwen_image_2.1_bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 14.23
+       },
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "text_encoders/qwen3vl_8b_bf16.safetensors",
+        "folder": "text_encoders",
+        "gb": 17.53
+       },
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "folder": "vae",
+        "gb": 0.68
+       }
+      ]
+     }
+    },
+    {
+     "label": "int8",
+     "file_gb": 17.3,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "diffusion_models/qwen_image_2.1_int8_convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 7.26
+       },
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "text_encoders/qwen3vl_8b_int8_convrot.safetensors",
+        "folder": "text_encoders",
+        "gb": 9.35
+       },
+       {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "path": "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "folder": "vae",
+        "gb": 0.68
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 1048.3,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "flux2-dev",
+   "cat": [
+    "image"
+   ],
+   "name": "FLUX.2 [dev]",
+   "vendor": "bfl",
+   "license": "FLUX Non-Commercial",
+   "released": "2025-11",
+   "desc": "32B 大模型，細節多，非商用授權",
+   "url": "https://huggingface.co/black-forest-labs/FLUX.2-dev",
+   "variants": [
+    {
+     "label": "fp8",
+     "file_gb": 53.8,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Flux-2-Dev",
+        "path": "split_files/diffusion_models/flux2_dev_fp8mixed.safetensors",
+        "folder": "diffusion_models",
+        "gb": 35.46
+       },
+       {
+        "repo": "Comfy-Org/Flux-2-Dev",
+        "path": "split_files/text_encoders/mistral_3_small_flux2_fp8.safetensors",
+        "folder": "text_encoders",
+        "gb": 18.03
+       },
+       {
+        "repo": "Comfy-Org/Flux-2-Dev",
+        "path": "split_files/vae/flux2-vae.safetensors",
+        "folder": "vae",
+        "gb": 0.34
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 1000.0,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "minimax-h3-image",
+   "cat": [
+    "image"
+   ],
+   "name": "MiniMax H3-Image",
+   "vendor": "minimax",
+   "license": "MiniMax H3-Image Community",
+   "released": "2026-11",
+   "desc": "開放權重生圖第一名，體積大",
+   "url": "https://huggingface.co/MiniMaxAI/MiniMax-H3-Image",
+   "variants": [
+    {
+     "label": "int8",
+     "file_gb": 49.3,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/MiniMax-H3-Image",
+        "path": "diffusion_models/minimax_h3_image_pruned_int8_convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 20.98
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+        "folder": "text_encoders",
+        "gb": 27.14
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3-Image",
+        "path": "vae/minimax_h3_image_vae_fp16.safetensors",
+        "folder": "vae",
+        "gb": 1.17
+       }
+      ]
+     }
+    },
+    {
+     "label": "bf16",
+     "file_gb": 92.9,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/MiniMax-H3-Image",
+        "path": "diffusion_models/minimax_h3_image_pruned_bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 40.23
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "text_encoders/qwen3vl_32b_minimax_h3_bf16.safetensors",
+        "folder": "text_encoders",
+        "gb": 51.51
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3-Image",
+        "path": "vae/minimax_h3_image_vae_fp16.safetensors",
+        "folder": "vae",
+        "gb": 1.17
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "image": {
+     "value": 1065.4,
+     "src": "aa-t2i"
+    }
+   }
+  },
+  {
+   "id": "wan2.2-ti2v-5b",
+   "cat": [
+    "video"
+   ],
+   "name": "Wan 2.2 TI2V 5B",
+   "vendor": "alibaba",
+   "license": "Apache-2.0",
+   "released": "2025-07",
+   "desc": "最小的 720p 影片模型，文字或圖片轉影片",
+   "url": "https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B",
+   "variants": [
+    {
+     "label": "fp16",
+     "file_gb": 18.1,
+     "run_gb": 24.0,
+     "run_note": "官方：720p 開 offload＋T5 放 CPU，24 GB（RTX 4090）可跑",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 10.0
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 6.74
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/vae/wan2.2_vae.safetensors",
+        "folder": "vae",
+        "gb": 1.41
+       }
+      ]
+     }
+    }
+   ],
+   "score": {}
+  },
+  {
+   "id": "ltx-2.3",
+   "cat": [
+    "video"
+   ],
+   "name": "LTX-2.3 22B",
+   "vendor": "lightricks",
+   "license": "LTX-2 Community License",
+   "released": "2026-03",
+   "desc": "影片連聲音一起生成，速度快",
+   "url": "https://huggingface.co/Lightricks/LTX-2.3",
+   "variants": [
+    {
+     "label": "fp8",
+     "file_gb": 42.4,
+     "run_gb": 16.0,
+     "run_note": "社群（ltxworkflow.com）：fp8＋ComfyUI 逐層 offload 最低 16 GB；官方建議 32 GB 以上",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Lightricks/LTX-2.3-fp8",
+        "path": "ltx-2.3-22b-dev-fp8.safetensors",
+        "folder": "checkpoints",
+        "gb": 29.15
+       },
+       {
+        "repo": "Comfy-Org/ltx-2",
+        "path": "split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 13.21
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "video": {
+     "value": 884.3,
+     "src": "aa-t2v",
+     "note": "LTX-2.3 Pro"
+    }
+   }
+  },
+  {
+   "id": "hunyuanvideo-1.5",
+   "cat": [
+    "video"
+   ],
+   "name": "HunyuanVideo 1.5",
+   "vendor": "tencent",
+   "license": "Tencent Hunyuan Community",
+   "released": "2025-11",
+   "desc": "8.3B 參數，720p 畫質穩、動作自然",
+   "url": "https://huggingface.co/tencent/HunyuanVideo-1.5",
+   "variants": [
+    {
+     "label": "fp16（720p T2V）",
+     "file_gb": 29.0,
+     "run_gb": 14.0,
+     "run_note": "官方：開模型 offload 最低 14 GB",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Hunyuan-Video-1.5",
+        "path": "split_files/diffusion_models/hunyuanvideo1.5_720p_t2v_fp16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 16.65
+       },
+       {
+        "repo": "Comfy-Org/Hunyuan-Video-1.5",
+        "path": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 9.38
+       },
+       {
+        "repo": "Comfy-Org/Hunyuan-Video-1.5",
+        "path": "split_files/text_encoders/byt5_small_glyphxl_fp16.safetensors",
+        "folder": "text_encoders",
+        "gb": 0.44
+       },
+       {
+        "repo": "Comfy-Org/Hunyuan-Video-1.5",
+        "path": "split_files/vae/hunyuanvideo15_vae_fp16.safetensors",
+        "folder": "vae",
+        "gb": 2.52
+       }
+      ]
+     }
+    }
+   ],
+   "score": {}
+  },
+  {
+   "id": "wan2.2-t2v-a14b",
+   "cat": [
+    "video"
+   ],
+   "name": "Wan 2.2 T2V A14B",
+   "vendor": "alibaba",
+   "license": "Apache-2.0",
+   "released": "2025-07",
+   "desc": "高低雜訊兩個 14B 專家，畫面細膩",
+   "url": "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B",
+   "variants": [
+    {
+     "label": "fp8",
+     "file_gb": 35.6,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",
+        "folder": "diffusion_models",
+        "gb": 14.29
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",
+        "folder": "diffusion_models",
+        "gb": 14.29
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "folder": "text_encoders",
+        "gb": 6.74
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/vae/wan_2.1_vae.safetensors",
+        "folder": "vae",
+        "gb": 0.25
+       }
+      ]
+     }
+    },
+    {
+     "label": "fp16",
+     "file_gb": 68.8,
+     "run_gb": 80.0,
+     "run_note": "官方：不開 offload 要 80 GB；開 offload 與轉型可降低，但官方沒給數字",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 28.58
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 28.58
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/text_encoders/umt5_xxl_fp16.safetensors",
+        "folder": "text_encoders",
+        "gb": 11.37
+       },
+       {
+        "repo": "Comfy-Org/Wan-2.2",
+        "path": "split_files/vae/wan_2.1_vae.safetensors",
+        "folder": "vae",
+        "gb": 0.25
+       }
+      ]
+     }
+    }
+   ],
+   "score": {}
+  },
+  {
+   "id": "ltx-2.5",
+   "cat": [
+    "video"
+   ],
+   "name": "LTX-2.5 22B",
+   "vendor": "lightricks",
+   "license": "LTX-2.x Community License",
+   "released": "2026-08",
+   "desc": "LTX 新版，影音同步生成，畫質提升",
+   "url": "https://huggingface.co/Lightricks/LTX-2.5",
+   "variants": [
+    {
+     "label": "int8（distilled）",
+     "file_gb": 38.7,
+     "run_gb": 32.0,
+     "run_note": "官方系統需求：32 GB 以上顯存（沒分版本）",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 21.5
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors",
+        "folder": "text_encoders",
+        "gb": 15.37
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "vae/ltx-2.5-video-vae-bf16.safetensors",
+        "folder": "vae",
+        "gb": 1.47
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "vae/ltx-2.5-audio-vae-bf16.safetensors",
+        "folder": "vae",
+        "gb": 0.36
+       }
+      ],
+      "gated": true
+     }
+    },
+    {
+     "label": "bf16（dev）",
+     "file_gb": 70.1,
+     "run_gb": 32.0,
+     "run_note": "官方系統需求：32 GB 以上顯存（沒分版本）",
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "diffusion_models/ltx-2.5-22b-dev-transformer-bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 42.02
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "text_encoders/gemma4-12b-with-proj-ltx-2.5-bf16.safetensors",
+        "folder": "text_encoders",
+        "gb": 26.26
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "vae/ltx-2.5-video-vae-bf16.safetensors",
+        "folder": "vae",
+        "gb": 1.47
+       },
+       {
+        "repo": "Lightricks/LTX-2.5",
+        "path": "vae/ltx-2.5-audio-vae-bf16.safetensors",
+        "folder": "vae",
+        "gb": 0.36
+       }
+      ],
+      "gated": true
+     }
+    }
+   ],
+   "score": {
+    "video": {
+     "value": 933.1,
+     "src": "aa-t2v",
+     "note": "LTX-2.5 Pro（AA 另有 Fast 936.9）"
+    }
+   }
+  },
+  {
+   "id": "minimax-h3",
+   "cat": [
+    "video"
+   ],
+   "name": "MiniMax H3",
+   "vendor": "minimax",
+   "license": "MiniMax H3 Community",
+   "released": "2026-07",
+   "desc": "開放權重影片第一名，有聲音，體積大",
+   "url": "https://huggingface.co/MiniMaxAI/MiniMax-H3",
+   "variants": [
+    {
+     "label": "int8",
+     "file_gb": 51.5,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "folder": "diffusion_models",
+        "gb": 20.97
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+        "folder": "text_encoders",
+        "gb": 27.14
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "vae/minimax_h3_video_vae_int8_convrot.safetensors",
+        "folder": "vae",
+        "gb": 2.81
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "vae/minimax_h3_audio_vae_fp32.safetensors",
+        "folder": "vae",
+        "gb": 0.61
+       }
+      ]
+     }
+    },
+    {
+     "label": "bf16",
+     "file_gb": 97.6,
+     "run_gb": null,
+     "source": {
+      "kind": "comfy",
+      "files": [
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "diffusion_models/minimax_h3_fl2va_pruned_bf16.safetensors",
+        "folder": "diffusion_models",
+        "gb": 40.23
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "text_encoders/qwen3vl_32b_minimax_h3_bf16.safetensors",
+        "folder": "text_encoders",
+        "gb": 51.51
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "vae/minimax_h3_video_vae_fp16.safetensors",
+        "folder": "vae",
+        "gb": 5.21
+       },
+       {
+        "repo": "Comfy-Org/MiniMax-H3",
+        "path": "vae/minimax_h3_audio_vae_fp32.safetensors",
+        "folder": "vae",
+        "gb": 0.61
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "video": {
+     "value": 1163.1,
+     "src": "aa-t2v",
+     "note": "MiniMax H3 (768p)"
+    }
+   }
+  },
+  {
+   "id": "kokoro-82m",
+   "cat": [
+    "tts"
+   ],
+   "name": "Kokoro 82M",
+   "vendor": "hexgrad",
+   "license": "Apache-2.0",
+   "released": "2025-01",
+   "desc": "超小又自然，有中文女聲男聲，CPU 也能跑",
+   "url": "https://huggingface.co/hexgrad/Kokoro-82M",
+   "variants": [
+    {
+     "label": "v1.0",
+     "file_gb": 0.3,
+     "run_gb": 0.8,
+     "run_note": "估算：權重 0.3 GB＋約 0.5 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "comfyui-kokoro（https://github.com/stavsap/comfyui-kokoro）",
+      "files": [
+       {
+        "repo": "hexgrad/Kokoro-82M",
+        "path": "kokoro-v1_0.pth",
+        "folder": "checkpoints",
+        "gb": 0.33
+       },
+       {
+        "repo": "hexgrad/Kokoro-82M",
+        "path": "voices/zf_xiaobei.pt",
+        "folder": "checkpoints",
+        "gb": null
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 1061.3,
+     "src": "aa-tts",
+     "note": "Kokoro 82M v1.0"
+    }
+   }
+  },
+  {
+   "id": "qwen3-tts",
+   "cat": [
+    "tts"
+   ],
+   "name": "Qwen3-TTS",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-01",
+   "desc": "中文自然、可複製聲音，小未的配音",
+   "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+   "variants": [
+    {
+     "label": "0.6B",
+     "file_gb": 2.5,
+     "run_gb": 3.5,
+     "run_note": "估算：權重 2.5 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Qwen-TTS（https://github.com/flybirdxx/ComfyUI-Qwen-TTS）",
+      "files": [
+       {
+        "repo": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.83
+       },
+       {
+        "repo": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+        "path": "speech_tokenizer/model.safetensors",
+        "folder": "checkpoints",
+        "gb": 0.68
+       }
+      ]
+     }
+    },
+    {
+     "label": "1.7B",
+     "file_gb": 4.5,
+     "run_gb": 5.5,
+     "run_note": "估算：權重 4.5 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Qwen-TTS（https://github.com/flybirdxx/ComfyUI-Qwen-TTS）",
+      "files": [
+       {
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 3.86
+       },
+       {
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "path": "speech_tokenizer/model.safetensors",
+        "folder": "checkpoints",
+        "gb": 0.68
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 930.6,
+     "src": "aa-tts",
+     "note": "AA 條目「Qwen3 TTS」沒標開放權重，可能是 API 版"
+    }
+   }
+  },
+  {
+   "id": "vibevoice-1.5b",
+   "cat": [
+    "tts"
+   ],
+   "name": "VibeVoice 1.5B",
+   "vendor": "microsoft",
+   "license": "MIT",
+   "released": "2025-08",
+   "desc": "長篇多人對話（Podcast），中英文",
+   "url": "https://huggingface.co/microsoft/VibeVoice-1.5B",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 5.4,
+     "run_gb": 6.4,
+     "run_note": "估算：權重 5.4 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "VibeVoice-ComfyUI（https://github.com/Enemyx-net/VibeVoice-ComfyUI）",
+      "files": [
+       {
+        "repo": "microsoft/VibeVoice-1.5B",
+        "path": "model-00001-of-00003.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.98
+       },
+       {
+        "repo": "microsoft/VibeVoice-1.5B",
+        "path": "model-00002-of-00003.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.98
+       },
+       {
+        "repo": "microsoft/VibeVoice-1.5B",
+        "path": "model-00003-of-00003.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.45
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 955.4,
+     "src": "aa-tts"
+    }
+   }
+  },
+  {
+   "id": "indextts-2.5",
+   "cat": [
+    "tts"
+   ],
+   "name": "IndexTTS-2.5",
+   "vendor": "bilibili",
+   "license": "bilibili Model License",
+   "released": "2026-08",
+   "desc": "中文配音、情緒與時長可控，複製聲音",
+   "url": "https://huggingface.co/IndexTeam/IndexTTS-2.5",
+   "variants": [
+    {
+     "label": "官方權重＋依賴",
+     "file_gb": 7.8,
+     "run_gb": 8.8,
+     "run_note": "估算：權重 7.8 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "TTS-Audio-Suite（https://github.com/diodiogod/TTS-Audio-Suite）",
+      "files": [
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "gpt.pth",
+        "folder": "checkpoints",
+        "gb": 3.26
+       },
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "s2mel.pth",
+        "folder": "checkpoints",
+        "gb": 0.41
+       },
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "codec.pth",
+        "folder": "checkpoints",
+        "gb": 0.61
+       },
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "qwen0.6bemo4-merge/model.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.19
+       },
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "hf_cache/w2v-bert-2.0/model.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.32
+       },
+       {
+        "repo": "t8star/IndexTTS-2.5-Comfy",
+        "path": "hf_cache/campplus_cn_common.bin",
+        "folder": "checkpoints",
+        "gb": 0.03
+       }
+      ]
+     }
+    }
+   ],
+   "score": {}
+  },
+  {
+   "id": "breeze-tts-2",
+   "cat": [
+    "tts"
+   ],
+   "name": "Breeze TTS 2",
+   "vendor": "breezeblue",
+   "license": "BreezeBlue 研究與非商用授權",
+   "released": "2026-08",
+   "desc": "開放權重第三名，中英文原生、複製聲音",
+   "url": "https://huggingface.co/BreezeBlue/Breeze-TTS-2",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 7.6,
+     "run_gb": 8.6,
+     "run_note": "估算：權重 7.6 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI 官方範本 breeze_tts2_tts 用 BreezeTextToSpeech 節點，是否在本機推論未確認",
+      "files": [
+       {
+        "repo": "BreezeBlue/Breeze-TTS-2",
+        "path": "model-00001-of-00002.safetensors",
+        "folder": "checkpoints",
+        "gb": 4.96
+       },
+       {
+        "repo": "BreezeBlue/Breeze-TTS-2",
+        "path": "model-00002-of-00002.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.0
+       },
+       {
+        "repo": "BreezeBlue/Breeze-TTS-2",
+        "path": "audio_tokenizer/model.safetensors",
+        "folder": "checkpoints",
+        "gb": 0.68
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 1229.3,
+     "src": "aa-tts"
+    }
+   }
+  },
+  {
+   "id": "fish-s2-pro",
+   "cat": [
+    "tts"
+   ],
+   "name": "Fish Audio S2 Pro",
+   "vendor": "fishaudio",
+   "license": "Fish Audio Research License",
+   "released": "2026-03",
+   "desc": "多語含中文，複製聲音、可下語氣指令",
+   "url": "https://huggingface.co/fishaudio/s2-pro",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 11.0,
+     "run_gb": 12.0,
+     "run_note": "估算：權重 11.0 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-FishAudioS2（https://github.com/Saganaki22/ComfyUI-FishAudioS2）",
+      "files": [
+       {
+        "repo": "fishaudio/s2-pro",
+        "path": "model-00001-of-00002.safetensors",
+        "folder": "checkpoints",
+        "gb": 4.99
+       },
+       {
+        "repo": "fishaudio/s2-pro",
+        "path": "model-00002-of-00002.safetensors",
+        "folder": "checkpoints",
+        "gb": 4.14
+       },
+       {
+        "repo": "fishaudio/s2-pro",
+        "path": "codec.pth",
+        "folder": "checkpoints",
+        "gb": 1.87
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 1103.4,
+     "src": "aa-tts"
+    }
+   }
+  },
+  {
+   "id": "fish-drama-3",
+   "cat": [
+    "tts"
+   ],
+   "name": "Fish Audio Drama 3",
+   "vendor": "fishaudio",
+   "license": "Fish Audio Research License",
+   "released": "2026-10",
+   "desc": "開放權重配音第一名，戲劇感強，體積大",
+   "url": "https://huggingface.co/fishaudio/drama-3",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 41.5,
+     "run_gb": 43.5,
+     "run_note": "估算：權重 41.5 GB＋約 2 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Drama3（https://github.com/PedroMarinhoDev/ComfyUI-Drama3）",
+      "files": [
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00001-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.86
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00002-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00003-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00004-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00005-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.64
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00006-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00007-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00008-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00009-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.64
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00010-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00011-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00012-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.63
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00013-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.64
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00014-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 3.75
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "model-00015-of-00015.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.41
+       },
+       {
+        "repo": "fishaudio/drama-3",
+        "path": "codec.pth",
+        "folder": "checkpoints",
+        "gb": 1.87
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "tts": {
+     "value": 1277.1,
+     "src": "aa-tts"
+    }
+   }
+  },
+  {
+   "id": "whisper-large-v3-turbo",
+   "cat": [
+    "asr"
+   ],
+   "name": "Whisper large-v3 turbo",
+   "vendor": "openai",
+   "license": "MIT",
+   "released": "2024-10",
+   "desc": "最普及的多語辨識，快、含中文",
+   "url": "https://huggingface.co/openai/whisper-large-v3-turbo",
+   "variants": [
+    {
+     "label": "fp16",
+     "file_gb": 1.6,
+     "run_gb": 2.6,
+     "run_note": "估算：權重 1.6 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Whisper（https://github.com/yuvraj108c/ComfyUI-Whisper）",
+      "files": [
+       {
+        "repo": "openai/whisper-large-v3-turbo",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.62
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 8.75,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "whisper-large-v3",
+   "cat": [
+    "asr"
+   ],
+   "name": "Whisper large-v3",
+   "vendor": "openai",
+   "license": "Apache-2.0",
+   "released": "2023-11",
+   "desc": "Whisper 完整版，多語穩定",
+   "url": "https://huggingface.co/openai/whisper-large-v3",
+   "variants": [
+    {
+     "label": "fp16",
+     "file_gb": 3.1,
+     "run_gb": 4.1,
+     "run_note": "估算：權重 3.1 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Whisper（https://github.com/yuvraj108c/ComfyUI-Whisper）",
+      "files": [
+       {
+        "repo": "openai/whisper-large-v3",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 3.09
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 8.24,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "qwen3-asr-0.6b",
+   "cat": [
+    "asr"
+   ],
+   "name": "Qwen3-ASR 0.6B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-06",
+   "desc": "小而準，中文錯誤率低",
+   "url": "https://huggingface.co/Qwen/Qwen3-ASR-0.6B-hf",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 1.6,
+     "run_gb": 2.6,
+     "run_note": "估算：權重 1.6 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Qwen3-ASR（https://github.com/DarioFT/ComfyUI-Qwen3-ASR）",
+      "files": [
+       {
+        "repo": "Qwen/Qwen3-ASR-0.6B-hf",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.56
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 7.07,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "qwen3-asr-1.7b",
+   "cat": [
+    "asr"
+   ],
+   "name": "Qwen3-ASR 1.7B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2026-06",
+   "desc": "開放權重中文辨識最準之一",
+   "url": "https://huggingface.co/Qwen/Qwen3-ASR-1.7B-hf",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 4.1,
+     "run_gb": 5.1,
+     "run_note": "估算：權重 4.1 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "ComfyUI-Qwen3-ASR（https://github.com/DarioFT/ComfyUI-Qwen3-ASR）",
+      "files": [
+       {
+        "repo": "Qwen/Qwen3-ASR-1.7B-hf",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 4.08
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 6.15,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "fun-asr-nano",
+   "cat": [
+    "asr"
+   ],
+   "name": "Fun-ASR-Nano 2512",
+   "vendor": "alibaba",
+   "license": "Apache-2.0",
+   "released": "2026-05",
+   "desc": "通義的輕量中文辨識，方言也行",
+   "url": "https://huggingface.co/FunAudioLLM/Fun-ASR-Nano-2512-hf",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 1.7,
+     "run_gb": 2.7,
+     "run_note": "估算：權重 1.7 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "沒找到現成的 ComfyUI 節點，要另外用 transformers／NeMo 跑",
+      "files": [
+       {
+        "repo": "FunAudioLLM/Fun-ASR-Nano-2512-hf",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 1.66
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 8.54,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "parakeet-tdt-0.6b-v3",
+   "cat": [
+    "asr"
+   ],
+   "name": "Parakeet TDT 0.6B v3",
+   "vendor": "nvidia",
+   "license": "CC-BY-4.0",
+   "released": "2025-08",
+   "desc": "速度極快的歐洲語系辨識，不支援中文",
+   "url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 2.5,
+     "run_gb": 3.5,
+     "run_note": "估算：權重 2.5 GB＋約 1 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "沒找到現成的 ComfyUI 節點，要另外用 transformers／NeMo 跑",
+      "files": [
+       {
+        "repo": "nvidia/parakeet-tdt-0.6b-v3",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 2.51
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 7.04,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "voxtral-small-24b",
+   "cat": [
+    "asr"
+   ],
+   "name": "Voxtral Small 24B",
+   "vendor": "mistral",
+   "license": "Apache-2.0",
+   "released": "2025-07",
+   "desc": "聽得懂內容的語音大模型，可問答摘要",
+   "url": "https://huggingface.co/mistralai/Voxtral-Small-24B-2507",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 48.5,
+     "run_gb": 50.5,
+     "run_note": "估算：權重 48.5 GB＋約 2 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "沒找到現成的 ComfyUI 節點，要另外用 transformers／NeMo 跑",
+      "files": [
+       {
+        "repo": "mistralai/Voxtral-Small-24B-2507",
+        "path": "consolidated.safetensors",
+        "folder": "checkpoints",
+        "gb": 48.52
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 7.44,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "nemotron-3.5-transcribe",
+   "cat": [
+    "asr"
+   ],
+   "name": "Nemotron 3.5 Transcribe 30B-A4B",
+   "vendor": "nvidia",
+   "license": "OpenMDW-1.1",
+   "released": "2026-10",
+   "desc": "開放權重辨識頂尖，多語含中文，體積大",
+   "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B",
+   "variants": [
+    {
+     "label": "bf16",
+     "file_gb": 67.5,
+     "run_gb": 69.5,
+     "run_note": "估算：權重 67.5 GB＋約 2 GB 執行負擔，未實測",
+     "source": {
+      "kind": "node",
+      "needs": "沒找到現成的 ComfyUI 節點，要另外用 transformers／NeMo 跑",
+      "files": [
+       {
+        "repo": "nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B",
+        "path": "model.safetensors",
+        "folder": "checkpoints",
+        "gb": 67.5
+       }
+      ]
+     }
+    }
+   ],
+   "score": {
+    "asr": {
+     "value": 6.13,
+     "src": "open-asr"
+    }
+   }
+  },
+  {
+   "id": "embeddinggemma-2-270m",
+   "cat": [
+    "embed"
+   ],
+   "name": "EmbeddingGemma 2 270M",
+   "vendor": "google",
+   "license": "Apache-2.0",
+   "released": "2026-09",
+   "desc": "超小嵌入模型，手機筆電都能跑",
+   "url": "https://ollama.com/library/embeddinggemma-2",
+   "variants": [
+    {
+     "label": "Q8_0（文字）",
+     "file_gb": 0.3,
+     "run_gb": 0.9,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "embeddinggemma-2:270m-q8_0-text"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 60.52,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "nomic-embed-text-v2-moe",
+   "cat": [
+    "embed"
+   ],
+   "name": "Nomic Embed Text v2 MoE",
+   "vendor": "nomic",
+   "license": "Apache-2.0",
+   "released": "2025-02",
+   "desc": "多語 MoE 嵌入，輕巧",
+   "url": "https://ollama.com/library/nomic-embed-text-v2-moe",
+   "variants": [
+    {
+     "label": "預設",
+     "file_gb": 0.96,
+     "run_gb": 1.5,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "nomic-embed-text-v2-moe:latest"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 57.64,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "bge-m3",
+   "cat": [
+    "embed"
+   ],
+   "name": "BGE-M3",
+   "vendor": "baai",
+   "license": "MIT",
+   "released": "2024-01",
+   "desc": "老牌多語嵌入，中文 RAG 常用",
+   "url": "https://ollama.com/library/bge-m3",
+   "variants": [
+    {
+     "label": "F16",
+     "file_gb": 1.2,
+     "run_gb": 1.7,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "bge-m3:567m"
+     }
+    }
+   ],
+   "score": {}
+  },
+  {
+   "id": "qwen3-embedding-0.6b",
+   "cat": [
+    "embed"
+   ],
+   "name": "Qwen3-Embedding 0.6B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2025-06",
+   "desc": "小尺寸、中文強的嵌入模型",
+   "url": "https://ollama.com/library/qwen3-embedding",
+   "variants": [
+    {
+     "label": "Q8_0",
+     "file_gb": 0.64,
+     "run_gb": 1.2,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-embedding:0.6b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 64.34,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "harrier-oss-v1-0.6b",
+   "cat": [
+    "embed"
+   ],
+   "name": "Harrier OSS v1 0.6B",
+   "vendor": "microsoft",
+   "license": "MIT",
+   "released": "2026-03",
+   "desc": "微軟新嵌入模型，小尺寸分數高",
+   "url": "https://huggingface.co/microsoft/harrier-oss-v1-0.6b",
+   "variants": [
+    {
+     "label": "Q8_0（mradermacher）",
+     "file_gb": 0.64,
+     "run_gb": 1.2,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/mradermacher/harrier-oss-v1-0.6b-GGUF:Q8_0"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 69.01,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "qwen3-embedding-4b",
+   "cat": [
+    "embed"
+   ],
+   "name": "Qwen3-Embedding 4B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2025-06",
+   "desc": "中文 RAG 首選的中型嵌入",
+   "url": "https://ollama.com/library/qwen3-embedding",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 2.5,
+     "run_gb": 3.0,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-embedding:4b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 4.3,
+     "run_gb": 4.8,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-embedding:4b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 69.45,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "qwen3-embedding-8b",
+   "cat": [
+    "embed"
+   ],
+   "name": "Qwen3-Embedding 8B",
+   "vendor": "qwen",
+   "license": "Apache-2.0",
+   "released": "2025-06",
+   "desc": "開放權重嵌入前段班，多語檢索最穩",
+   "url": "https://ollama.com/library/qwen3-embedding",
+   "variants": [
+    {
+     "label": "Q4_K_M",
+     "file_gb": 4.7,
+     "run_gb": 5.2,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-embedding:8b-q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0",
+     "file_gb": 8.0,
+     "run_gb": 8.6,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "qwen3-embedding:8b-q8_0"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 70.58,
+     "src": "mteb-ml"
+    }
+   }
+  },
+  {
+   "id": "harrier-oss-v1-27b",
+   "cat": [
+    "embed"
+   ],
+   "name": "Harrier OSS v1 27B",
+   "vendor": "microsoft",
+   "license": "MIT",
+   "released": "2026-03",
+   "desc": "MTEB 多語第一名，體積大、速度慢",
+   "url": "https://huggingface.co/microsoft/harrier-oss-v1-27b",
+   "variants": [
+    {
+     "label": "Q4_K_M（Abiray）",
+     "file_gb": 16.6,
+     "run_gb": 17.1,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/Abiray/harrier-oss-v1-27b-GGUF:Q4_K_M"
+     }
+    },
+    {
+     "label": "Q8_0（Abiray）",
+     "file_gb": 28.7,
+     "run_gb": 29.3,
+     "run_note": "估算：下載大小＋約 0.5 GB，未實測",
+     "source": {
+      "kind": "ollama",
+      "name": "hf.co/Abiray/harrier-oss-v1-27b-GGUF:Q8_0"
+     }
+    }
+   ],
+   "score": {
+    "embed": {
+     "value": 74.27,
+     "src": "mteb-ml"
+    }
+   }
+  }
+ ]
+}

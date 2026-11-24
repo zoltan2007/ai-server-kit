@@ -9,7 +9,7 @@ import time
 
 USER_OK = {"/api/status", "/api/models", "/api/models/show", "/api/chat", "/api/me", "/api/logout", "/api/password",
            "/api/sessions", "/api/sessions/get", "/api/sessions/save", "/api/sessions/delete",
-           "/api/agreement", "/api/agreement/accept"}
+           "/api/agreement", "/api/agreement/accept", "/api/hub"}
 MASTER = {"name": "admin", "role": "admin", "status": "active", "master": True}
 
 

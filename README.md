@@ -74,6 +74,8 @@ sudo bash install.sh
 
 Options mirror Windows: `--ollama-version`, `--model`, `--lan`, `--models-dir`, `--port`, `--no-terminal`, `--user`, `--yes`, `--list-versions`.
 
+**ComfyUI (images, video, voice)**: add `--comfyui` to the Linux installer to also install [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (git checkout, its own venv, CUDA 12.8 PyTorch, roughly 6–8 GB more) as the systemd service `comfyui`, **listening on 127.0.0.1:8188 only**. `--comfyui-gpu 2` pins it to one GPU, `--comfyui-ref <tag>` picks a version. Uninstalling moves ComfyUI's model files to `/opt/ai-server-kit-comfyui-models`, and reinstalling puts them back. The Windows installer does not install ComfyUI yet; if you install it yourself, set `"comfyui": {"dir": "<ComfyUI folder>"}` in `config.json`.
+
 Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入碼. Linux: `sudo /opt/ai-server-kit/show-token.sh`.
 
 👉 **Full guide, deployment and usage:** **https://zoltan2007.github.io/ai-server-kit/**
@@ -91,6 +93,8 @@ A multi-user chat workspace on top of the panel, laid out like a desktop AI codi
 - **Rooms**: invite other accounts into a shared room; the AI answers only when mentioned.
 
 Long documents need a long context: Ollama reads about 4096 tokens by default and silently drops the rest. The page asks for a larger context when a conversation is long (8192, 16384 or 32768, from a rough estimate); to pin one value for every request and avoid model reloads, set `"num_ctx": 32768` in `config.json`. Larger contexts use more VRAM.
+
+**Model library**: the sidebar's 模型 opens it. Categories: language, code, image, video, voice (TTS), speech recognition and embeddings. Each card shows the model, its publisher, download size, the rough VRAM it needs to run, and how well it fits this machine. Every category has two rankings: **fits this machine** (from the GPUs and RAM the panel detects, or a preset for the planned AI box: one GPU is best, then split across GPUs, then spilling into RAM, then too big; higher scores first within a tier) and **capability score** (one public leaderboard per category, named with its date on the page). Language, code and embedding models download through Ollama, the rest go into ComfyUI's `models/` folder. Only admins can download or delete, and download URLs and target folders come only from the built-in list (`app/hub.json`).
 
 ## Security & privacy
 

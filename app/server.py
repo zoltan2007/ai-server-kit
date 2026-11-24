@@ -25,6 +25,7 @@ import admin_api  # noqa: E402
 import agreement  # noqa: E402
 import export_api  # noqa: E402
 import guard  # noqa: E402
+import hub_api  # noqa: E402
 import ai_api  # noqa: E402
 import jobs  # noqa: E402
 import mail  # noqa: E402
@@ -635,7 +636,7 @@ GET_ROUTES = {
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
     "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
-    **users_api.GET, **rooms_api.GET, **ai_api.GET, **export_api.GET, **admin_api.GET,
+    **users_api.GET, **rooms_api.GET, **ai_api.GET, **export_api.GET, **admin_api.GET, **hub_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,
@@ -646,7 +647,7 @@ POST_ROUTES = {
     "/api/jobs/clear": Handler.job_clear, "/api/jobs/kill": Handler.job_kill,
     "/api/term/run": Handler.term_run, "/api/term/input": Handler.term_input,
     "/api/sessions/save": Handler.session_save, "/api/sessions/delete": Handler.session_delete,
-    **users_api.POST, **rooms_api.POST, **ai_api.POST,
+    **users_api.POST, **rooms_api.POST, **ai_api.POST, **hub_api.POST,
 }
 
 _log_path = None
