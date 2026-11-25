@@ -25,6 +25,7 @@ def get(h, q):
     out["profiles"] = [{"id": "host", "name": "這台主機"}] + [{"id": k, "name": p["name"]} for k, p in hub.PROFILES.items()]
     out["profile_id"] = q.get("profile") if q.get("profile") in hub.PROFILES else "host"
     out["admin"] = h.user.get("role") == "admin"
+    out["gen_ids"] = sorted(h.app.gen.recipes)        # 哪些模型可以在 Kiki 裡直接生成
     if not out["admin"]:
         out["comfy"] = {k: status[k] for k in ("installed", "running")}      # 一般帳號不需要知道主機上的資料夾
     h.json(out)

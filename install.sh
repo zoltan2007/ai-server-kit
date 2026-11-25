@@ -232,7 +232,7 @@ Wants=network-online.target
 [Service]
 User=$RUN_USER
 WorkingDirectory=$COMFY_DIR
-ExecStart=$CPY $COMFY_DIR/main.py --listen 127.0.0.1 --port 8188 $COMFY_CPU
+ExecStart=$CPY $COMFY_DIR/main.py --listen 127.0.0.1 --port 8188 --preview-method auto $COMFY_CPU
 Restart=on-failure
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
@@ -318,7 +318,7 @@ done
 printf '\n\033[32m  ✔ 安裝完成\033[0m\n'
 say "  面板：http://127.0.0.1:$PORT/"
 for u in ${LAN_URLS[@]+"${LAN_URLS[@]}"}; do say "  手機／其他電腦：$u"; done
-if [ -f "$COMFY_DIR/main.py" ]; then say "  ComfyUI：只有這台能開 http://127.0.0.1:8188/（模型在 Kiki Cloude 的「模型」下載）"; fi
+if [ -f "$COMFY_DIR/main.py" ]; then say "  ComfyUI：只有這台能開 http://127.0.0.1:8188/（模型在 Kiki Cloude 的「模型」下載，右欄「創作」生圖、生影片）"; fi
 printf '\033[33m  登入碼：%s\033[0m\n' "$TOKEN"
 say "  （忘記的話：sudo $PREFIX/show-token.sh）"
 if [ "$LAN" = 0 ]; then say "  只有這台能連。從別台用 SSH 轉發：ssh -L $PORT:127.0.0.1:$PORT 帳號@這台，再開 http://127.0.0.1:$PORT/"; fi

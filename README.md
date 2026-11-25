@@ -96,6 +96,11 @@ Long documents need a long context: Ollama reads about 4096 tokens by default an
 
 **Model library**: the sidebar's 模型 opens it. Categories: language, code, image, video, voice (TTS), speech recognition and embeddings. Each card shows the model, its publisher, download size, the rough VRAM it needs to run, and how well it fits this machine. Every category has two rankings: **fits this machine** (from the GPUs and RAM the panel detects, or a preset for the planned AI box: one GPU is best, then split across GPUs, then spilling into RAM, then too big; higher scores first within a tier) and **capability score** (one public leaderboard per category, named with its date on the page). Language, code and embedding models download through Ollama, the rest go into ComfyUI's `models/` folder. Only admins can download or delete, and download URLs and target folders come only from the built-in list (`app/hub.json`).
 
+**Create (images and video)**: the right panel's 創作 tab, `/生圖 a cat by the window` or `/生影片 …` in the message box, or "在 Kiki 裡用" on a downloaded model in the library. Pick a model, aspect ratio and video length, write a prompt and press generate. Progress and a live preview show while it runs (ComfyUI needs `--preview-method auto`; the installer sets it). Finished images and videos are posted into the conversation and kept in the panel, where you can download, regenerate or delete them. Every signed-in account can use it: at most 2 jobs per account and 8 per machine at once, and 3 GB of finished work per account.
+- Generation uses built-in workflows (`app/gen.json`, flattened from ComfyUI's official templates and checked by `tools/build_gen.py`). Users only send the prompt plus size, length, steps and seed; they cannot add nodes or pick model files.
+- Results are stored in `data_dir/gen/<account>/` and only their owner can fetch them (admins cannot see other people's). Deleting a conversation deletes its works, except ones a forked conversation still uses; deleting an account deletes all of them.
+- 11 models are supported: FLUX.2 [klein] 4B, Z-Image Turbo, HiDream-O1, FLUX 3 Klein, Qwen-Image 2.1, FLUX.2 [dev], MiniMax H3-Image, Wan 2.2 TI2V 5B, Wan 2.2 T2V A14B, HunyuanVideo 1.5 and MiniMax H3. LTX-2.3 and LTX-2.5 need extra upscaler files and are not supported yet. Text-to-image and text-to-video only for now.
+
 ## Security & privacy
 
 - **Local only by default** (`127.0.0.1`). `-Lan` opens it to your LAN — unencrypted, so for home/office networks only. To reach it from outside, use a VPN such as Tailscale; never expose the port to the open internet.
@@ -152,6 +157,7 @@ pwsh tools/pack.ps1
 - Managing several hosts from one panel.
 - Other engines (vLLM, llama.cpp) beyond Ollama.
 - A single-file `.exe` installer.
+- Create: image-to-image and image-to-video, the LTX models, voice and speech recognition (need custom nodes). The built-in workflows have not been run on a real ComfyUI yet.
 
 ## License
 

@@ -26,6 +26,8 @@ import agreement  # noqa: E402
 import export_api  # noqa: E402
 import guard  # noqa: E402
 import hub_api  # noqa: E402
+import gen  # noqa: E402
+import gen_api  # noqa: E402
 import ai_api  # noqa: E402
 import jobs  # noqa: E402
 import mail  # noqa: E402
@@ -47,7 +49,7 @@ MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=ut
         ".json": "application/json", ".webmanifest": "application/manifest+json"}
 MAX_JSON = 48 * 1024 * 1024        # 對話可以帶圖片（base64），給大一點
 UPLOAD_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._\-]{0,150}\.gguf$", re.I)
-CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
+CSP = ("default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; "
        "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
 
 
@@ -65,6 +67,7 @@ class App:
         self.rooms = rooms.RoomStore(self.data_dir)
         self.usage = usage.Usage(self.data_dir)
         self.guard = guard.Guard()
+        self.gen = gen.Gen(self.data_dir)
         self.mailer = mail.Mailer(self.data_dir)
         self.version = VERSION
         self.session_stores = {}
@@ -567,7 +570,12 @@ class Handler(BaseHTTPRequestHandler):
         sid = str(b.get("id", ""))
         if not ID_RE.match(sid):
             return self.err("對話編號不對")
-        self.json({"ok": self.app.sessions_for(self.user).delete(sid)})
+        store = self.app.sessions_for(self.user)
+        gone = gen.ids_in(store.get(sid))
+        ok = store.delete(sid)
+        if gone:      # 這個對話生成的圖片、影片一起刪；分支出去的對話還在用的留著
+            self.app.gen.purge_unused(self.user, gone, store.dir)
+        self.json({"ok": ok})
 
     # ── 背景工作 ──
     def job_list(self, q):
@@ -636,7 +644,7 @@ GET_ROUTES = {
     "/api/models/hf_tags": Handler.model_hf_tags, "/api/imports": Handler.imports, "/api/jobs": Handler.job_list,
     "/api/jobs/stream": Handler.job_stream, "/api/term/info": Handler.term_info,
     "/api/sessions": Handler.session_list, "/api/sessions/get": Handler.session_get,
-    **users_api.GET, **rooms_api.GET, **ai_api.GET, **export_api.GET, **admin_api.GET, **hub_api.GET,
+    **users_api.GET, **rooms_api.GET, **ai_api.GET, **export_api.GET, **admin_api.GET, **hub_api.GET, **gen_api.GET,
 }
 POST_ROUTES = {
     "/api/agreement/accept": Handler.agreement_accept,
@@ -647,7 +655,7 @@ POST_ROUTES = {
     "/api/jobs/clear": Handler.job_clear, "/api/jobs/kill": Handler.job_kill,
     "/api/term/run": Handler.term_run, "/api/term/input": Handler.term_input,
     "/api/sessions/save": Handler.session_save, "/api/sessions/delete": Handler.session_delete,
-    **users_api.POST, **rooms_api.POST, **ai_api.POST, **hub_api.POST,
+    **users_api.POST, **rooms_api.POST, **ai_api.POST, **hub_api.POST, **gen_api.POST,
 }
 
 _log_path = None

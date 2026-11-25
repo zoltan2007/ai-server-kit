@@ -84,7 +84,7 @@ function card(m, rank, cat) {
   let act = "";
   if (v.source.kind === "node") act = `<span class="muted small">只列資訊</span>`;
   else if (v.source.gated) act = `<span class="muted small">要先登入 Hugging Face 同意授權，面板還不能下載</span>`;
-  else if (v.have) act = `<span class="pill ok">已下載</span>${d.admin && v.source.kind === "comfy" ? `<button class="btn sm" data-rm="${esc(m.id)}">刪除</button>` : ""}`;
+  else if (v.have) act = `<span class="pill ok">已下載</span>${(d.gen_ids || []).includes(m.id) ? `<button class="btn sm primary" data-use="${esc(m.id)}" data-kind="${esc(cat.id)}">在 Kiki 裡用</button>` : ""}${d.admin && v.source.kind === "comfy" ? `<button class="btn sm" data-rm="${esc(m.id)}">刪除</button>` : ""}`;
   else if (job && job.state === "running") act = `<span class="hub-prog"><i style="width:${job.pct || 0}%"></i></span><span class="muted small">${esc(job.text || "下載中")}</span>`;
   else if (!d.admin) act = `<span class="muted small">下載要請管理員</span>`;
   else if (v.source.kind === "comfy" && !d.comfy.installed) act = `<span class="muted small">要先裝 ComfyUI</span>`;

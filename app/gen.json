@@ -1,0 +1,1707 @@
+{
+ "checked": "0d0e105153c02261519a6a552c52ec1cd5d9855e (comfyanonymous/ComfyUI master, 2026-11-24 21:44 -0500)",
+ "note": "由 tools/build_gen.py 產生；工作流程照 Comfy-Org/workflow_templates 官方範本攤平，節點名稱對過 ComfyUI 原始碼",
+ "models": {
+  "flux2-dev": {
+   "kind": "image",
+   "defaults": {
+    "width": 1024,
+    "height": 1024,
+    "steps": 20
+   },
+   "limits": {
+    "min_side": 256,
+    "max_side": 2048,
+    "multiple": 16
+   },
+   "workflow": {
+    "12": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "38": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "flux2",
+      "device": "default"
+     }
+    },
+    "10": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "6": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "38",
+       0
+      ]
+     }
+    },
+    "26": {
+     "class_type": "FluxGuidance",
+     "inputs": {
+      "conditioning": [
+       "6",
+       0
+      ],
+      "guidance": 4
+     }
+    },
+    "22": {
+     "class_type": "BasicGuider",
+     "inputs": {
+      "model": [
+       "12",
+       0
+      ],
+      "conditioning": [
+       "26",
+       0
+      ]
+     }
+    },
+    "16": {
+     "class_type": "KSamplerSelect",
+     "inputs": {
+      "sampler_name": "euler"
+     }
+    },
+    "48": {
+     "class_type": "Flux2Scheduler",
+     "inputs": {
+      "steps": "$steps",
+      "width": "$width",
+      "height": "$height"
+     }
+    },
+    "47": {
+     "class_type": "EmptyFlux2LatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "25": {
+     "class_type": "RandomNoise",
+     "inputs": {
+      "noise_seed": "$seed"
+     }
+    },
+    "13": {
+     "class_type": "SamplerCustomAdvanced",
+     "inputs": {
+      "noise": [
+       "25",
+       0
+      ],
+      "guider": [
+       "22",
+       0
+      ],
+      "sampler": [
+       "16",
+       0
+      ],
+      "sigmas": [
+       "48",
+       0
+      ],
+      "latent_image": [
+       "47",
+       0
+      ]
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "13",
+       0
+      ],
+      "vae": [
+       "10",
+       0
+      ]
+     }
+    },
+    "9": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_flux2_text_to_image.json",
+    "https://docs.comfy.org/tutorials/flux/flux-2-dev",
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_flux2_fp8.json",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_custom_sampler.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_flux.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "The t2i template itself lists mistral_3_small_flux2_bf16 + full_encoder_small_decoder VAE; our files (mistral_3_small_flux2_fp8, flux2-vae) are the ones the official image_flux2_fp8.json template uses with the same flux2_dev_fp8mixed UNet, so only loader filenames differ. Graph and values (guidance 4, euler, Flux2Scheduler 20 steps) unchanged."
+  },
+  "flux2-klein-4b": {
+   "kind": "image",
+   "defaults": {
+    "width": 1024,
+    "height": 1024,
+    "steps": 4
+   },
+   "limits": {
+    "min_side": 256,
+    "max_side": 2048,
+    "multiple": 16
+   },
+   "workflow": {
+    "70": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "71": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "flux2",
+      "device": "default"
+     }
+    },
+    "72": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "74": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "71",
+       0
+      ]
+     }
+    },
+    "76": {
+     "class_type": "ConditioningZeroOut",
+     "inputs": {
+      "conditioning": [
+       "74",
+       0
+      ]
+     }
+    },
+    "63": {
+     "class_type": "CFGGuider",
+     "inputs": {
+      "model": [
+       "70",
+       0
+      ],
+      "positive": [
+       "74",
+       0
+      ],
+      "negative": [
+       "76",
+       0
+      ],
+      "cfg": 1
+     }
+    },
+    "61": {
+     "class_type": "KSamplerSelect",
+     "inputs": {
+      "sampler_name": "euler"
+     }
+    },
+    "62": {
+     "class_type": "Flux2Scheduler",
+     "inputs": {
+      "steps": "$steps",
+      "width": "$width",
+      "height": "$height"
+     }
+    },
+    "66": {
+     "class_type": "EmptyFlux2LatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "73": {
+     "class_type": "RandomNoise",
+     "inputs": {
+      "noise_seed": "$seed"
+     }
+    },
+    "64": {
+     "class_type": "SamplerCustomAdvanced",
+     "inputs": {
+      "noise": [
+       "73",
+       0
+      ],
+      "guider": [
+       "63",
+       0
+      ],
+      "sampler": [
+       "61",
+       0
+      ],
+      "sigmas": [
+       "62",
+       0
+      ],
+      "latent_image": [
+       "66",
+       0
+      ]
+     }
+    },
+    "65": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "64",
+       0
+      ],
+      "vae": [
+       "72",
+       0
+      ]
+     }
+    },
+    "9": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "65",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_flux2_klein_text_to_image.json",
+    "https://docs.comfy.org/tutorials/flux/flux-2-klein",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_custom_sampler.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_flux.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "flux-2-klein-4b.safetensors is the DISTILLED 4B (the template's base variant uses flux-2-klein-base-4b with cfg 5 / 20 steps). Template bypasses the distilled subgraph by default (mode 4) but it is the one matching this file: 4 steps, cfg 1, negative = ConditioningZeroOut."
+  },
+  "flux3-image-klein": {
+   "kind": "image",
+   "defaults": {
+    "width": 1024,
+    "height": 1024,
+    "steps": 16
+   },
+   "limits": {
+    "min_side": 256,
+    "max_side": 2048,
+    "multiple": 16
+   },
+   "workflow": {
+    "1": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "2": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "flux3",
+      "device": "default"
+     }
+    },
+    "3": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "4": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "2",
+       0
+      ]
+     }
+    },
+    "5": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "",
+      "clip": [
+       "2",
+       0
+      ]
+     }
+    },
+    "6": {
+     "class_type": "EmptyFlux2LatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "7": {
+     "class_type": "KSampler",
+     "inputs": {
+      "model": [
+       "1",
+       0
+      ],
+      "seed": "$seed",
+      "steps": "$steps",
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+       "4",
+       0
+      ],
+      "negative": [
+       "5",
+       0
+      ],
+      "latent_image": [
+       "6",
+       0
+      ],
+      "denoise": 1
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "7",
+       0
+      ],
+      "vae": [
+       "3",
+       0
+      ]
+     }
+    },
+    "9": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_flux3_klein_distilled_t2i.json",
+    "https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_flux.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "flux3-image-klein-(bf16|int8-convrot) is the DISTILLED variant (the 'base' variant has its own template: cfg 3.5, 50 steps). The official template ships with switch=TRUE, i.e. the prompt is first rewritten by TextGenerate using an extra model qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors that is NOT in our download list; I set the template's own switch to off (on_false = raw prompt), so TextGenerate/system prompt nodes are dropped. Sampler values come from the subgraph's outer widget values (16 steps, euler, simple); inner KSampler widgets (15/er_sde) are overridden by them. cfg 1 so the empty negative is unused. Template ResolutionSelector uses multiple=8, but EmptyFlux2LatentImage step is 16, so multiple=16 here."
+  },
+  "hidream-o1-image": {
+   "kind": "image",
+   "defaults": {
+    "width": 2048,
+    "height": 2048,
+    "steps": 40
+   },
+   "limits": {
+    "min_side": 1312,
+    "max_side": 3104,
+    "multiple": 32
+   },
+   "negative_default": "",
+   "workflow": {
+    "6": {
+     "class_type": "CheckpointLoaderSimple",
+     "inputs": {
+      "ckpt_name": "$file0"
+     }
+    },
+    "124": {
+     "class_type": "ModelNoiseScale",
+     "inputs": {
+      "model": [
+       "6",
+       0
+      ],
+      "noise_scale": 8
+     }
+    },
+    "232": {
+     "class_type": "HiDreamO1PatchSeamSmoothing",
+     "inputs": {
+      "model": [
+       "124",
+       0
+      ],
+      "start_percent": 0.8,
+      "end_percent": 1,
+      "pattern": "single_shift",
+      "passes": "ramp_2_4",
+      "blend": "median",
+      "strength": 1
+     }
+    },
+    "110": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "6",
+       1
+      ]
+     }
+    },
+    "188": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$negative",
+      "clip": [
+       "6",
+       1
+      ]
+     }
+    },
+    "112": {
+     "class_type": "BasicScheduler",
+     "inputs": {
+      "model": [
+       "124",
+       0
+      ],
+      "scheduler": "normal",
+      "steps": "$steps",
+      "denoise": 1
+     }
+    },
+    "230": {
+     "class_type": "KSamplerSelect",
+     "inputs": {
+      "sampler_name": "dpmpp_2m_sde_gpu"
+     }
+    },
+    "156": {
+     "class_type": "EmptyHiDreamO1LatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "108": {
+     "class_type": "SamplerCustom",
+     "inputs": {
+      "model": [
+       "232",
+       0
+      ],
+      "add_noise": true,
+      "noise_seed": "$seed",
+      "cfg": 5,
+      "positive": [
+       "110",
+       0
+      ],
+      "negative": [
+       "188",
+       0
+      ],
+      "sampler": [
+       "230",
+       0
+      ],
+      "sigmas": [
+       "112",
+       0
+      ],
+      "latent_image": [
+       "156",
+       0
+      ]
+     }
+    },
+    "105": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "108",
+       0
+      ],
+      "vae": [
+       "6",
+       2
+      ]
+     }
+    },
+    "227": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "105",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_hidream_o1.json",
+    "https://docs.comfy.org/tutorials/image/hidream/hidream-o1",
+    "https://huggingface.co/Comfy-Org/HiDream-O1-Image",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_custom_sampler.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_hidream_o1.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_model_advanced.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Text encoder and VAE come from the checkpoint itself (CheckpointLoaderSimple outputs 1/2). $file1 (gemma4_e4b_it_fp8_scaled) is ONLY used by the optional 'Prompt Enhancement' subgraph (TextGenerate rewrite), which is off by default and omitted here, so $file1 is not referenced. Template negative CLIPTextEncode is empty with cfg 5. Trained resolutions (~4 MP): 2048x2048, 2304x1728, 2304x1792, 2496x1664, 2560x1440, 3104x1312 and portrait swaps; lower sizes degrade (node allows 64..4096 step 32). noise_scale 8 is for the base model (source tooltip: dev = 7.5; dev template uses 7.6 + SamplerLCM, 28 steps, cfg 1) — this graph is only for hidream_o1_image_bf16/_fp8_scaled (base), not the dev checkpoint. BasicScheduler takes the ModelNoiseScale output (#124), SamplerCustom takes the seam-smoothing output (#232), exactly as in the template."
+  },
+  "hunyuanvideo-1.5": {
+   "kind": "video",
+   "defaults": {
+    "width": 1280,
+    "height": 720,
+    "steps": 20,
+    "length": 121,
+    "fps": 24
+   },
+   "limits": {
+    "min_side": 480,
+    "max_side": 1280,
+    "multiple": 16,
+    "max_length": 121,
+    "length_rule": "4n+1"
+   },
+   "negative_default": "",
+   "workflow": {
+    "12": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "11": {
+     "class_type": "DualCLIPLoader",
+     "inputs": {
+      "clip_name1": "$file1",
+      "clip_name2": "$file2",
+      "type": "hunyuan_video_15",
+      "device": "default"
+     }
+    },
+    "10": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file3"
+     }
+    },
+    "44": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "11",
+       0
+      ]
+     }
+    },
+    "93": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$negative",
+      "clip": [
+       "11",
+       0
+      ]
+     }
+    },
+    "132": {
+     "class_type": "ModelSamplingSD3",
+     "inputs": {
+      "model": [
+       "12",
+       0
+      ],
+      "shift": 7
+     }
+    },
+    "131": {
+     "class_type": "CFGGuider",
+     "inputs": {
+      "model": [
+       "132",
+       0
+      ],
+      "positive": [
+       "44",
+       0
+      ],
+      "negative": [
+       "93",
+       0
+      ],
+      "cfg": 6
+     }
+    },
+    "128": {
+     "class_type": "BasicScheduler",
+     "inputs": {
+      "model": [
+       "12",
+       0
+      ],
+      "scheduler": "simple",
+      "steps": "$steps",
+      "denoise": 1
+     }
+    },
+    "130": {
+     "class_type": "KSamplerSelect",
+     "inputs": {
+      "sampler_name": "euler"
+     }
+    },
+    "129": {
+     "class_type": "RandomNoise",
+     "inputs": {
+      "noise_seed": "$seed"
+     }
+    },
+    "124": {
+     "class_type": "EmptyHunyuanVideo15Latent",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "length": "$length",
+      "batch_size": 1
+     }
+    },
+    "127": {
+     "class_type": "SamplerCustomAdvanced",
+     "inputs": {
+      "noise": [
+       "129",
+       0
+      ],
+      "guider": [
+       "131",
+       0
+      ],
+      "sampler": [
+       "130",
+       0
+      ],
+      "sigmas": [
+       "128",
+       0
+      ],
+      "latent_image": [
+       "124",
+       0
+      ]
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "127",
+       0
+      ],
+      "vae": [
+       "10",
+       0
+      ]
+     }
+    },
+    "101": {
+     "class_type": "CreateVideo",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "fps": "$fps"
+     }
+    },
+    "102": {
+     "class_type": "SaveVideo",
+     "inputs": {
+      "video": [
+       "101",
+       0
+      ],
+      "filename_prefix": "$prefix",
+      "format": "mp4",
+      "format.codec": "h264"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/video_hunyuan_video_1.5_720p_t2v.json",
+    "https://docs.comfy.org/tutorials/video/hunyuan/hunyuan-video-1-5",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_custom_sampler.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_hunyuan.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_model_advanced.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_video.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "EasyCache (#105) is bypassed (mode 4) in the template; its input (#12) is wired straight through, so BasicScheduler reads the UNet directly while the CFGGuider uses ModelSamplingSD3(shift 7) - this mirrors the template wiring exactly (BasicScheduler is not fed from ModelSamplingSD3 in the template). Template note: official Hunyuan settings for 720p_t2v are cfg 6, shift 9, 50 steps; template uses shift 7 / 20 steps for speed. Template negative is empty. SaveVideo in template: auto / h264."
+  },
+  "minimax-h3": {
+   "kind": "video",
+   "defaults": {
+    "width": 1344,
+    "height": 768,
+    "steps": 20,
+    "length": 124,
+    "fps": 24
+   },
+   "limits": {
+    "min_side": 352,
+    "max_side": 1344,
+    "multiple": 32,
+    "max_length": 362,
+    "length_rule": "17n+5"
+   },
+   "workflow": {
+    "127": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "128": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "minimax",
+      "device": "default"
+     }
+    },
+    "119": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "120": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file3"
+     }
+    },
+    "131": {
+     "class_type": "MiniMaxH3ImageToVideo",
+     "inputs": {
+      "clip": [
+       "128",
+       0
+      ],
+      "vae": [
+       "119",
+       0
+      ],
+      "prompt": "$prompt",
+      "width": "$width",
+      "height": "$height",
+      "length": "$length"
+     }
+    },
+    "124": {
+     "class_type": "BasicScheduler",
+     "inputs": {
+      "model": [
+       "127",
+       0
+      ],
+      "scheduler": "simple",
+      "steps": "$steps",
+      "denoise": 1
+     }
+    },
+    "123": {
+     "class_type": "KSamplerSelect",
+     "inputs": {
+      "sampler_name": "res_multistep"
+     }
+    },
+    "129": {
+     "class_type": "RandomNoise",
+     "inputs": {
+      "noise_seed": "$seed"
+     }
+    },
+    "126": {
+     "class_type": "BasicGuider",
+     "inputs": {
+      "model": [
+       "127",
+       0
+      ],
+      "conditioning": [
+       "131",
+       0
+      ]
+     }
+    },
+    "125": {
+     "class_type": "SamplerCustomAdvanced",
+     "inputs": {
+      "noise": [
+       "129",
+       0
+      ],
+      "guider": [
+       "126",
+       0
+      ],
+      "sampler": [
+       "123",
+       0
+      ],
+      "sigmas": [
+       "124",
+       0
+      ],
+      "latent_image": [
+       "131",
+       1
+      ]
+     }
+    },
+    "122": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "125",
+       0
+      ],
+      "vae": [
+       "119",
+       0
+      ]
+     }
+    },
+    "121": {
+     "class_type": "VAEDecodeAudio",
+     "inputs": {
+      "samples": [
+       "125",
+       0
+      ],
+      "vae": [
+       "120",
+       0
+      ]
+     }
+    },
+    "130": {
+     "class_type": "CreateVideo",
+     "inputs": {
+      "images": [
+       "122",
+       0
+      ],
+      "fps": "$fps",
+      "audio": [
+       "121",
+       0
+      ]
+     }
+    },
+    "92": {
+     "class_type": "SaveVideo",
+     "inputs": {
+      "video": [
+       "130",
+       0
+      ],
+      "filename_prefix": "$prefix",
+      "format": "mp4",
+      "format.codec": "h264"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/video_minimax_h3_t2v.json",
+    "https://huggingface.co/Comfy-Org/MiniMax-H3",
+    "https://github.com/Comfy-Org/ComfyUI/pull/15224",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_audio.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_custom_sampler.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_minimax_h3.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_video.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Template text encoder is qwen3vl_32b_minimax_h3_nvfp4_awq; our qwen3vl_32b_minimax_h3_int8_convrot is the int8 sibling (filename swap only; same file the H3 Image template uses). Both VAEDecode (video VAE) and VAEDecodeAudio (audio VAE) read the same joint AV latent (#125[0]) exactly as in the template. 24 fps native; keep fps 24. Length: template maps duration 5 s -> 124 via 'max(5, round(a*24)) + (5 - (... % 17)) % 17'; node tooltip: frame count snapped up to 17k+5, trained range ~124-362. Template note: native canvas 768 px short edge, capped at 768x1344, multiple of 32; template ResolutionSelector default is 16:9 at 0.4 MP (864x480) - 1344x768 is the node default/native maximum and is heavier. 20 steps = non-LoRA path."
+  },
+  "minimax-h3-image": {
+   "kind": "image",
+   "defaults": {
+    "width": 4096,
+    "height": 4096,
+    "steps": 6
+   },
+   "limits": {
+    "min_side": 2048,
+    "max_side": 6272,
+    "multiple": 32
+   },
+   "workflow": {
+    "1": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "2": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "minimax",
+      "device": "default"
+     }
+    },
+    "3": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "5": {
+     "class_type": "MiniMaxH3ImageConditioning",
+     "inputs": {
+      "clip": [
+       "2",
+       0
+      ],
+      "vae": [
+       "3",
+       0
+      ],
+      "prompt": "$prompt",
+      "width": "$width",
+      "height": "$height"
+     }
+    },
+    "6": {
+     "class_type": "ConditioningZeroOut",
+     "inputs": {
+      "conditioning": [
+       "5",
+       0
+      ]
+     }
+    },
+    "7": {
+     "class_type": "KSampler",
+     "inputs": {
+      "model": [
+       "1",
+       0
+      ],
+      "seed": "$seed",
+      "steps": "$steps",
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+       "5",
+       0
+      ],
+      "negative": [
+       "6",
+       0
+      ],
+      "latent_image": [
+       "5",
+       1
+      ],
+      "denoise": 1
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "7",
+       0
+      ],
+      "vae": [
+       "3",
+       0
+      ]
+     }
+    },
+    "9": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_minimax_h3_image_t2i.json",
+    "https://huggingface.co/Comfy-Org/MiniMax-H3-Image",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_minimax_h3.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Template ships with switch=ON: prompt rewritten by TextGenerateV2 with extra model qwen3.5_9b_w4a8_gptq.safetensors (NOT in our download list); set to off here (raw prompt goes to MiniMaxH3ImageConditioning). Template note: native ~16 MP (4096x4096 at 1:1), effective 4-20 MP, lower to 4 MP (2048x2048) on small GPUs; 6 steps/cfg 1/euler/simple fixed by the CFG-distilled checkpoint. Size comes from ResolutionSelector(1:1, 16 MP, multiple 32). min/max_side are from the template's size table (16:9 = 5472x3072, 21:9 = 6272x2688), not node limits."
+  },
+  "qwen-image-2.1": {
+   "kind": "image",
+   "defaults": {
+    "width": 1024,
+    "height": 1024,
+    "steps": 25
+   },
+   "limits": {
+    "min_side": 512,
+    "max_side": 2048,
+    "multiple": 32
+   },
+   "workflow": {
+    "451": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "453": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "qwen_image",
+      "device": "default"
+     }
+    },
+    "454": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "480": {
+     "class_type": "QwenImage21Cache",
+     "inputs": {
+      "model": [
+       "451",
+       0
+      ],
+      "device": "auto",
+      "dtype": "default"
+     }
+    },
+    "452": {
+     "class_type": "TextEncodeQwenImage21",
+     "inputs": {
+      "clip": [
+       "453",
+       0
+      ],
+      "prompt": "$prompt",
+      "negative_prompt": "",
+      "resolution": 1024
+     }
+    },
+    "456": {
+     "class_type": "EmptyLatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "458": {
+     "class_type": "KSampler",
+     "inputs": {
+      "model": [
+       "480",
+       0
+      ],
+      "seed": "$seed",
+      "steps": "$steps",
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+       "452",
+       0
+      ],
+      "negative": [
+       "452",
+       1
+      ],
+      "latent_image": [
+       "456",
+       0
+      ],
+      "denoise": 1
+     }
+    },
+    "457": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "458",
+       0
+      ],
+      "vae": [
+       "454",
+       0
+      ]
+     }
+    },
+    "461": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "457",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_qwen_image_2_1_t2i.json",
+    "https://docs.comfy.org/tutorials/image/qwen/qwen-image-2-1",
+    "https://huggingface.co/Comfy-Org/Qwen-Image-2.1",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_qwen.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Template output node is SaveImageAdvanced(png, 8-bit, sRGB); replaced with plain SaveImage (PNG). Prompt enhancer (extra file qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot) is off by default in the template and omitted. cfg 1 per template note ('keep 1 for the official path'; negative unused). Template note: official pipeline uses ~40-50 euler steps, template starts at 25; native 2K (2048x2048) supported, prefer multiples of 32. QwenImage21Cache is marked is_experimental in source. EmptyLatentImage (4-ch, /8) is what the template uses; I did not change it. The TextEncodeQwenImage21 'vae' input is left unconnected as in the template (only needed for reference images)."
+  },
+  "wan2.2-t2v-a14b": {
+   "kind": "video",
+   "defaults": {
+    "width": 640,
+    "height": 640,
+    "steps": 20,
+    "length": 81,
+    "fps": 16
+   },
+   "limits": {
+    "min_side": 480,
+    "max_side": 1280,
+    "multiple": 16,
+    "max_length": 81,
+    "length_rule": "4n+1"
+   },
+   "negative_default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走，裸露，NSFW",
+   "workflow": {
+    "75": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "76": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file1",
+      "weight_dtype": "default"
+     }
+    },
+    "71": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file2",
+      "type": "wan",
+      "device": "default"
+     }
+    },
+    "73": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file3"
+     }
+    },
+    "82": {
+     "class_type": "ModelSamplingSD3",
+     "inputs": {
+      "model": [
+       "75",
+       0
+      ],
+      "shift": 5
+     }
+    },
+    "86": {
+     "class_type": "ModelSamplingSD3",
+     "inputs": {
+      "model": [
+       "76",
+       0
+      ],
+      "shift": 5
+     }
+    },
+    "89": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "71",
+       0
+      ]
+     }
+    },
+    "72": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$negative",
+      "clip": [
+       "71",
+       0
+      ]
+     }
+    },
+    "74": {
+     "class_type": "EmptyHunyuanLatentVideo",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "length": "$length",
+      "batch_size": 1
+     }
+    },
+    "81": {
+     "class_type": "KSamplerAdvanced",
+     "inputs": {
+      "model": [
+       "82",
+       0
+      ],
+      "add_noise": "enable",
+      "noise_seed": "$seed",
+      "steps": 20,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+       "89",
+       0
+      ],
+      "negative": [
+       "72",
+       0
+      ],
+      "latent_image": [
+       "74",
+       0
+      ],
+      "start_at_step": 0,
+      "end_at_step": 10,
+      "return_with_leftover_noise": "enable"
+     }
+    },
+    "78": {
+     "class_type": "KSamplerAdvanced",
+     "inputs": {
+      "model": [
+       "86",
+       0
+      ],
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": 20,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+       "89",
+       0
+      ],
+      "negative": [
+       "72",
+       0
+      ],
+      "latent_image": [
+       "81",
+       0
+      ],
+      "start_at_step": 10,
+      "end_at_step": 20,
+      "return_with_leftover_noise": "disable"
+     }
+    },
+    "87": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "78",
+       0
+      ],
+      "vae": [
+       "73",
+       0
+      ]
+     }
+    },
+    "88": {
+     "class_type": "CreateVideo",
+     "inputs": {
+      "images": [
+       "87",
+       0
+      ],
+      "fps": "$fps"
+     }
+    },
+    "80": {
+     "class_type": "SaveVideo",
+     "inputs": {
+      "video": [
+       "88",
+       0
+      ],
+      "filename_prefix": "$prefix",
+      "format": "mp4",
+      "format.codec": "h264"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/video_wan2_2_14B_t2v.json",
+    "https://docs.comfy.org/tutorials/video/wan/wan2_2",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_hunyuan.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_model_advanced.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_video.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Steps are deliberately literal (20 total, high-noise expert 0-10, low-noise 10-20, cfg 3.5) because the split point is derived from steps in the template (Switch/PrimitiveInt nodes); $steps is NOT used - change both samplers together if you change it. Template length = floor(duration*fps)+1 with duration 5, fps 16 -> 81. 640x640 is the template default; 1280x720 is the model's 720p mode (heavier). fp16 variant: same graph, only filenames change."
+  },
+  "wan2.2-ti2v-5b": {
+   "kind": "video",
+   "defaults": {
+    "width": 1280,
+    "height": 704,
+    "steps": 20,
+    "length": 121,
+    "fps": 24
+   },
+   "limits": {
+    "min_side": 480,
+    "max_side": 1280,
+    "multiple": 32,
+    "max_length": 121,
+    "length_rule": "4n+1"
+   },
+   "negative_default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+   "workflow": {
+    "37": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "38": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "wan",
+      "device": "default"
+     }
+    },
+    "39": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "48": {
+     "class_type": "ModelSamplingSD3",
+     "inputs": {
+      "model": [
+       "37",
+       0
+      ],
+      "shift": 8
+     }
+    },
+    "6": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "38",
+       0
+      ]
+     }
+    },
+    "7": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$negative",
+      "clip": [
+       "38",
+       0
+      ]
+     }
+    },
+    "55": {
+     "class_type": "Wan22ImageToVideoLatent",
+     "inputs": {
+      "vae": [
+       "39",
+       0
+      ],
+      "width": "$width",
+      "height": "$height",
+      "length": "$length",
+      "batch_size": 1
+     }
+    },
+    "3": {
+     "class_type": "KSampler",
+     "inputs": {
+      "model": [
+       "48",
+       0
+      ],
+      "seed": "$seed",
+      "steps": "$steps",
+      "cfg": 5,
+      "sampler_name": "uni_pc",
+      "scheduler": "simple",
+      "positive": [
+       "6",
+       0
+      ],
+      "negative": [
+       "7",
+       0
+      ],
+      "latent_image": [
+       "55",
+       0
+      ],
+      "denoise": 1
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "3",
+       0
+      ],
+      "vae": [
+       "39",
+       0
+      ]
+     }
+    },
+    "57": {
+     "class_type": "CreateVideo",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "fps": "$fps"
+     }
+    },
+    "58": {
+     "class_type": "SaveVideo",
+     "inputs": {
+      "video": [
+       "57",
+       0
+      ],
+      "filename_prefix": "$prefix",
+      "format": "mp4",
+      "format.codec": "h264"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/video_wan2_2_5B_ti2v.json",
+    "https://docs.comfy.org/tutorials/video/wan/wan2_2",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_model_advanced.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_video.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_wan.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "Template SaveVideo uses format auto/codec auto (resolves to mp4); here explicit mp4/h264. Native 24 fps, 1280x704 (or 704x1280). max_length 121 = template default (~5 s), not a node limit; node length step 4."
+  },
+  "z-image-turbo": {
+   "kind": "image",
+   "defaults": {
+    "width": 1024,
+    "height": 1024,
+    "steps": 8
+   },
+   "limits": {
+    "min_side": 512,
+    "max_side": 2048,
+    "multiple": 16
+   },
+   "workflow": {
+    "28": {
+     "class_type": "UNETLoader",
+     "inputs": {
+      "unet_name": "$file0",
+      "weight_dtype": "default"
+     }
+    },
+    "30": {
+     "class_type": "CLIPLoader",
+     "inputs": {
+      "clip_name": "$file1",
+      "type": "lumina2",
+      "device": "default"
+     }
+    },
+    "29": {
+     "class_type": "VAELoader",
+     "inputs": {
+      "vae_name": "$file2"
+     }
+    },
+    "11": {
+     "class_type": "ModelSamplingAuraFlow",
+     "inputs": {
+      "model": [
+       "28",
+       0
+      ],
+      "shift": 3
+     }
+    },
+    "27": {
+     "class_type": "CLIPTextEncode",
+     "inputs": {
+      "text": "$prompt",
+      "clip": [
+       "30",
+       0
+      ]
+     }
+    },
+    "33": {
+     "class_type": "ConditioningZeroOut",
+     "inputs": {
+      "conditioning": [
+       "27",
+       0
+      ]
+     }
+    },
+    "13": {
+     "class_type": "EmptySD3LatentImage",
+     "inputs": {
+      "width": "$width",
+      "height": "$height",
+      "batch_size": 1
+     }
+    },
+    "3": {
+     "class_type": "KSampler",
+     "inputs": {
+      "model": [
+       "11",
+       0
+      ],
+      "seed": "$seed",
+      "steps": "$steps",
+      "cfg": 1,
+      "sampler_name": "res_multistep",
+      "scheduler": "simple",
+      "positive": [
+       "27",
+       0
+      ],
+      "negative": [
+       "33",
+       0
+      ],
+      "latent_image": [
+       "13",
+       0
+      ],
+      "denoise": 1
+     }
+    },
+    "8": {
+     "class_type": "VAEDecode",
+     "inputs": {
+      "samples": [
+       "3",
+       0
+      ],
+      "vae": [
+       "29",
+       0
+      ]
+     }
+    },
+    "9": {
+     "class_type": "SaveImage",
+     "inputs": {
+      "images": [
+       "8",
+       0
+      ],
+      "filename_prefix": "$prefix"
+     }
+    }
+   },
+   "sources": [
+    "https://github.com/Comfy-Org/workflow_templates/blob/eac646cad5e9f37a78f296da56b48f61ad94e7a4/templates/image_z_image_turbo.json",
+    "https://docs.comfy.org/tutorials/image/z-image/z-image-turbo",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_model_advanced.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/comfy_extras/nodes_sd3.py",
+    "https://github.com/comfyanonymous/ComfyUI/blob/0d0e105153c02261519a6a552c52ec1cd5d9855e/nodes.py"
+   ],
+   "notes": "bf16 and int8 templates are identical except filenames (int8: z_image_turbo_int8_convrot + qwen_3_4b_fp8_mixed). max_side 2048 is a practical cap, not a node limit (node allows up to 16384)."
+  }
+ }
+}

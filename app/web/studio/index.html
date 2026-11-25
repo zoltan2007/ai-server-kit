@@ -191,13 +191,14 @@
   <!-- 右欄：主機狀態 -->
   <aside class="right" id="right">
     <div class="side-head rtabs">
-      <button data-rt="host" class="on">主機</button><button data-rt="project">專案</button><button data-rt="art">成品</button><button data-rt="usage">用量</button><button data-rt="members" id="rt-members" hidden>申請</button>
+      <button data-rt="host" class="on">主機</button><button data-rt="project">專案</button><button data-rt="art">成品</button><button data-rt="gen">創作</button><button data-rt="usage">用量</button><button data-rt="members" id="rt-members" hidden>申請</button>
       <span class="grow"></span>
       <button class="icon-btn" id="right-close" title="收起" aria-label="收起"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <div class="right-body rpane" id="status" data-rt="host"></div>
     <div class="right-body rpane" id="project-pane" data-rt="project" hidden></div>
     <div class="right-body rpane" id="art-pane" data-rt="art" hidden></div>
+    <div class="right-body rpane" id="gen-pane" data-rt="gen" hidden></div>
     <div class="right-body rpane" data-rt="usage" hidden><div class="heat side" id="heat-side" hidden></div></div>
     <div class="right-body rpane" data-rt="members" hidden><div class="users" id="users-side"></div></div>
   </aside>
@@ -284,6 +285,8 @@
 <script src="files.js"></script>
 <script src="artifact.js"></script>
 <script src="hub.js"></script>
+<script src="gen.js"></script>
+<script src="genpane.js"></script>
 <script src="modal.js"></script>
 </body>
 </html>

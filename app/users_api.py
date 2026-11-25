@@ -9,7 +9,8 @@ import time
 
 USER_OK = {"/api/status", "/api/models", "/api/models/show", "/api/chat", "/api/me", "/api/logout", "/api/password",
            "/api/sessions", "/api/sessions/get", "/api/sessions/save", "/api/sessions/delete",
-           "/api/agreement", "/api/agreement/accept", "/api/hub"}
+           "/api/agreement", "/api/agreement/accept", "/api/hub",
+           "/api/gen/models", "/api/gen/start", "/api/gen/status", "/api/gen/file", "/api/gen/preview", "/api/gen/cancel", "/api/gen/delete"}
 MASTER = {"name": "admin", "role": "admin", "status": "active", "master": True}
 
 
@@ -194,6 +195,7 @@ def delete_account(app, name):
     app.rooms.purge_user(name)
     import shutil
     shutil.rmtree(os.path.join(app.data_dir, "sessions", name), ignore_errors=True)
+    shutil.rmtree(os.path.join(app.data_dir, "gen", name), ignore_errors=True)
     app.session_stores.pop(name, None)
 
 

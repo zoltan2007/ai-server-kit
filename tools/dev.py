@@ -12,6 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "app"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 
+import fake_comfy  # noqa: E402
 import fake_ollama  # noqa: E402
 import hub  # noqa: E402
 import providers  # noqa: E402
@@ -54,17 +55,32 @@ class _FakeResp:
         pass
 
 
+_real_open = hub._urlopen
+
+
 def fake_hf(req, timeout=None):
-    """預覽用的假 ComfyUI 與假 Hugging Face：不連網，下載回一段假資料（約 4 MB）。"""
+    """預覽用的假 Hugging Face：不連網，下載回一段假資料（約 4 MB）。本機的假 ComfyUI 照常連。"""
     url = req.full_url if hasattr(req, "full_url") else str(req)
-    if url.endswith("/system_stats"):
-        return _FakeResp(b'{"system": {"comfyui_version": "0.0.0-preview"}}')
+    if url.startswith("http://127.0.0.1:"):
+        return _real_open(req, timeout=timeout)
     if url.startswith("https://huggingface.co/"):
         return _FakeResp(b"\0" * (4 * 1024 * 1024))
     raise OSError("預覽不連網：%s" % url)
 
 
 hub._urlopen = fake_hf
+PRE_INSTALLED = {"z-image-turbo": "bf16", "flux2-klein-4b": "bf16", "wan2.2-ti2v-5b": "fp16"}   # 預覽時當作已經下載好
+
+
+def fake_video(data):
+    """有 ffmpeg 就做一支 3 秒的測試影片，假 ComfyUI 的影片成品才播得出來。"""
+    import shutil
+    import subprocess
+    out = os.path.join(data, "preview-video.mp4")
+    if not os.path.exists(out) and shutil.which("ffmpeg"):
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc2=size=640x352:rate=24:duration=3",
+                        "-pix_fmt", "yuv420p", "-c:v", "libx264", out], check=False, timeout=60)
+    return open(out, "rb").read() if os.path.exists(out) else None
 
 DEV_TOKEN = "dev-preview-token-2026"
 
@@ -85,6 +101,17 @@ if __name__ == "__main__":
     os.makedirs(cfg["comfyui"]["dir"], exist_ok=True)
     with open(os.path.join(cfg["comfyui"]["dir"], "main.py"), "w", encoding="utf-8") as f:
         f.write("# 預覽用的假 ComfyUI\n")
+    fc = fake_comfy.serve(0)
+    fake_comfy.S.steps, fake_comfy.S.delay = 12, 0.35
+    fake_comfy.S.video = fake_video(data)
+    cfg["comfyui"]["url"] = "http://127.0.0.1:%d" % fc.server_address[1]
+    for m in hub.load()["models"]:
+        for v in m["variants"]:
+            if PRE_INSTALLED.get(m["id"]) == v["label"]:
+                for f in v["source"]["files"]:
+                    p = hub.target(cfg["comfyui"]["dir"], f)
+                    os.makedirs(os.path.dirname(p), exist_ok=True)
+                    open(p, "a").close()
     srv = server.make_server(cfg)
     print("預覽：http://127.0.0.1:%d/" % port, flush=True)
     try:

@@ -10,7 +10,8 @@ import secrets
 import threading
 import time
 
-NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{2,19}$")   # 3～20 字，小寫英數
+NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{1,18}[a-z0-9_-]$")   # 3～20 字，小寫英數；不能用「.」結尾（Windows 會把它吃掉，兩個帳號變同一個資料夾）
+WIN_DEVICES = {"con", "prn", "aux", "nul"} | {"com%d" % i for i in range(10)} | {"lpt%d" % i for i in range(10)}
 RESERVED = {"admin", "kiki", "claude", "gpt", "gemini", "grok", "system", "root", "ai"}
 TOKEN_DAYS = 30
 MIN_PW = 8
@@ -58,7 +59,7 @@ class UserStore:
     # ── 帳號 ──
     @staticmethod
     def valid_name(name):
-        return bool(NAME_RE.match(name or ""))
+        return bool(NAME_RE.match(name or "")) and name.split(".")[0] not in WIN_DEVICES
 
     @staticmethod
     def check_password(pw):

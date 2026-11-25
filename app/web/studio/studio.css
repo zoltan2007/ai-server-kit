@@ -621,3 +621,45 @@ body.in-hub .hub { display: grid !important; }
 .hc-stats span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hub { grid-auto-rows: max-content; }
 .hub-cats { min-height: max-content; }
+
+/* ── 創作（右欄生圖、生影片） ── */
+.gen-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gen-form { display: grid; gap: 10px; }
+.gen-f { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; }
+.gen-f > span { color: var(--muted); min-width: 3em; }
+.gen-f select, .gen-f input { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 10px; }
+.gen-f.col { flex-direction: column; align-items: stretch; }
+.gen-f .seg { flex-wrap: wrap; }
+#gen-prompt, #gen-neg { width: 100%; resize: vertical; min-height: 84px; padding: 10px 12px; border-radius: 12px; line-height: 1.5; }
+#gen-neg { min-height: 52px; }
+.gen-adv summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 2px 0; }
+.gen-adv[open] { display: grid; gap: 8px; }
+.gen-go { width: 100%; padding: 10px; font-size: 15px; }
+.gen-go:disabled { opacity: .5; cursor: not-allowed; }
+.gen-empty { display: grid; gap: 6px; padding: 14px; border-radius: 14px; box-shadow: var(--inset-sm); }
+.gen-empty code, .gen-form code { font-size: 12px; }
+.gen-h { margin: 6px 0 2px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.gen-now-row { display: grid; gap: 4px; }
+.gen-live { position: relative; width: 100%; max-width: 420px; max-height: 60vh; border-radius: 14px; overflow: hidden; box-shadow: var(--inset); background: var(--surface-2); }
+.gen-live img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.9); }
+.gen-over { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; font-size: 13px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .55)); color: #fff; }
+.gen-over .hub-prog { min-width: 60px; background: rgba(255, 255, 255, .2); box-shadow: none; }
+.gen-over .btn { color: var(--text); }
+.gen-media { position: relative; width: 100%; max-width: 420px; max-height: 70vh; border-radius: 14px; overflow: hidden; box-shadow: var(--raise-sm); background: var(--surface-2); }
+.gen-media img, .gen-media video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.gen-media.big { max-width: none; max-height: 62vh; }
+.gen-play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; border-radius: 50%; border: 0; cursor: pointer; background: var(--bg); box-shadow: var(--raise); display: grid; place-items: center; }
+.gen-play svg { width: 28px; height: 28px; fill: var(--accent); stroke: none; }
+.gen-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.gen-tag { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; font-size: 12px; color: var(--accent-ink); background: var(--accent); vertical-align: 1px; }
+.gen-view { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.gen-view[hidden] { display: none; }
+.gen-prompt-txt { margin: 0; font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.gen-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.gen-thumb { position: relative; aspect-ratio: 1; border: 0; border-radius: 12px; cursor: pointer; background: var(--surface-2) center / cover no-repeat; box-shadow: var(--raise-sm); }
+.gen-thumb:hover, .gen-thumb.on { box-shadow: var(--raise), 0 0 0 2px var(--accent); }
+.gen-thumb.gone { opacity: .4; }
+.gen-vid { position: absolute; inset: 0; display: grid; place-items: center; }
+.gen-vid svg { width: 26px; height: 26px; fill: var(--accent); stroke: none; }
+.msg .gen-live, .msg .gen-media { margin-top: 4px; }
