@@ -125,6 +125,16 @@ class AdminCliTest(unittest.TestCase):
             me = urllib.request.Request(base + "/api/users", headers={"Authorization": "Bearer " + body["token"]})
             with urllib.request.urlopen(me, timeout=10) as r:
                 self.assertIn("zoltan", [u["name"] for u in json.load(r)["users"]])
+            # 主機面板（/）也是帳號密碼登入，登入碼欄位預設藏起來
+            with urllib.request.urlopen(base + "/", timeout=10) as r:
+                page = r.read().decode("utf-8")
+            self.assertIn('id="login-user"', page)
+            self.assertIn('id="login-pass"', page)
+            self.assertRegex(page, r'<input id="login-token"[^>]*\bhidden\b')
+            # 帳號憑證能用面板的管理員功能（/api/jobs 只有管理員能用）
+            jobs = urllib.request.Request(base + "/api/jobs", headers={"Authorization": "Bearer " + body["token"]})
+            with urllib.request.urlopen(jobs, timeout=10) as r:
+                self.assertEqual(r.status, 200)
         finally:
             srv.shutdown()
             srv.server_close()

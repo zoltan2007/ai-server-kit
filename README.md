@@ -76,7 +76,7 @@ Options mirror Windows: `--ollama-version`, `--model`, `--lan`, `--models-dir`, 
 
 **ComfyUI (images, video, voice)**: add `--comfyui` to the Linux installer to also install [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (git checkout, its own venv, CUDA 12.8 PyTorch, roughly 6–8 GB more) as the systemd service `comfyui`, **listening on 127.0.0.1:8188 only**. `--comfyui-gpu 2` pins it to one GPU, `--comfyui-ref <tag>` picks a version. Uninstalling moves ComfyUI's model files to `/opt/ai-server-kit-comfyui-models`, and reinstalling puts them back. The Windows installer does not install ComfyUI yet; if you install it yourself, set `"comfyui": {"dir": "<ComfyUI folder>"}` in `config.json`.
 
-**Admin account (Linux)**: the interactive installer asks for an admin username and password (typed twice, never shown). After that the admin signs in on the normal login page with that username and password; the login code is only a backup. Create one later, or reset a forgotten password, with `sudo /opt/ai-server-kit/set-admin.sh` (it stops the panel, asks, then starts it again). `--yes` installs skip the question. The Windows installer does not ask yet: create the admin with the login code in Kiki, or run `python app\admin_cli.py --data <data_dir>` while the panel is stopped.
+**Admin account (Linux)**: the interactive installer asks for an admin username and password (typed twice, never shown). After that the admin signs in on the normal login page with that username and password; the login code is only a backup. The host panel (`/`) uses the same admin username and password and shares the sign-in with Kiki (signing in to one signs you in to the other); regular accounts are pointed to Kiki. Create one later, or reset a forgotten password, with `sudo /opt/ai-server-kit/set-admin.sh` (it stops the panel, asks, then starts it again). `--yes` installs skip the question. The Windows installer does not ask yet: create the admin with the login code in Kiki, or run `python app\admin_cli.py --data <data_dir>` while the panel is stopped.
 
 Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入碼. Linux: `sudo /opt/ai-server-kit/show-token.sh`.
 
@@ -106,7 +106,7 @@ Long documents need a long context: Ollama reads about 4096 tokens by default an
 ## Security & privacy
 
 - **Local only by default** (`127.0.0.1`). `-Lan` opens it to your LAN — unencrypted, so for home/office networks only. To reach it from outside, use a VPN such as Tailscale; never expose the port to the open internet.
-- **Every API call needs the login code** (24 random characters, generated at install). It lives in the request header, not the URL and not a cookie.
+- **Every API call needs the login code** (24 random characters, generated at install) **or an account's sign-in token** (30 days, from username and password). It lives in the request header, not the URL and not a cookie.
 - **The terminal is full machine control** at the panel account's permission level. For machines you hand to others, install with `-NoTerminal`.
 - **Ollama stays bound to `127.0.0.1`** — the outside world reaches it only through the login-protected panel.
 

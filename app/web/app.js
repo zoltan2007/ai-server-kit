@@ -21,7 +21,9 @@ function dur(sec) {
   return d ? `${d} 天 ${h} 小時` : h ? `${h} 小時 ${m} 分` : `${m} 分`;
 }
 
-let TOKEN = ls.get("token", "");
+// 在 Kiki（/studio/）登入過就直接用那份憑證，不用再登入一次
+const studioToken = () => { try { return JSON.parse(localStorage.getItem("studio.token") || '""'); } catch { return ""; } };
+let TOKEN = ls.get("token", "") || studioToken();
 const S = { tab: "status", status: null, models: null, jobs: [], plat: "", caps: {} };
 
 // ── 連線 ──
@@ -67,24 +69,50 @@ function autosize(ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.
 const later = fn => setTimeout(fn, 40);
 
 // ── 登入 ──
-function showLogin(msg) {
+// 平常用管理員帳號密碼登入；安裝時的登入碼只當備用（忘記密碼、或還沒有管理員帳號時）
+const NOT_ADMIN = "這個帳號不是管理員。主機面板只有管理員能用，一般帳號請到 Kiki（網址後面加 /studio/）";
+let loginMode = "password";
+function setLoginMode(mode) {
+  loginMode = mode;
+  const tok = mode === "token";
+  $("#login-user").hidden = tok; $("#login-pass").hidden = tok; $("#login-token").hidden = !tok;
+  $("#login-hint").textContent = tok ? "輸入安裝時顯示的登入碼。忘記的話，在主機上執行「顯示登入碼」。"
+    : "用管理員帳號登入（跟 Kiki 同一組帳號密碼）。";
+  $("#login-mode").textContent = tok ? "用帳號密碼登入" : "忘記密碼？用安裝時的登入碼";
+  setTimeout(() => (tok ? $("#login-token") : $("#login-user").value ? $("#login-pass") : $("#login-user")).focus(), 50);
+}
+async function showLogin(msg) {
   $("#app").hidden = true; $("#login").hidden = false;
   $("#login-err").textContent = msg || "";
-  setTimeout(() => $("#login-token").focus(), 50);
+  let setup = false;   // 還沒有任何管理員帳號（剛裝好）：只能先用登入碼
+  try { setup = !!(await (await fetch("/api/ping")).json()).setup; } catch { /* 連不到就照平常 */ }
+  setLoginMode(setup ? "token" : "password");
 }
+$("#login-mode").addEventListener("click", () => { $("#login-err").textContent = ""; setLoginMode(loginMode === "token" ? "password" : "token"); });
 $("#login-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const tok = $("#login-token").value.trim();
+  const body = loginMode === "token" ? { token: $("#login-token").value.trim() }
+    : { user: $("#login-user").value.trim(), password: $("#login-pass").value };
+  if (loginMode === "token" ? !body.token : !body.user || !body.password) { $("#login-err").textContent = "請填完整"; return; }
   $("#login-err").textContent = "";
   try {
-    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: tok }) });
+    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || "登入失敗");
-    TOKEN = tok; ls.set("token", tok); $("#login-token").value = "";
+    if (j.role !== "admin") {   // 一般帳號：剛發的憑證收回，請他去 Kiki
+      fetch("/api/logout", { method: "POST", headers: { Authorization: "Bearer " + j.token } }).catch(() => {});
+      throw new Error(NOT_ADMIN);
+    }
+    TOKEN = j.token; ls.set("token", j.token);
+    $("#login-token").value = ""; $("#login-pass").value = "";
     start();
   } catch (err) { $("#login-err").textContent = err.message; }
 });
-$("#logout-btn").addEventListener("click", () => { TOKEN = ""; ls.del("token"); showLogin(); });
+$("#logout-btn").addEventListener("click", () => {
+  if (TOKEN) fetch("/api/logout", { method: "POST", headers: { Authorization: "Bearer " + TOKEN } }).catch(() => {});
+  if (studioToken() === TOKEN) { try { localStorage.removeItem("studio.token"); } catch { /* 忽略 */ } }
+  TOKEN = ""; ls.del("token"); showLogin();
+});
 
 // ── 分頁 ──
 function switchTab(tab) {
@@ -980,6 +1008,12 @@ $("#term-kill").addEventListener("click", async () => {
 
 // ── 開始 ──
 if (TOKEN) {
+  // /api/jobs 只有管理員能用：403＝登入的是一般帳號（例如從 Kiki 帶過來的）
   api("/api/ping").then(() => fetch("/api/jobs", { headers: { Authorization: "Bearer " + TOKEN } }))
-    .then(r => r.ok ? start() : showLogin()).catch(() => showLogin("連不到面板伺服器"));
+    .then(r => {
+      if (r.ok) return start();
+      if (ls.get("token", "") === TOKEN) ls.del("token");
+      TOKEN = "";
+      showLogin(r.status === 403 ? NOT_ADMIN : "");
+    }).catch(() => showLogin("連不到面板伺服器"));
 } else showLogin();

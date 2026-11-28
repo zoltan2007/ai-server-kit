@@ -75,7 +75,7 @@ sudo bash install.sh
 
 **ComfyUI（生圖、影片、配音）**：Linux 安裝檔加 `--comfyui` 會一起裝 [ComfyUI](https://github.com/comfyanonymous/ComfyUI)（git 下載、獨立的 Python 虛擬環境、CUDA 12.8 版 PyTorch，約多 6–8 GB），做成 systemd 服務 `comfyui`，**只聽 127.0.0.1:8188**。`--comfyui-gpu 2` 讓它只用第 2 張顯示卡（例如把語言模型留給另外兩張），`--comfyui-ref <標籤>` 指定版本。解除安裝時 ComfyUI 的模型檔會搬到 `/opt/ai-server-kit-comfyui-models` 保留，重裝會放回去。Windows 版的安裝檔還不會裝 ComfyUI；自己裝好後在 `config.json` 加 `"comfyui": {"dir": "ComfyUI 資料夾"}` 就能用模型庫下載。
 
-**管理員帳號（Linux）**：一步一步安裝時會問管理員的帳號和密碼（密碼打兩次、不會顯示），之後管理員就在一般的登入畫面輸入帳號密碼登入，登入碼只當備用。之後要新建、或忘記密碼要重設：`sudo /opt/ai-server-kit/set-admin.sh`（會先停面板、問完再開）。加 `--yes` 安裝不會問。Windows 安裝檔還不會問：用登入碼進 Kiki 建，或在面板停止時執行 `python app\admin_cli.py --data <data_dir>`。
+**管理員帳號（Linux）**：一步一步安裝時會問管理員的帳號和密碼（密碼打兩次、不會顯示），之後管理員就在一般的登入畫面輸入帳號密碼登入，登入碼只當備用。主機面板（`/`）也用同一組管理員帳號密碼，而且跟 Kiki 共用登入（登入其中一個，另一個也就登入了）；一般帳號會被請去 Kiki。之後要新建、或忘記密碼要重設：`sudo /opt/ai-server-kit/set-admin.sh`（會先停面板、問完再開）。加 `--yes` 安裝不會問。Windows 安裝檔還不會問：用登入碼進 Kiki 建，或在面板停止時執行 `python app\admin_cli.py --data <data_dir>`。
 
 忘記登入碼？Windows：開始功能表 → AI 主機面板 → 顯示登入碼。Linux：`sudo /opt/ai-server-kit/show-token.sh`。
 
@@ -119,7 +119,7 @@ sudo bash install.sh
 1. **Tailscale（建議）**：主機和手機都裝 Tailscale、登入同一個帳號，手機打開主機的 Tailscale IP（例如 `http://100.x.x.x:8780/studio/`）。不用開路由器的埠、不用固定 IP、連線本身有加密，Ollama 仍只聽本機。面板要用 `--lan` 或把 `host` 設成 Tailscale IP。
 2. **Cloudflare Tunnel ＋ Access**：想要一個真正的網址（`ai.你的網域`）才用；Tunnel 從主機往外連，不開埠，Access 再擋一層登入。
 3. **不要做**：路由器直接轉埠 8780 到主機，更不要轉 11434（Ollama 沒有任何登入機制）。
-- **每個 API 都要登入碼**（24 個隨機字元，安裝時產生），放在請求標頭，不放網址、不用 cookie。
+- **每個 API 都要登入碼**（24 個隨機字元，安裝時產生）**或帳號登入後拿到的憑證**（30 天），放在請求標頭，不放網址、不用 cookie。
 - **終端機等於完整控制這台電腦**，權限就是跑面板的帳號。給別人用的機器請用 `-NoTerminal`。
 - **Ollama 維持只聽 `127.0.0.1`**，外面只能透過有登入碼的面板用它。
 

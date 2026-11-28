@@ -14,10 +14,13 @@
   <form class="login-card" id="login-form">
     <img src="icon.svg" alt="" class="login-logo">
     <h1>AI 主機面板</h1>
-    <p class="muted">輸入安裝時顯示的登入碼。忘記的話，在主機上執行「顯示登入碼」。</p>
-    <input id="login-token" type="password" autocomplete="current-password" placeholder="登入碼" required>
+    <p class="muted" id="login-hint">用管理員帳號登入（跟 Kiki 同一組帳號密碼）。</p>
+    <input id="login-user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="帳號">
+    <input id="login-pass" type="password" autocomplete="current-password" placeholder="密碼">
+    <input id="login-token" type="password" autocomplete="off" placeholder="登入碼" hidden>
     <button class="btn primary" type="submit">登入</button>
     <p class="login-err" id="login-err"></p>
+    <button class="linkbtn" type="button" id="login-mode">忘記密碼？用安裝時的登入碼</button>
   </form>
 </div>
 

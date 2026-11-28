@@ -74,6 +74,8 @@ label > input, label > select, label > textarea { margin-top: 4px; color: var(--
 .login-card p { margin: 0; }
 .login-logo { width: 52px; height: 52px; margin: 0 auto; }
 .login-err { color: var(--danger); min-height: 1.5em; font-size: 14px; }
+.linkbtn { background: none; border: 0; padding: 4px; color: var(--muted); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.linkbtn:hover { color: var(--text); }
 .agree-card { max-width: 560px; text-align: left; }
 .agree-card h1 { text-align: center; }
 .agree-text { white-space: pre-wrap; word-break: break-word; font-family: var(--font); font-size: 13.5px; line-height: 1.6; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; max-height: 44vh; overflow-y: auto; margin: 0; }
