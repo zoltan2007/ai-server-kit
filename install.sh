@@ -86,7 +86,8 @@ RAM=$(awk '/MemTotal/ {print $2*1024}' /proc/meminfo)
 VRAM=0
 if command -v nvidia-smi >/dev/null 2>&1; then
   VRAM=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | awk '{s+=$1} END {print s*1048576}')
-  say "  NVIDIA 顯示卡：$(nvidia-smi --query-gpu=name --format=csv,noheader | paste -sd '、')（共 $((VRAM/1073741824)) GB）"
+  # paste -d 只吃單一位元組，「、」是 3 個位元組會變亂碼，所以用 awk 接
+  say "  NVIDIA 顯示卡：$(nvidia-smi --query-gpu=name --format=csv,noheader | awk 'NR>1{printf "、"} {printf "%s", $0}')（共 $((VRAM/1073741824)) GB）"
 else
   warn "  沒有偵測到 NVIDIA 顯示卡（或驅動沒裝）：模型會用 CPU 跑（比較慢）。"
 fi
@@ -201,6 +202,8 @@ if [ "$COMFY" = 1 ]; then
     if [ -n "$COMFY_REF" ]; then as_user git -C "$COMFY_DIR" checkout -q "$COMFY_REF"; else as_user git -C "$COMFY_DIR" pull -q --ff-only || warn "  沒辦法直接更新（改過檔案？），先用目前的版本"; fi
   else
     say "  下載 ComfyUI"
+    # $PREFIX 是 root 的，一般使用者不能在裡面建資料夾：先用 root 建好空資料夾交給他，再 clone 進去
+    rm -rf "$COMFY_DIR.tmp"; mkdir -p "$COMFY_DIR.tmp"; chown "$RUN_USER" "$COMFY_DIR.tmp"
     as_user git clone -q https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR.tmp" || die "  下載 ComfyUI 失敗（GitHub 連不到？）"
     [ -n "$COMFY_REF" ] && as_user git -C "$COMFY_DIR.tmp" checkout -q "$COMFY_REF"
     # 已經有 models/ 的話（例如之前手動放的模型）保留下來
@@ -274,6 +277,30 @@ cat > "$PREFIX/show-token.sh" <<EOF
 EOF
 chmod 755 "$PREFIX/show-token.sh"
 
+cat > "$PREFIX/set-admin.sh" <<EOF
+#!/bin/sh
+# 建立或重設管理員帳號（要 sudo）。之後在登入畫面用這組帳號密碼登入。
+# 會先停面板再改（面板開著改的話會被它蓋掉），改完再開。
+[ "\$(id -u)" -eq 0 ] || exec sudo "\$0" "\$@"
+was=\$(systemctl is-active ai-server-kit 2>/dev/null)
+[ "\$was" = active ] && systemctl stop ai-server-kit
+sudo -u "$RUN_USER" -H "$PY" "$PREFIX/app/admin_cli.py" --data "$PREFIX/data" "\$@"
+rc=\$?
+[ "\$was" = active ] && systemctl start ai-server-kit
+exit \$rc
+EOF
+chmod 755 "$PREFIX/set-admin.sh"
+
+# ── 管理員帳號：在這裡設好，之後就用一般的登入畫面登入（帳號密碼），不用登入碼 ──
+admin_ok() { sudo -u "$RUN_USER" -H "$PY" "$PREFIX/app/admin_cli.py" --data "$PREFIX/data" --check; }
+if ! admin_ok && [ "$YES" != 1 ] && [ -t 0 ]; then
+  step "管理員帳號（之後在登入畫面用帳號密碼登入）"
+  systemctl stop ai-server-kit 2>/dev/null || true
+  sudo -u "$RUN_USER" -H "$PY" "$PREFIX/app/admin_cli.py" --data "$PREFIX/data" ||
+    warn "  沒有建好管理員帳號；之後可以執行 sudo $PREFIX/set-admin.sh"
+fi
+HAS_ADMIN=0; admin_ok && HAS_ADMIN=1
+
 cat > /etc/systemd/system/ai-server-kit.service <<EOF
 [Unit]
 Description=AI Server Kit 面板
@@ -319,8 +346,14 @@ printf '\n\033[32m  ✔ 安裝完成\033[0m\n'
 say "  面板：http://127.0.0.1:$PORT/"
 for u in ${LAN_URLS[@]+"${LAN_URLS[@]}"}; do say "  手機／其他電腦：$u"; done
 if [ -f "$COMFY_DIR/main.py" ]; then say "  ComfyUI：只有這台能開 http://127.0.0.1:8188/（模型在 Kiki Cloude 的「模型」下載，右欄「創作」生圖、生影片）"; fi
-printf '\033[33m  登入碼：%s\033[0m\n' "$TOKEN"
-say "  （忘記的話：sudo $PREFIX/show-token.sh）"
+if [ "$HAS_ADMIN" = 1 ]; then
+  say "  管理員：在登入畫面輸入你的帳號密碼（忘記密碼：sudo $PREFIX/set-admin.sh）"
+  say "  備用登入碼平常用不到，要看的話：sudo $PREFIX/show-token.sh"
+else
+  printf '\033[33m  登入碼：%s\033[0m\n' "$TOKEN"
+  say "  （忘記的話：sudo $PREFIX/show-token.sh）"
+  say "  建管理員帳號（之後就用帳號密碼登入）：sudo $PREFIX/set-admin.sh"
+fi
 if [ "$LAN" = 0 ]; then say "  只有這台能連。從別台用 SSH 轉發：ssh -L $PORT:127.0.0.1:$PORT 帳號@這台，再開 http://127.0.0.1:$PORT/"; fi
 if [ "$LAN" = 1 ]; then say "  注意：區網連線沒有加密，只在內網用；要從外面連請用 Tailscale 之類的 VPN。"; fi
 say ""

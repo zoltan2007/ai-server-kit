@@ -76,6 +76,8 @@ Options mirror Windows: `--ollama-version`, `--model`, `--lan`, `--models-dir`, 
 
 **ComfyUI (images, video, voice)**: add `--comfyui` to the Linux installer to also install [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (git checkout, its own venv, CUDA 12.8 PyTorch, roughly 6–8 GB more) as the systemd service `comfyui`, **listening on 127.0.0.1:8188 only**. `--comfyui-gpu 2` pins it to one GPU, `--comfyui-ref <tag>` picks a version. Uninstalling moves ComfyUI's model files to `/opt/ai-server-kit-comfyui-models`, and reinstalling puts them back. The Windows installer does not install ComfyUI yet; if you install it yourself, set `"comfyui": {"dir": "<ComfyUI folder>"}` in `config.json`.
 
+**Admin account (Linux)**: the interactive installer asks for an admin username and password (typed twice, never shown). After that the admin signs in on the normal login page with that username and password; the login code is only a backup. Create one later, or reset a forgotten password, with `sudo /opt/ai-server-kit/set-admin.sh` (it stops the panel, asks, then starts it again). `--yes` installs skip the question. The Windows installer does not ask yet: create the admin with the login code in Kiki, or run `python app\admin_cli.py --data <data_dir>` while the panel is stopped.
+
 Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入碼. Linux: `sudo /opt/ai-server-kit/show-token.sh`.
 
 👉 **Full guide, deployment and usage:** **https://zoltan2007.github.io/ai-server-kit/**
@@ -84,7 +86,7 @@ Forgot the login code? Windows: Start menu → AI 主機面板 → 顯示登入�
 
 A multi-user chat workspace on top of the panel, laid out like a desktop AI coding app: project list with groups and branches on the left, the conversation in the middle, a side pane on the right. The interface is in Traditional Chinese.
 
-- **Accounts**: people apply on the login page (optionally verified by a code mailed to their Gmail address), an admin approves them, and each account gets its own projects. Admins can set daily or weekly token limits and see usage on a dashboard. The install-time login code remains the master admin: the login page asks for it directly until an admin account exists, and after that it sits behind "忘記密碼" (forgot password).
+- **Accounts**: people apply on the login page (optionally verified by a code mailed to their Gmail address), an admin approves them, and each account gets its own projects. Admins can set daily or weekly token limits and see usage on a dashboard. Admins sign in with a username and password like everyone else (the Linux installer creates the first one; `set-admin.sh` resets it). The install-time login code remains the master admin as a backup: the login page asks for it directly only while no admin account exists, and otherwise it sits behind "忘記密碼" (forgot password).
 - **Projects**: streaming replies with thinking, Markdown, branching, pinning, per-project instructions that are sent to the local model on every turn, export as text, an AI-readable memory file, or a zip of everything.
 - **Message actions**: copy, regenerate the last answer, edit and resend one of your own messages, find within the conversation, keyboard shortcuts (`Ctrl+/` lists them).
 - **Attachments**: images (for vision models; downscaled to 1568 px), text and code files (UTF-8 or Big5), and PDFs. **PDF text is extracted in the browser; the original file never reaches the host.** Scanned or encrypted PDFs yield no text. Only the newest batch of images is re-sent each turn unless you pin a message's images.

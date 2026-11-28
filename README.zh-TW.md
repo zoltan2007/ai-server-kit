@@ -75,6 +75,8 @@ sudo bash install.sh
 
 **ComfyUI（生圖、影片、配音）**：Linux 安裝檔加 `--comfyui` 會一起裝 [ComfyUI](https://github.com/comfyanonymous/ComfyUI)（git 下載、獨立的 Python 虛擬環境、CUDA 12.8 版 PyTorch，約多 6–8 GB），做成 systemd 服務 `comfyui`，**只聽 127.0.0.1:8188**。`--comfyui-gpu 2` 讓它只用第 2 張顯示卡（例如把語言模型留給另外兩張），`--comfyui-ref <標籤>` 指定版本。解除安裝時 ComfyUI 的模型檔會搬到 `/opt/ai-server-kit-comfyui-models` 保留，重裝會放回去。Windows 版的安裝檔還不會裝 ComfyUI；自己裝好後在 `config.json` 加 `"comfyui": {"dir": "ComfyUI 資料夾"}` 就能用模型庫下載。
 
+**管理員帳號（Linux）**：一步一步安裝時會問管理員的帳號和密碼（密碼打兩次、不會顯示），之後管理員就在一般的登入畫面輸入帳號密碼登入，登入碼只當備用。之後要新建、或忘記密碼要重設：`sudo /opt/ai-server-kit/set-admin.sh`（會先停面板、問完再開）。加 `--yes` 安裝不會問。Windows 安裝檔還不會問：用登入碼進 Kiki 建，或在面板停止時執行 `python app\admin_cli.py --data <data_dir>`。
+
 忘記登入碼？Windows：開始功能表 → AI 主機面板 → 顯示登入碼。Linux：`sudo /opt/ai-server-kit/show-token.sh`。
 
 👉 **完整介紹、部署與使用教學：** **https://zoltan2007.github.io/ai-server-kit/**
@@ -83,7 +85,7 @@ sudo bash install.sh
 
 像 Claude 程式介面的對話頁：左欄對話清單（今天／昨天／過去 7 天／更早、釘選、搜尋）、中間對話（串流、思考過程、Markdown、附圖）、右欄主機狀態（溫度、顯示記憶體、載入中的模型）。對話存在主機的 `data_dir/sessions/`，手機和電腦看到同一份。輸入 `/` 有快捷指令（`/新`、`/模型`、`/狀態`、`/釘選`、`/清除`、`/面板`）。模型下載、匯入、終端機仍在原本的面板（`/`）。
 
-**帳號**：Kiki 用帳號密碼登入。訪客在登入頁「申請帳號」（帳號、密碼、給管理員的話），管理員在左下角「成員」核准／拒絕／停用／重設密碼；每個帳號的對話各自分開（`data_dir/sessions/<帳號>/`）。一般帳號只能對話、看狀態；下載模型、終端機、帳號管理都要管理員。安裝時的登入碼是「主管理員」，第一次用它登入 Kiki 會請你建一個管理員帳號（可跳過）。還沒有管理員帳號時，登入頁會直接要登入碼；有了之後，登入碼的入口收在登入頁的「忘記密碼」裡（一般使用者忘記密碼請找管理員重設）。密碼用 PBKDF2 加鹽存在 `data_dir/users.json`，登入憑證 30 天（`tokens.json`）。
+**帳號**：Kiki 用帳號密碼登入。訪客在登入頁「申請帳號」（帳號、密碼、給管理員的話），管理員在左下角「成員」核准／拒絕／停用／重設密碼；每個帳號的對話各自分開（`data_dir/sessions/<帳號>/`）。一般帳號只能對話、看狀態；下載模型、終端機、帳號管理都要管理員。管理員也用帳號密碼登入（Linux 安裝檔會建第一個，`set-admin.sh` 可重設）。安裝時的登入碼是備用的「主管理員」，用它登入 Kiki 而還沒有管理員帳號時會請你建一個（可跳過）。還沒有管理員帳號時，登入頁會直接要登入碼；有了之後，登入碼的入口收在登入頁的「忘記密碼」裡（一般使用者忘記密碼請找管理員重設）。密碼用 PBKDF2 加鹽存在 `data_dir/users.json`，登入憑證 30 天（`tokens.json`）。
 
 **對話裡能做的事**
 
