@@ -151,7 +151,7 @@ async function loadMe() {
   const q = me.quota || {}, used = me.used || {};
   $("#quota-line").hidden = !(q.day || q.week);
   $("#quota-line").textContent = [q.day ? `今天 ${fmtTok(used.day || 0)} / ${fmtTok(q.day)}` : "", q.week ? `本週 ${fmtTok(used.week || 0)} / ${fmtTok(q.week)}` : ""].filter(Boolean).join(" · ");
-  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin"; $("#mail-btn").hidden = me.role !== "admin";
+  $("#users-btn").hidden = me.role !== "admin"; $("#panel-link").hidden = me.role !== "admin"; $("#model-more").hidden = me.role !== "admin"; $("#rt-members").hidden = me.role !== "admin"; $("#dash-btn").hidden = me.role !== "admin"; $("#mail-btn").hidden = me.role !== "admin";
   $("#pw-details").hidden = !!me.master;
   $("#users-badge").hidden = !me.pending; $("#users-badge").textContent = me.pending || 0;
   if (me.pending) toast(`有 ${me.pending} 個帳號申請等你核准`);
@@ -262,7 +262,7 @@ function renderModelChip() {
   $("#model-name").textContent = m || (S.models.length ? "選模型" : "還沒有模型");
   $("#model-list").innerHTML = S.models.length
     ? S.models.map(n => `<button data-model="${esc(n)}" class="${n === m ? "on" : ""}"><span>${esc(n)}</span>${n === m ? '<span class="muted">目前</span>' : ""}</button>`).join("")
-    : `<div class="muted small" style="padding:8px">還沒有模型，先到面板下載</div>`;
+    : `<div class="muted small" style="padding:8px">${S.me?.role === "admin" ? "還沒有模型，先到面板下載" : "還沒有模型，請管理員下載"}</div>`;
   if (typeof renderPartnerChip === "function" && S.cur) renderPartnerChip();
   updateCaps();
 }
@@ -641,18 +641,20 @@ const SLASH = [
   { k: "/分支", d: "把目前對話分支出一個新對話", run: () => S.cur.id && forkSession(S.cur.id) },
   { k: "/群組", d: "把目前對話移到群組", run: () => { const g = prompt("群組名稱（留空＝不分群組）", S.cur.group || ""); if (g != null) { S.cur.group = g.trim(); queueSave(0); } } },
   { k: "/清除", d: "清掉目前對話的訊息（保留標題）", run: () => { if (confirm("清掉這個對話的所有訊息？")) { S.cur.messages = []; renderCur(); queueSave(0); } } },
-  { k: "/面板", d: "到舊面板：下載模型、匯入、終端機", run: () => (location.href = "../") },
+  { k: "/面板", d: "到主機面板：下載模型、匯入、終端機", admin: true, run: () => (location.href = "../") },
 ];
+// 主機面板只有管理員能用，一般帳號看不到 /面板
+const mySlash = () => SLASH.filter(c => !c.admin || S.me?.role === "admin");
 function renderSlash(v) {
   const menu = $("#slash");
   if (!v.startsWith("/") || v.includes("\n")) { menu.hidden = true; return; }
-  const hits = SLASH.filter(c => c.k.startsWith(v.trim()) || v.trim() === "/");
+  const hits = mySlash().filter(c => c.k.startsWith(v.trim()) || v.trim() === "/");
   menu.hidden = !hits.length;
   menu.innerHTML = hits.map((c, i) => `<button type="button" data-k="${c.k}" class="${i ? "" : "on"}"><b>${c.k}</b><span>${c.d}</span></button>`).join("");
 }
 $("#slash").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) { $("#input").value = ""; autosize($("#input")); $("#slash").hidden = true; runSlash(b.dataset.k); } });
 function runSlash(text) {
-  const c = SLASH.find(x => text.trim() === x.k);
+  const c = mySlash().find(x => text.trim() === x.k);
   if (!c) return false;
   if (!S.cur && !["/新", "/面板", "/模型"].includes(c.k)) { toast("這個指令要在專案裡用"); $("#slash").hidden = true; return true; }
   $("#slash").hidden = true; c.run(); return true;
