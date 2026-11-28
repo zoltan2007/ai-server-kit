@@ -257,11 +257,15 @@ async function loadModels() {
   if (S.cur && !S.cur.model && S.models.length) S.cur.model = ls.get("model", "") && S.models.includes(ls.get("model", "")) ? ls.get("model", "") : S.models[0];
   renderModelChip();
 }
+// 無審查版（abliterated／uncensored／heretic）在選單上標出來；Hugging Face 來的模型名稱太長，只顯示 repo 名稱和量化
+const isUncensored = n => /abliterat|uncensor|heretic/i.test(n);
+const modelLabel = n => String(n).replace(/^hf\.co\/[^/]+\//, "").replace(/-GGUF(?=:|$)/i, "");
 function renderModelChip() {
   const m = S.cur?.model || "";
-  $("#model-name").textContent = m || (S.models.length ? "選模型" : "還沒有模型");
+  $("#model-name").textContent = m ? modelLabel(m) : (S.models.length ? "選模型" : "還沒有模型");
+  $("#model-name").title = m;
   $("#model-list").innerHTML = S.models.length
-    ? S.models.map(n => `<button data-model="${esc(n)}" class="${n === m ? "on" : ""}"><span>${esc(n)}</span>${n === m ? '<span class="muted">目前</span>' : ""}</button>`).join("")
+    ? S.models.map(n => `<button data-model="${esc(n)}" class="${n === m ? "on" : ""}" title="${esc(n)}"><span>${esc(modelLabel(n))}${isUncensored(n) ? ' <span class="pill warn">無審查</span>' : ""}</span>${n === m ? '<span class="muted">目前</span>' : ""}</button>`).join("")
     : `<div class="muted small" style="padding:8px">${S.me?.role === "admin" ? "還沒有模型，先到面板下載" : "還沒有模型，請管理員下載"}</div>`;
   if (typeof renderPartnerChip === "function" && S.cur) renderPartnerChip();
   updateCaps();
@@ -419,7 +423,7 @@ async function forkSession(id) {
   const src = await api("/api/sessions/get?id=" + id).catch(err => { toast(err.message, true); });
   if (!src) return;
   newSession({ title: (src.title || "對話") + "（分支）", model: src.model, group: src.group || "", parent: id,
-    messages: src.messages || [], settings: src.settings || {}, partner: src.partner || null, instructions: src.instructions || "" });
+    messages: src.messages || [], settings: src.settings || {}, partner: src.partner || null, instructions: src.instructions || "", handoff: src.handoff || null });
   open["s:" + id] = true; ls.set("open", open);
   await saveNow(); renderList(); toast("已分支出新對話");
 }
@@ -431,7 +435,7 @@ async function deleteSession(id) {
 }
 async function saveSession(c) {
   const r = await api("/api/sessions/save", { body: { id: c.id, title: c.title, model: c.model, pinned: c.pinned, group: c.group, parent: c.parent,
-    partner: c.partner || null, instructions: c.instructions || "", settings: c.settings, messages: c.messages } });
+    partner: c.partner || null, instructions: c.instructions || "", settings: c.settings, messages: c.messages, handoff: c.handoff || null } });
   const i = S.sessions.findIndex(s => s.id === r.id);
   const row = { id: r.id, title: r.title, model: r.model, updated: r.updated, pinned: r.pinned, group: r.group, parent: r.parent, count: r.messages.length };
   if (i >= 0) S.sessions[i] = row; else S.sessions.unshift(row);
@@ -493,9 +497,10 @@ function renderCur() {
   renderModelChip();
   if (typeof renderThinkChip === "function") renderThinkChip();
   const box = $("#msgs");
-  $$(".msg", box).forEach(x => x.remove());
+  $$(".msg, .handoff", box).forEach(x => x.remove());
   $("#empty").hidden = !!c.messages.length;
   for (const m of c.messages) box.appendChild(msgEl(m));
+  if (typeof renderHandoff === "function") renderHandoff();   // 交接檔那條線（handoff.js）
   scrollMsgs(true);
 }
 function nearBottom() { const b = $("#msgs"); return b.scrollHeight - b.scrollTop - b.clientHeight < 120; }

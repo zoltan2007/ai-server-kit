@@ -123,6 +123,37 @@ class FitTest(unittest.TestCase):
         for src in c["sources"].values():
             self.assertTrue(src.get("name") and src.get("date"), src)
 
+    def test_uncensored_versions(self):
+        """uncensored.json 併進原版模型、標 uncensored；推薦版本永遠是原版；不合格的筆數略過。"""
+        c = hub.load()
+        unc = [(m["id"], v) for m in c["models"] for v in m["variants"] if v.get("uncensored")]
+        self.assertGreaterEqual(len(unc), 6)
+        for mid, v in unc:
+            self.assertTrue(v["label"].startswith("無審查 "), mid)
+            self.assertTrue(v["source"]["name"].startswith("hf.co/"), mid)
+            self.assertTrue(v["url"].startswith("https://huggingface.co/"), mid)
+            self.assertTrue(v["maker"] and v["file_gb"] and v["run_gb"] >= v["file_gb"], mid)
+        for prof in (AIBOX, SMALL):
+            out = hub.build(c, prof)
+            for m in out["models"]:
+                self.assertFalse(m["variants"][m["best"]].get("uncensored"), m["id"])
+        # 不合格的略過：名稱不合法、標籤不是「無審查 …」、不是 Ollama、跟原有標籤重複
+        tmp = tempfile.mkdtemp(prefix="aisk-unc-")
+        try:
+            p = os.path.join(tmp, "uncensored.json")
+            good = {"label": "無審查 Q4", "file_gb": 1, "run_gb": 2, "url": "https://evil.example/x", "source": {"kind": "ollama", "name": "hf.co/a/b:Q4"}}
+            bad = [dict(good, label="Q4"), dict(good, label="無審查 Q5", source={"kind": "ollama", "name": "hf.co/a/b:Q4;rm -rf"}),
+                   dict(good, label="無審查 Q6", source={"kind": "comfy", "files": []}), dict(good)]
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"models": {"m": [good] + bad}}, f, ensure_ascii=False)
+            cat = {"models": [{"id": "m", "variants": [ollama(4)]}]}
+            vs = hub.merge_uncensored(cat, p)["models"][0]["variants"]
+            self.assertEqual([v["label"] for v in vs], ["Q4", "無審查 Q4"])
+            self.assertEqual(vs[1]["url"], "")        # 只接受 Hugging Face 的網址
+            self.assertIs(hub.merge_uncensored(cat, os.path.join(tmp, "沒有這個檔.json")), cat)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 
 class FakeResp(io.BytesIO):
     status = 200

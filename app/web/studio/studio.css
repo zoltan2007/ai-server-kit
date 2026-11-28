@@ -619,7 +619,7 @@ body.in-hub .hub { display: grid !important; }
 .hc-score.none { color: var(--muted); font-weight: 400; }
 .hub-warn a { color: inherit; text-decoration: underline; }
 .hc-stats span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hub { grid-auto-rows: max-content; }
+.hub { grid-auto-rows: max-content; grid-template-columns: minmax(0, 1fr); }   /* 欄寬跟著視窗，不被分類那排撐寬（窄視窗會整頁橫向捲動） */
 .hub-cats { min-height: max-content; }
 
 /* ── 創作（右欄生圖、生影片） ── */
@@ -663,3 +663,26 @@ body.in-hub .hub { display: grid !important; }
 .gen-vid { position: absolute; inset: 0; display: grid; place-items: center; }
 .gen-vid svg { width: 26px; height: 26px; fill: var(--accent); stroke: none; }
 .msg .gen-live, .msg .gen-media { margin-top: 4px; }
+
+/* 交接檔（handoff.js）：被整理掉的訊息淡一點，下面一條可展開的交接檔 */
+.msg.compacted { opacity: .5; transition: opacity .2s; }
+.msg.compacted:hover { opacity: .85; }
+.handoff { margin: 4px 0 22px; border-radius: var(--radius); background: var(--bg); box-shadow: var(--inset-sm); border: 1px dashed var(--border); }
+.handoff.working { padding: 11px 14px; color: var(--muted); font-size: 13px; animation: ho-pulse 1.6s ease-in-out infinite; }
+@keyframes ho-pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .handoff.working { animation: none; } }
+.handoff summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 10px 14px; cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
+.handoff summary::-webkit-details-marker { display: none; }
+.handoff summary b { color: var(--accent-ink); background: var(--accent); padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.handoff summary::after { content: "展開"; margin-left: auto; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.handoff details[open] summary::after { content: "收起"; }
+.handoff summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius); }
+.handoff .ho-body { margin: 0 14px; padding: 8px 2px 4px; border-top: 1px solid var(--border); font-size: 13.5px; line-height: 1.65; max-height: 50vh; overflow: auto; }
+.handoff .ho-body h4 { margin: 12px 0 2px; font-size: 13px; color: var(--accent); }
+.handoff .ho-body h4:first-child { margin-top: 4px; }
+.handoff .ho-body p, .handoff .ho-body ul { margin: 2px 0 6px; }
+.handoff .ho-edit { width: 100%; min-height: 260px; font: 13px/1.6 var(--mono); resize: vertical; }
+.handoff .ho-acts { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px 12px; }
+
+/* 無審查版的小標籤（模型庫卡片、Kiki 的模型選單） */
+.hc-unc, #model-list .pill { padding: 1px 8px; font-size: 11.5px; margin-left: 4px; vertical-align: 1px; font-weight: 500; }

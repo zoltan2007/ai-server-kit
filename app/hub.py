@@ -16,6 +16,7 @@ import urllib.request
 
 import sysinfo
 from jobs import Job
+from ollama_api import NAME_RE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GB = 1000 ** 3
@@ -38,9 +39,38 @@ TIERS = {3: "一張顯卡放得下", 2: "拆到好幾張顯卡，一樣全在顯
 FP8_GPU = re.compile(r"RTX\s*(40|50)\d\d|RTX\s*PRO|\bL4\b|L40|H100|H200|B100|B200|GB10|Ada|Blackwell", re.I)
 
 
-def load(path=None):
+UNC_LABEL = re.compile(r"^無審查 \S.{0,36}$")
+
+
+def load(path=None, unc_path=None):
     with open(path or os.path.join(HERE, "hub.json"), encoding="utf-8") as f:
-        return json.load(f)
+        catalog = json.load(f)
+    if path and not unc_path:
+        return catalog      # 指定別的 hub.json（測試）時不自動合併
+    return merge_uncensored(catalog, unc_path or os.path.join(HERE, "uncensored.json"))
+
+
+def merge_uncensored(catalog, unc_path):
+    """無審查版（uncensored.json，社群 abliterated 的 GGUF）併進原版模型的版本清單，標 uncensored。
+    分開放一個檔：hub.json 是從研究結果重建的，重建時不會把這些蓋掉。不合格的筆數直接略過。"""
+    try:
+        with open(unc_path, encoding="utf-8") as f:
+            extra = json.load(f).get("models") or {}
+    except (OSError, ValueError):
+        return catalog
+    for m in catalog["models"]:
+        labels = {v["label"] for v in m["variants"]}
+        for v in extra.get(m["id"]) or []:
+            src = v.get("source") or {}
+            name, label = str(src.get("name", "")), str(v.get("label", ""))
+            if src.get("kind") != "ollama" or not NAME_RE.match(name) or not UNC_LABEL.match(label) or label in labels:
+                continue
+            labels.add(label)
+            m["variants"].append({"label": label, "file_gb": v.get("file_gb"), "run_gb": v.get("run_gb"), "uncensored": True,
+                                  "maker": str(v.get("maker") or "")[:120],
+                                  "url": str(v.get("url") or "") if str(v.get("url") or "").startswith("https://huggingface.co/") else "",
+                                  "source": {"kind": "ollama", "name": name}})
+    return catalog
 
 
 # ── 這台機器的規格 ──
@@ -115,9 +145,11 @@ def build(catalog, prof, installed=(), comfy_dir=None):
         for v in m["variants"]:
             tier, why = fit(v, runtime_of(v), prof)
             vs.append(dict(v, fit=tier, fit_text=why, note=fp8_note(v, prof), have=_has(v, have, comfy_dir)))
-        # 推薦版本：顯卡放得下的話挑最大的（量化越高品質越好）；放不下就挑最小、最有機會跑起來的
+        # 推薦版本：顯卡放得下的話挑最大的（量化越高品質越好）；放不下就挑最小、最有機會跑起來的。
+        # 無審查版不當預設推薦，使用者在模型庫切到「無審查版」才看得到
         size = lambda v: v.get("run_gb") or v.get("file_gb") or 0     # noqa: E731
-        top = max(vs, key=lambda v: (_group(v["fit"]), size(v) if _group(v["fit"]) == 2 else -size(v)))
+        pool = [v for v in vs if not v.get("uncensored")] or vs
+        top = max(pool, key=lambda v: (_group(v["fit"]), size(v) if _group(v["fit"]) == 2 else -size(v)))
         models.append(dict(m, variants=vs, runtime=runtime, best=vs.index(top), fit=top["fit"]))
     ranks = {}
     for cid in cats:

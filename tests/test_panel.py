@@ -152,6 +152,25 @@ class PanelTest(unittest.TestCase):
         self.assertTrue(self.req("/api/sessions/get?id=" + sid)[1]["instructions"].startswith("先講結論"))
         code, r = self.req("/api/sessions/delete", {"id": sid})
         self.assertTrue(r["ok"])
+
+    def test_session_handoff(self):
+        """交接檔（對話太長時前面整理成的重點）跟著對話存、讀得回來；格式不對就丟掉，不擋存檔。"""
+        msgs = [{"role": "user", "content": "a"}, {"role": "assistant", "content": "b"}, {"role": "user", "content": "c"}]
+        ho = {"text": "## 目標\n測試" + "x" * 30000, "upto": 2, "sig": "2:abc", "at": 1764370000, "model": "qwen3.5:4b", "edited": True, "junk": "丟掉"}
+        code, r = self.req("/api/sessions/save", {"title": "長對話", "model": "qwen3.5:4b", "messages": msgs, "handoff": ho})
+        self.assertEqual(code, 200, r)
+        sid = r["id"]
+        h = self.req("/api/sessions/get?id=" + sid)[1]["handoff"]
+        self.assertEqual((h["upto"], h["sig"], h["model"], h["edited"], len(h["text"])), (2, "2:abc", "qwen3.5:4b", True, 20000))
+        self.assertTrue(h["text"].startswith("## 目標"))
+        self.assertNotIn("junk", h)
+        for bad in ({"text": "x", "upto": 9}, {"text": "x", "upto": 0}, {"text": "x", "upto": True}, {"text": "  ", "upto": 1},
+                    {"text": 5, "upto": 1}, "不是物件", None):
+            code, r = self.req("/api/sessions/save", {"id": sid, "title": "長對話", "messages": msgs, "handoff": bad})
+            self.assertEqual(code, 200, r)
+            self.assertIsNone(self.req("/api/sessions/get?id=" + sid)[1]["handoff"], bad)
+        code, r = self.req("/api/sessions/delete", {"id": sid})
+        self.assertTrue(r["ok"])
         self.assertEqual(self.req("/api/sessions/get?id=" + sid)[0], 404)
 
     def test_accounts(self):

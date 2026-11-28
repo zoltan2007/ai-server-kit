@@ -1,0 +1,139 @@
+{
+ "updated": "2026-11-29",
+ "note": "社群做的無審查版（abliterated：把原版「會拒絕回答」的部分拿掉）。檔案大小查 Hugging Face API（2026-11-29）；運行＝檔案＋原版同量化多出來的用量（粗估）。只收廣泛使用、Apache-2.0、不用登入就能下載的。",
+ "models": {
+  "gemma4-e4b": [
+   {
+    "label": "無審查 Q4_K_M",
+    "file_gb": 5.34,
+    "run_gb": 7.1,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-gemma-4-E4B-it-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-gemma-4-E4B-it-abliterated-GGUF:Q4_K_M"
+    }
+   },
+   {
+    "label": "無審查 Q8_0",
+    "file_gb": 8.03,
+    "run_gb": 9.9,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-gemma-4-E4B-it-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-gemma-4-E4B-it-abliterated-GGUF:Q8_0"
+    }
+   }
+  ],
+  "qwen3.5-9b": [
+   {
+    "label": "無審查 Q4_K_M",
+    "file_gb": 5.63,
+    "run_gb": 7.4,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-Qwen3.5-9B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-Qwen3.5-9B-abliterated-GGUF:Q4_K_M"
+    }
+   },
+   {
+    "label": "無審查 Q8_0",
+    "file_gb": 9.53,
+    "run_gb": 11.4,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-Qwen3.5-9B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-Qwen3.5-9B-abliterated-GGUF:Q8_0"
+    }
+   }
+  ],
+  "gpt-oss-20b": [
+   {
+    "label": "無審查 MXFP4",
+    "file_gb": 12.11,
+    "run_gb": 13.8,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），bartowski 轉成 GGUF",
+    "url": "https://huggingface.co/bartowski/huihui-ai_Huihui-gpt-oss-20b-BF16-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/bartowski/huihui-ai_Huihui-gpt-oss-20b-BF16-abliterated-GGUF:MXFP4_MOE"
+    }
+   }
+  ],
+  "qwen3.8-27b": [
+   {
+    "label": "無審查 Q4_K_M（UD-DW）",
+    "file_gb": 16.55,
+    "run_gb": 18.8,
+    "maker": "huihui-ai 拿掉拒絕（abliterated）並轉成 GGUF",
+    "url": "https://huggingface.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF:UD-DW-Q4_K_M"
+    }
+   },
+   {
+    "label": "無審查 Q8_0",
+    "file_gb": 29.05,
+    "run_gb": 31.2,
+    "maker": "huihui-ai 拿掉拒絕（abliterated）並轉成 GGUF",
+    "url": "https://huggingface.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF:Q8_0"
+    }
+   }
+  ],
+  "qwen3.6-35b-a3b": [
+   {
+    "label": "無審查 Q4_K_M",
+    "file_gb": 21.17,
+    "run_gb": 23.0,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-Qwen3.6-35B-A3B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-Qwen3.6-35B-A3B-abliterated-GGUF:Q4_K_M"
+    }
+   },
+   {
+    "label": "無審查 Q8_0",
+    "file_gb": 36.9,
+    "run_gb": 38.7,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-Qwen3.6-35B-A3B-abliterated-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-Qwen3.6-35B-A3B-abliterated-GGUF:Q8_0"
+    }
+   }
+  ],
+  "gemma4-31b": [
+   {
+    "label": "無審查 Q4_K_M",
+    "file_gb": 18.69,
+    "run_gb": 21.4,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-gemma-4-31B-it-abliterated-v2-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-gemma-4-31B-it-abliterated-v2-GGUF:Q4_K_M"
+    }
+   },
+   {
+    "label": "無審查 Q8_0",
+    "file_gb": 32.64,
+    "run_gb": 35.4,
+    "maker": "huihui-ai 拿掉拒絕（abliterated），mradermacher 轉成 GGUF",
+    "url": "https://huggingface.co/mradermacher/Huihui-gemma-4-31B-it-abliterated-v2-GGUF",
+    "source": {
+     "kind": "ollama",
+     "name": "hf.co/mradermacher/Huihui-gemma-4-31B-it-abliterated-v2-GGUF:Q8_0"
+    }
+   }
+  ]
+ }
+}

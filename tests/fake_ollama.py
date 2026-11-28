@@ -163,11 +163,20 @@ class H(BaseHTTPRequestHandler):
             last = (b.get("messages") or [{}])[-1].get("content", "")
             S.last_chat = b          # 測試用：看面板實際送了什麼給 Ollama
 
+            first = (b.get("messages") or [{}])[0]
+            asked_handoff = first.get("role") == "system" and "交接檔" in first.get("content", "") \
+                and any(k in last for k in ("【要整理的對話】", "【接下來的對話】"))
+
             def gen():
                 if b.get("think"):
                     for t in ["先想一下", "使用者說了：", last[:20]]:
                         yield {"model": name, "message": {"role": "assistant", "content": "", "thinking": t}, "done": False}
                 reply = ["你好！", "我是測試用的假模型。", "\n\n```bash\n", "nvidia-smi\n", "```\n", "\n| 項目 | 值 |\n|---|---|\n| CPU | 12% |\n"]
+                if asked_handoff:      # Kiki 要整理交接檔（studio/handoff.js）：回一份格式對的假交接檔
+                    n = last.count("\n\n") + 1
+                    reply = ["## 目標\n", "測試交接檔（假模型整理了 %d 段對話）。\n" % n, "## 已確定的事\n無\n", "## 重要細節\n",
+                             "暗號：%s\n" % ("藍色鯨魚" if "藍色鯨魚" in last else "無"), "## 使用者的偏好與要求\n無\n",
+                             "## 還沒解決／待辦\n無\n", "## 最後在做什麼\n測試自動壓縮。\n"]
                 for t in reply:
                     yield {"model": name, "message": {"role": "assistant", "content": t}, "done": False}
                 yield {"model": name, "message": {"role": "assistant", "content": ""}, "done": True, "done_reason": "stop",

@@ -13,6 +13,21 @@ MAX_BYTES = 8 * 1024 * 1024      # 一個對話最多 8 MB（含圖片）
 MAX_COUNT = 500
 MAX_TOTAL = 300 * 1024 * 1024     # 一個帳號所有對話加起來最多 300 MB
 MAX_INSTRUCTIONS = 4000           # 專案指示（每次都會附給 Kiki）的字數上限
+MAX_HANDOFF = 20000               # 交接檔（對話太長時前面整理成的重點）的字數上限
+
+
+def clean_handoff(h, n_messages):
+    """交接檔（studio/handoff.js）：前 upto 則訊息整理成的重點。格式不對就丟掉（不擋存檔），Kiki 會照原本的方式送完整對話。"""
+    if not isinstance(h, dict):
+        return None
+    text, upto, at = h.get("text"), h.get("upto"), h.get("at")
+    if not isinstance(text, str) or not text.strip():
+        return None
+    if not isinstance(upto, int) or isinstance(upto, bool) or not 0 < upto <= n_messages:
+        return None
+    return {"text": text[:MAX_HANDOFF], "upto": upto, "sig": str(h.get("sig") or "")[:40],
+            "at": at if isinstance(at, (int, float)) and not isinstance(at, bool) else 0,
+            "model": str(h.get("model") or "")[:200], "edited": bool(h.get("edited"))}
 
 
 class SessionStore:
@@ -97,6 +112,7 @@ class SessionStore:
                 "messages": s.get("messages") or [], "updated": time.time()}
         if not isinstance(body["messages"], list):
             raise ValueError("messages 要是清單")
+        body["handoff"] = clean_handoff(s.get("handoff"), len(body["messages"]))
         data = json.dumps(body, ensure_ascii=False)
         if len(data.encode("utf-8")) > MAX_BYTES:
             raise ValueError("這個對話太大了（超過 8 MB），請開新的對話")
